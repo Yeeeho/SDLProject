@@ -11,7 +11,7 @@ bool System::Init()
         SDL_Log(SDL_GetError());
         success = false;
     }
-    if (SDL_CreateWindowAndRenderer("MistDigger", kWindowWidth, kWindowHeight, 0, &sWindow, &sRenderer) == false) {
+    if (SDL_CreateWindowAndRenderer("MistEater", sWindowWidth, sWindowHeight, 0, &sWindow, &sRenderer) == false) {
         SDL_Log("couldn't create window and renderer");
         SDL_Log(SDL_GetError());
         success = false;
@@ -46,7 +46,7 @@ bool System::LoadMedia()
 {
     bool success = true;
 
-    std::string fontPath{"fonts/FreeSans.ttf"};
+    std::string fontPath{"fonts/MaruMinyaHangul.ttf"};
     sFont = TTF_OpenFont(fontPath.c_str(), 28);
     if (sFont == nullptr) {
         SDL_Log("Could not load %s, SDL_ttf Error: %s\n", fontPath.c_str(), SDL_GetError());
@@ -69,4 +69,36 @@ void System::Close()
     SDL_Quit();
     TTF_Quit();
     MIX_Quit();
+}
+
+bool System::HandleEvents(SDL_Event& e, float mouseX, float mouseY)
+{
+    bool quit = false;
+
+    //이벤트 큐에 이벤트가 있을때
+    while (SDL_PollEvent(&e) == true) {
+        if (e.type == SDL_EVENT_QUIT) quit = true;
+
+        
+    }
+
+    return quit;
+}
+
+//루프 안에 넣어주세요
+void System::RenderThings()
+{
+
+}
+
+Uint64 Timer::StoreProgramTick()
+{
+    Uint64 ns = SDL_GetTicksNS();
+    mNs = ns;
+    return ns;
+}
+
+Uint64 Timer::GetPreviousTick()
+{
+    return mNs;
 }

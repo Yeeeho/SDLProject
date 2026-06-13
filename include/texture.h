@@ -14,7 +14,7 @@ class Texture {
     void Destroy();
 
     //텍스트 로드
-    bool LoadFromRenderedText(std::string textureText, SDL_Color textColor);
+    bool LoadFromRenderedText(std::string textureText, int size, SDL_Color textColor);
 
     //렌더링
     void Render(float x, float y, SDL_FRect *clip = nullptr,

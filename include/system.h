@@ -5,8 +5,8 @@
 class System {
     public:
 
-    static constexpr int kWindowWidth{800};
-    static constexpr int kWindowHeight{600};
+    inline static int sWindowWidth{800};
+    inline static int sWindowHeight{600};
 
     //윈도우
     inline static SDL_Window* sWindow{nullptr};
@@ -18,11 +18,20 @@ class System {
     inline static TTF_Font* sFont{nullptr};
 
     /*함수 선언*/
-    //초기화 함수
+
     bool Init();
     bool LoadMedia();
     void Close();
-    
-    private:
+    bool HandleEvents(SDL_Event& e, float mouseX, float mouseY);
+    void RenderThings();
 
+    private:
+};
+
+class Timer {
+    public:
+    Uint64 mNs = 0;
+
+    Uint64 StoreProgramTick();
+    Uint64 GetPreviousTick();
 };

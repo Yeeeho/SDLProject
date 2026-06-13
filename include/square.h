@@ -4,6 +4,8 @@ class Square {
     public:
     int GetX();
     int GetY();
+    int GetW();
+    int GetH();
 
     Square(int x, int y,int width, int height);
 
