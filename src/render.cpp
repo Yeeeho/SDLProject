@@ -9,12 +9,14 @@
 //렌더링 짬통
 void RenderManager::RenderThings()
 {
+    bool test = true;
+
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0xFF);
     SDL_RenderClear(System::sRenderer);
 
     Square uiFrame = Square(10, 10, 300, 300);
-    UI ui = UI(&uiFrame, "I have become death, destroyer of the world. 그리고 람쥐썬더 헌 쳇바퀴에 타고파");
-    ui.Render();
+    UI ui = UI(&uiFrame, "no hablas ingles? i bet you'll habla yourself. 그리고 람쥐썬더는 헌 쳇바퀴에 타고파?");
+    ui.Render(test);
 
     //fps표시
     Timer timer;

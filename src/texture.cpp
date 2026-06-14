@@ -101,3 +101,66 @@ bool Texture::isLoaded()
 {
     return mTexture != nullptr;
 }
+
+bool TextTexture::LoadFromRenderedText(std::string textureText, int size, SDL_Color textColor)
+{
+    Destroy();
+
+    bool success = true;
+
+    //어떤 글자가 들어갔는지를 매핑해준다.
+    for (int i = 0; i < textureText.length(); i++) {
+        // utf-8에서 한글은 한 문자가 3바이트다. 그걸 구분해야함.
+        // 3바이트 문자의 첫번째 바이트는 0b1110xxxx 이므로 비트 비교로 3바이트 문자 추출
+        if ((textureText[i] & 0b11110000) == 0b11100000) {
+            // 이새끼는 한글이구나
+            mTextLengthVector.push_back(static_cast<float>(size));
+            i += 2;
+        }
+        else {
+            if (textureText.substr(i, 1) == " ") {
+                mTextLengthVector.push_back(static_cast<float>(size/2));
+            }
+            else {
+                mTextLengthVector.push_back(static_cast<float>(size/2));
+            }
+        }
+    }
+
+    //텍스트 서페이스 로드
+    SDL_Surface* textSurface = TTF_RenderText_Blended(System::sFont, textureText.c_str(), 0, textColor);
+    SDL_Surface* scaledSurface = nullptr;
+    if (textSurface == nullptr) {
+        SDL_Log(SDL_GetError());
+        success = false;
+    }
+
+    //사이즈가 0이 아니면 서페이스 스케일링
+    if (size != 0) {
+        if ((textureText[0] & 0b11110000) == 0b11100000) {
+            scaledSurface = SDL_ScaleSurface(textSurface, size, size, SDL_SCALEMODE_LINEAR);
+        }
+        else {
+            scaledSurface = SDL_ScaleSurface(textSurface, size, size, SDL_SCALEMODE_LINEAR);
+        }
+    }
+
+    //서페이스에서 텍스처를 생성
+    mTexture = SDL_CreateTextureFromSurface(System::sRenderer, textSurface);
+    if (mTexture == nullptr) {
+        SDL_Log(SDL_GetError());
+        success = false;
+    }
+
+    if (success) {
+        mWidth = textSurface->w;
+        mHeight = textSurface->h;
+    }
+
+    //임시 서페이스 파괴
+    SDL_DestroySurface(textSurface);
+    SDL_DestroySurface(scaledSurface);
+
+    return success;
+
+}

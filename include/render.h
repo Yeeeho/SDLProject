@@ -9,6 +9,9 @@ class RenderManager {
     
     int GetDesiredFps();
 
+    //ui 업데이트용 플래그 변수
+    bool mIsUIUpdate = true;
+
     private:
 
     bool mCapFpsOn = true;

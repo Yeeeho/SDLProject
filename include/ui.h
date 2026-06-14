@@ -5,6 +5,7 @@
 
 class UI;
 class Square;
+class TextTexture;
 
 class UIManager {
     public:
@@ -21,6 +22,9 @@ class UI {
     UI() = default;
     UI(Square*, std::string);
 
+    float ClipDesiredTextLength(TextTexture &ttexture);
+
+    void Render(bool& isUIUpdate);
     void Render();
 
     void SetPadding(float padding);

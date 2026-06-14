@@ -11,7 +11,34 @@ UI::UI(Square* uiFrame, std::string uiText)
     mUIText = uiText;
 }
 
-void UI::Render()
+float UI::ClipDesiredTextLength(TextTexture& ttexture)
+{
+    //실제 길이제한
+    float rawW = mUIFrame->GetW() - mPadding*4;
+
+    //누적된 길이
+    float accumulatedW = 0.f;
+    for (auto textinf = ttexture.mTextLengthVector.begin(); textinf != ttexture.mTextLengthVector.end();) {
+        
+        //텍스트 길이가 실제 제한을 벗어나면
+        if (accumulatedW > rawW) {
+            //길이 덧셈을 취소후 반환
+            accumulatedW - *textinf;
+            break;
+        }
+
+        accumulatedW += *textinf;
+
+        //현재 요소를 맵에서 삭제함
+        //erase 함수는 다음 반복자를 반환하므로 내가 증감해줄 필요는 없다.
+        textinf = ttexture.mTextLengthVector.erase(textinf);
+    }
+
+    return accumulatedW;
+}
+
+//이렇게 하면 성능 부하가 크다. 이 함수 이제 쓰지마라. 밑에거 써라.
+void UI::Render(bool& isUIUpdate)
 {
     mUIFrame->Render();
     Texture textTexture;
@@ -46,13 +73,62 @@ void UI::Render()
         //줄의 첫 시작이 공백이면 반복 한번 스킵한다.
         if (totalWidth == 0 && mUIText.substr(i, 1) == " ") {
             continue;
-        }
-          
+        }        
+
         //렌더링
         //총 넓이가 얼마였는지 기억해서 더해준다.
         textTexture.Render(mUIFrame->GetX() + mPadding + totalWidth, mUIFrame->GetY()  + mPadding + totalHeight);
         //렌더링한 텍스처만큼 총 넓이 변수에 더해준다.
         totalWidth += static_cast<float>(textTexture.GetWidth());
+    }
+
+    isUIUpdate = false; //렌더링 완료하면 업데이트 완료 상태로 바꿈
+}
+
+void UI::Render()
+{
+    mUIFrame->Render();
+    TextTexture textTexture;
+    SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
+
+    //줄바꾸는 로직을 더 성능 부하 적은 방법으로 만든다.
+    //이친구를 사실상 스프라이트 시트로 쓰는거다..
+    textTexture.LoadFromRenderedText(mUIText, 20, textColor);
+
+    //총 길이, 누적 길이를 기억해놓는다.
+    float totalWidth = textTexture.GetWidth();
+    float accumulatedWidth = 0.f;
+    float accumulatedHeight = 0.f;
+    //클립이 사용할 넓이값
+    float clipW = 0.f;
+
+    //텍스처가 프레임의 x축 한계선에 도달했을 경우 잘라내서 렌더링한다.
+    while (totalWidth + mUIFrame->GetW() - mPadding * 2 > mUIFrame->GetW() - mPadding * 2) {
+
+        float tempBoi = ClipDesiredTextLength(textTexture);
+
+        //남은 길이가 프레임 내부 x축제한보다 작을 경우
+        if (totalWidth < mUIFrame->GetW() - mPadding*2) {
+            clipW = totalWidth;
+        }
+        else {
+            clipW = tempBoi;
+        }
+
+        SDL_FRect clip {
+            accumulatedWidth, 0.f,
+            clipW, (float)textTexture.GetHeight()
+        };
+        
+        textTexture.Render(
+            mUIFrame->GetX() + mPadding, 
+            mUIFrame->GetY() + mPadding + accumulatedHeight, &clip
+        );
+                
+        //증감할거 증감해준다.
+        totalWidth -= tempBoi;
+        accumulatedHeight += textTexture.GetHeight();
+        accumulatedWidth += tempBoi;
     }
 }
 
@@ -92,6 +168,6 @@ void UIManager::InitUIs()
 void UIManager::RenderUIs()
 {
     for (auto ui : uiMap) {
-        ui.second->Render();
+        
     }
 }
