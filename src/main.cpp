@@ -2,9 +2,9 @@
 
 #include <SDL3/SDL.h> 
 
+#include "ui.h"
 #include "system.h"
-#include "square.h"
-#include "texture.h"
+#include "render.h"
 
 int main() {
     System sys;
@@ -21,24 +21,25 @@ int main() {
     SDL_Event e;
     SDL_zero(e);
 
+    Timer timer;
+    RenderManager rend;
+
+    UIManager uim;
+    uim.InitUIs();
+
+    //메인 루프
     while (quit == false) {
-        //이벤트 큐에 이벤트가 있을때
-        while (SDL_PollEvent(&e) == true) {
-            if (e.type == SDL_EVENT_QUIT) quit = true;
-        }
 
-        SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0xFF);
-        SDL_RenderClear(System::sRenderer);
+        bool isUIUpdate = true; //ui 업데이트용 플래그 변수
 
-        Square ui = Square(0, 0, 100, 100);
-        ui.Render();
+        float mouseX, mouseY = -1.f;
+        SDL_GetMouseState(&mouseX, &mouseY);
 
-        Texture sampleTextTexture;
-        SDL_Color textColor {0x00, 0xFF, 0x00, 0xFF};
-        sampleTextTexture.LoadFromRenderedText("Hello", textColor);
-        sampleTextTexture.Render(0.f, sampleTextTexture.GetHeight()/2);
+        quit = sys.HandleEvents(e, mouseX, mouseY);
 
-        SDL_RenderPresent(System::sRenderer);
+        rend.RenderThings();
+
+        rend.AdjustFps(timer);
     }
 
     sys.Close();

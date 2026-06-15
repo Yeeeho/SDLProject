@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <SDL3/SDL.h>
 
 class Texture {
@@ -14,7 +15,7 @@ class Texture {
     void Destroy();
 
     //텍스트 로드
-    bool LoadFromRenderedText(std::string textureText, SDL_Color textColor);
+    virtual bool LoadFromRenderedText(std::string textureText, int size, SDL_Color textColor);
 
     //렌더링
     void Render(float x, float y, SDL_FRect *clip = nullptr,
@@ -27,10 +28,21 @@ class Texture {
     int GetHeight();
     bool isLoaded();
 
-    private:
     SDL_Texture* mTexture;
 
     //텍스처 크기
     int mWidth;
     int mHeight;
+    private:
+};
+
+enum class TextType {
+    BLANK ,SQUARE, NARROW
+};
+
+class TextTexture : public Texture {
+    public:
+
+    std::vector<float> mTextLengthVector;
+    bool LoadFromRenderedText(std::string textureText, int size, SDL_Color textColor) override;
 };
