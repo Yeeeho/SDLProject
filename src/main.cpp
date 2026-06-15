@@ -36,7 +36,7 @@ int main() {
         Texture sampleTextTexture;
         SDL_Color textColor {0x00, 0xFF, 0x00, 0xFF};
         sampleTextTexture.LoadFromRenderedText("Hello", textColor);
-        sampleTextTexture.Render(0.f, sampleTextTexture.GetHeight());
+        sampleTextTexture.Render(0.f, sampleTextTexture.GetHeight()/2);
 
         SDL_RenderPresent(System::sRenderer);
     }
