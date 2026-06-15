@@ -23,7 +23,7 @@ float UI::ClipDesiredTextLength(TextTexture& ttexture)
         //텍스트 길이가 실제 제한을 벗어나면
         if (accumulatedW > rawW) {
             //길이 덧셈을 취소후 반환
-            accumulatedW - *textinf;
+            accumulatedW -= *textinf;
             break;
         }
 
@@ -35,6 +35,13 @@ float UI::ClipDesiredTextLength(TextTexture& ttexture)
     }
 
     return accumulatedW;
+}
+
+void UI::HandleEvent(SDL_Event &e, float mouseX, float mouseY)
+{
+    if (e.key.key == SDLK_1 && e.type == SDL_EVENT_KEY_DOWN) {
+        SDL_Log("dddddd");
+    }
 }
 
 //이렇게 하면 성능 부하가 크다. 이 함수 이제 쓰지마라. 밑에거 써라.
@@ -103,13 +110,15 @@ void UI::Render()
     float clipW = 0.f;
 
     //텍스처가 프레임의 x축 한계선에 도달했을 경우 잘라내서 렌더링한다.
-    while (totalWidth + mUIFrame->GetW() - mPadding * 2 > mUIFrame->GetW() - mPadding * 2) {
+    bool complete = false;
+    while (!complete) {
 
         float tempBoi = ClipDesiredTextLength(textTexture);
 
         //남은 길이가 프레임 내부 x축제한보다 작을 경우
         if (totalWidth < mUIFrame->GetW() - mPadding*2) {
             clipW = totalWidth;
+            complete = true;
         }
         else {
             clipW = tempBoi;
@@ -150,24 +159,24 @@ Button::Button(Square *uiFrame, std::string uiText)
 
 void Button::HandleEvent(SDL_Event &e, float mouseX, float mouseY)
 {
-    if (!e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) return; //클릭 감지
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
     //버튼 안에 있는지 확인
     if (e.button.x < mUIFrame->GetX()) return;
     if (e.button.x > mUIFrame->GetX() + mUIFrame->GetW()) return;    
     if (e.button.y < mUIFrame->GetY()) return;
     if (e.button.y > mUIFrame->GetY() + mUIFrame->GetH()) return;    
 
-    SDL_Log("おはよ。");
+    SDL_Log("おはよう");
 }
 
 void UIManager::InitUIs()
 {
-    uiMap["testButton"] = new UI(new Square(10, 400, 100, 100), "ohayo gozaimasu");
+    uiMap["testButton"] = new Button(new Square(10, 400, 100, 100), "ohayo gozaimasu");
 }
 
 void UIManager::RenderUIs()
 {
     for (auto ui : uiMap) {
-        
+        ui.second->Render();
     }
 }

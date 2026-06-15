@@ -32,12 +32,9 @@ int main() {
 
         bool isUIUpdate = true; //ui 업데이트용 플래그 변수
 
-        float mouseX, mouseY = -1.f;
-        SDL_GetMouseState(&mouseX, &mouseY);
+        quit = sys.HandleEvents(e, uim);
 
-        quit = sys.HandleEvents(e, mouseX, mouseY);
-
-        rend.RenderThings();
+        rend.RenderThings(uim);
 
         rend.AdjustFps(timer);
     }

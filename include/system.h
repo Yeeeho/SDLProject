@@ -2,6 +2,8 @@
 
 #include <SDL3/SDL.h>
 
+class UIManager;
+
 class System {
     public:
 
@@ -22,7 +24,7 @@ class System {
     bool Init();
     bool LoadMedia();
     void Close();
-    bool HandleEvents(SDL_Event& e, float mouseX, float mouseY);
+    bool HandleEvents(SDL_Event& e, UIManager& uim);
     void RenderThings();
 
     private:

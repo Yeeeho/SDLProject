@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "system.h"
+#include "ui.h"
 
 bool System::Init()
 {
@@ -71,15 +72,25 @@ void System::Close()
     MIX_Quit();
 }
 
-bool System::HandleEvents(SDL_Event& e, float mouseX, float mouseY)
+bool System::HandleEvents(SDL_Event& e, UIManager& uim)
 {
     bool quit = false;
+
+    //마우스 위치 계산
+    float mouseX, mouseY = -1.f;
+    SDL_GetMouseState(&mouseX, &mouseY);
 
     //이벤트 큐에 이벤트가 있을때
     while (SDL_PollEvent(&e) == true) {
         if (e.type == SDL_EVENT_QUIT) quit = true;
-
         
+        if (e.key.key == SDLK_0 && e.type == SDL_EVENT_KEY_DOWN) {
+            SDL_Log("i am event");
+        }
+
+        for (auto ui : uim.uiMap) {
+            ui.second->HandleEvent(e, mouseX, mouseY);
+        }
     }
 
     return quit;

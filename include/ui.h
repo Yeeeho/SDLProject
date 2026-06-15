@@ -24,6 +24,8 @@ class UI {
 
     float ClipDesiredTextLength(TextTexture &ttexture);
 
+    virtual void HandleEvent(SDL_Event& e, float mouseX, float mouseY);
+
     void Render(bool& isUIUpdate);
     void Render();
 
@@ -33,13 +35,13 @@ class UI {
     Square* mUIFrame{nullptr};
     std::string mUIText;
 
+    float mPadding = 10.f;
     private:
-    float mPadding = 10;
 };
 
 class Button : public UI {
     public:
     Button(Square*, std::string);
 
-    void HandleEvent(SDL_Event& e, float mouseX, float mousY);
+    void HandleEvent(SDL_Event& e, float mouseX, float mouseY) override;
 };

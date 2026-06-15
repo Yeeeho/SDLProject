@@ -1,10 +1,11 @@
 #pragma once
 
 class RenderManager;
+class UIManager;
 
 class RenderManager {
     public:
-    void RenderThings();
+    void RenderThings(UIManager uim);
     void AdjustFps(Timer& timer);
     
     int GetDesiredFps();

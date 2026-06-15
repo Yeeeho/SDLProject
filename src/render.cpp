@@ -7,7 +7,7 @@
 #include "texture.h"
 
 //렌더링 짬통
-void RenderManager::RenderThings()
+void RenderManager::RenderThings(UIManager uim)
 {
     bool test = true;
 
@@ -15,8 +15,10 @@ void RenderManager::RenderThings()
     SDL_RenderClear(System::sRenderer);
 
     Square uiFrame = Square(10, 10, 300, 300);
-    UI ui = UI(&uiFrame, "no hablas ingles? i bet you'll habla yourself. 그리고 람쥐썬더는 헌 쳇바퀴에 타고파?");
-    ui.Render(test);
+    UI ui = UI(&uiFrame, "로로로로롤 로로롤 로로롤");
+    ui.Render();
+
+    uim.RenderUIs();
 
     //fps표시
     Timer timer;
