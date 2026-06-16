@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ui.h"
 
+#include "system.h"
 #include "texture.h"
 #include "square.h"
 
@@ -45,6 +46,7 @@ void UI::HandleEvent(SDL_Event &e, float mouseX, float mouseY)
 }
 
 //이렇게 하면 성능 부하가 크다. 이 함수 이제 쓰지마라. 밑에거 써라.
+//근데 해보니까 아니다. 밑에거 함수 너무 더러우니까 이걸로 텍스처 하나에 렌더링해놓고 그거 써라
 void UI::Render(bool& isUIUpdate)
 {
     mUIFrame->Render();
@@ -115,6 +117,12 @@ void UI::Render()
 
         float tempBoi = ClipDesiredTextLength(textTexture);
 
+        //텍스트가 프레임 y축을 벗어나는 것을 확인
+        if (accumulatedHeight > mUIFrame->GetH() - mPadding*2) {
+            complete = true;
+            break;
+        }
+
         //남은 길이가 프레임 내부 x축제한보다 작을 경우
         if (totalWidth < mUIFrame->GetW() - mPadding*2) {
             clipW = totalWidth;
@@ -171,11 +179,14 @@ void Button::HandleEvent(SDL_Event &e, float mouseX, float mouseY)
 
 void UIManager::InitUIs()
 {
-    uiMap["testButton"] = new Button(new Square(10, 400, 100, 100), "ohayo gozaimasu");
+    uiMap["testUI"] = new UI(new Square(10, System::sWindowHeight- 110, 100, 100), "힘세고 강한 아침.");
+    uiMap["testButton"] = new Button(new Square(10, 10, 100, 100), "ohayo gozaimasu");
 }
 
 void UIManager::RenderUIs()
 {
+    SDL_SetRenderLogicalPresentation(System::sRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+
     for (auto ui : uiMap) {
         ui.second->Render();
     }

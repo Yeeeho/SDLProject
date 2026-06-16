@@ -2,6 +2,7 @@
 
 class RenderManager;
 class UIManager;
+class Timer;
 
 class RenderManager {
     public:

@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "system.h"
+#include "game_state.h"
 #include "ui.h"
 
 bool System::Init()
@@ -17,6 +18,12 @@ bool System::Init()
         SDL_Log(SDL_GetError());
         success = false;
     }
+    else {
+        SDL_SetWindowBordered(sWindow, true);
+        SDL_MaximizeWindow(sWindow);
+        SDL_SetRenderLogicalPresentation(sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+    }
+
     //수직동기화
     if (SDL_SetRenderVSync(sRenderer, 1) == false) {
         SDL_Log(SDL_GetError());
@@ -72,7 +79,7 @@ void System::Close()
     MIX_Quit();
 }
 
-bool System::HandleEvents(SDL_Event& e, UIManager& uim)
+bool System::HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameState* currentSt)
 {
     bool quit = false;
 
@@ -83,23 +90,12 @@ bool System::HandleEvents(SDL_Event& e, UIManager& uim)
     //이벤트 큐에 이벤트가 있을때
     while (SDL_PollEvent(&e) == true) {
         if (e.type == SDL_EVENT_QUIT) quit = true;
-        
-        if (e.key.key == SDLK_0 && e.type == SDL_EVENT_KEY_DOWN) {
-            SDL_Log("i am event");
-        }
 
-        for (auto ui : uim.uiMap) {
-            ui.second->HandleEvent(e, mouseX, mouseY);
-        }
+        //ui매니저에 할당된 ui들의 이벤트 핸들링.
+        currentSt->HandleEvent(e, uim, objm, mouseX, mouseY);
     }
 
     return quit;
-}
-
-//루프 안에 넣어주세요
-void System::RenderThings()
-{
-
 }
 
 Uint64 Timer::StoreProgramTick()
@@ -112,4 +108,8 @@ Uint64 Timer::StoreProgramTick()
 Uint64 Timer::GetPreviousTick()
 {
     return mNs;
+}
+
+ObjectManager::ObjectManager()
+{
 }
