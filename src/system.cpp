@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "system.h"
+#include "map.h"
 #include "game_state.h"
 #include "ui.h"
 
@@ -21,7 +22,7 @@ bool System::Init()
     else {
         SDL_SetWindowBordered(sWindow, true);
         SDL_MaximizeWindow(sWindow);
-        SDL_SetRenderLogicalPresentation(sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+        SDL_SetRenderLogicalPresentation(sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_DISABLED);
     }
 
     //수직동기화
@@ -79,7 +80,7 @@ void System::Close()
     MIX_Quit();
 }
 
-bool System::HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameState* currentSt)
+bool System::HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
     bool quit = false;
 
@@ -91,8 +92,8 @@ bool System::HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, Gam
     while (SDL_PollEvent(&e) == true) {
         if (e.type == SDL_EVENT_QUIT) quit = true;
 
-        //ui매니저에 할당된 ui들의 이벤트 핸들링.
-        currentSt->HandleEvent(e, uim, objm, mouseX, mouseY);
+        //현재 상태에 있는 매니저들의 이벤트 핸들링
+        gsm.mCurrentState->HandleEvent(e, uim, objm, gsm, mouseX, mouseY);
     }
 
     return quit;
@@ -112,4 +113,21 @@ Uint64 Timer::GetPreviousTick()
 
 ObjectManager::ObjectManager()
 {
+}
+
+void ObjectManager::RenderObjects()
+{
+    SDL_SetRenderLogicalPresentation(System::sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+
+    //맵 렌더링
+    if (map != nullptr) {
+        map->Render();
+    }
+    else {
+    }
+}
+
+void ObjectManager::DestroyObjects()
+{
+    //오브젝트 파괴하는 함수. 아직 미구현.
 }

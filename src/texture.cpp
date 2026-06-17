@@ -53,6 +53,9 @@ bool Texture::LoadFromRenderedText(std::string textureText, int size, SDL_Color 
         SDL_Log(SDL_GetError());
         success = false;
     }
+    
+    SDL_SetTextureScaleMode(mTexture, SDL_SCALEMODE_LINEAR);
+    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND);
 
     if (success) {
         mWidth = textSurface->w;

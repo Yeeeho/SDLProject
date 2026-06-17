@@ -2,6 +2,7 @@
 #include "ui.h"
 
 #include "system.h"
+#include "game_state.h"
 #include "texture.h"
 #include "square.h"
 
@@ -10,6 +11,12 @@ UI::UI(Square* uiFrame, std::string uiText)
 {
     mUIFrame = uiFrame;
     mUIText = uiText;
+    mTexture = SDL_CreateTexture(
+        System::sRenderer,
+        SDL_PIXELFORMAT_RGBA8888,
+        SDL_TEXTUREACCESS_TARGET,
+        System::sWindowWidth, System::sWindowHeight
+    );
 }
 
 float UI::ClipDesiredTextLength(TextTexture& ttexture)
@@ -38,17 +45,30 @@ float UI::ClipDesiredTextLength(TextTexture& ttexture)
     return accumulatedW;
 }
 
-void UI::HandleEvent(SDL_Event &e, float mouseX, float mouseY)
+void UI::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, float mouseY)
 {
-    if (e.key.key == SDLK_1 && e.type == SDL_EVENT_KEY_DOWN) {
-        SDL_Log("dddddd");
-    }
+
 }
 
 //이렇게 하면 성능 부하가 크다. 이 함수 이제 쓰지마라. 밑에거 써라.
-//근데 해보니까 아니다. 밑에거 함수 너무 더러우니까 이걸로 텍스처 하나에 렌더링해놓고 그거 써라
-void UI::Render(bool& isUIUpdate)
+//근데 해보니까 아니다. 밑에거 함수 너무 더러우니까 이걸로 쓰자..
+void UI::RenderOnUpdate()
 {
+    //업데이트 플래그가 거짓이면 저장된 텍스처를 렌더링한다.
+    if (mIsUIUpdate == false) {
+        SDL_RenderTexture(System::sRenderer ,mTexture, nullptr, nullptr);
+        return;
+    }
+    //업데이트 플래그가 참이면
+    SDL_Log("updating ui on update flag");
+
+    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureScaleMode(mTexture, SDL_SCALEMODE_LINEAR);
+
+    SDL_SetRenderTarget(System::sRenderer, mTexture); //렌더러 타겟으로 설정
+    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_RenderClear(System::sRenderer);
+
     mUIFrame->Render();
     Texture textTexture;
     SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
@@ -61,11 +81,11 @@ void UI::Render(bool& isUIUpdate)
         //3바이트 문자의 첫번째 바이트는 0b1110xxxx 이므로 비트 비교로 3바이트 문자 추출
         if ((mUIText[i] & 0b11110000) == 0b11100000) {
             //이새끼는 한글이구나
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), 20, textColor);
+            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), 0, textColor);
             i += 2;
         }
         else {
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), 20, textColor);
+            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), 0, textColor);
         }
 
         //텍스트 텍스처가 프레임 x축 범위를 넘어갔을 경우
@@ -91,7 +111,8 @@ void UI::Render(bool& isUIUpdate)
         totalWidth += static_cast<float>(textTexture.GetWidth());
     }
 
-    isUIUpdate = false; //렌더링 완료하면 업데이트 완료 상태로 바꿈
+    SDL_SetRenderTarget(System::sRenderer, NULL); //렌더러 타겟에서 해제
+    mIsUIUpdate = false; //렌더링 완료하면 플래그 변수 초기화
 }
 
 void UI::Render()
@@ -159,28 +180,43 @@ float UI::GetPadding()
     return mPadding;
 }
 
-Button::Button(Square *uiFrame, std::string uiText)
+Button::Button(Square *uiFrame, std::string uiText, BtnType type)
 {
     mUIFrame = uiFrame;
     mUIText = uiText;
+    mType = type;
+
+    mTexture = SDL_CreateTexture(
+        System::sRenderer,
+        SDL_PIXELFORMAT_RGBA8888,
+        SDL_TEXTUREACCESS_TARGET,
+        System::sWindowWidth, System::sWindowHeight
+    );
 }
 
-void Button::HandleEvent(SDL_Event &e, float mouseX, float mouseY)
+void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, float mouseY)
 {
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
     //버튼 안에 있는지 확인
     if (e.button.x < mUIFrame->GetX()) return;
     if (e.button.x > mUIFrame->GetX() + mUIFrame->GetW()) return;    
     if (e.button.y < mUIFrame->GetY()) return;
     if (e.button.y > mUIFrame->GetY() + mUIFrame->GetH()) return;    
+    
+    //여기에 마우스 오버 이벤트 로직을 입력.
 
-    SDL_Log("おはよう");
-}
+    //클릭했는지 확인
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
 
-void UIManager::InitUIs()
-{
-    uiMap["testUI"] = new UI(new Square(10, System::sWindowHeight- 110, 100, 100), "힘세고 강한 아침.");
-    uiMap["testButton"] = new Button(new Square(10, 10, 100, 100), "ohayo gozaimasu");
+    //버튼 타입에 따라 반응함. 헤으응.
+    //시작 버튼을 눌렀을 경우
+    if (mType == BtnType::Start) {
+        SDL_Log("start button pressed");
+        gsm.mNextState = gsm.mOms; //다음 타깃 상태는 오버맵 상태다.
+        gsm.mIsStateChange = true;
+    }
+    else {
+        SDL_Log("おはよう");
+    }
 }
 
 void UIManager::RenderUIs()
@@ -188,6 +224,21 @@ void UIManager::RenderUIs()
     SDL_SetRenderLogicalPresentation(System::sRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
 
     for (auto ui : uiMap) {
-        ui.second->Render();
+        ui.second->RenderOnUpdate();
     }
+}
+
+void UIManager::DestroyUIs()
+{
+    for (auto ui : uiMap) {
+        //ui 텍스처 파괴 로직
+        if (ui.second->mTexture != nullptr) {
+            SDL_DestroyTexture(ui.second->mTexture);
+        }
+
+        //ui 자체 메모리 해제
+        delete ui.second;
+    }
+
+    uiMap.clear();
 }

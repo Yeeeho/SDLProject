@@ -8,19 +8,15 @@
 #include "texture.h"
 
 //렌더링 짬통, 메인 루프에서 한번만 호출
-void RenderManager::RenderThings(UIManager uim)
+void RenderManager::RenderThings(UIManager& uim, ObjectManager& objm)
 {
     bool test = true;
 
-    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0xFF);
+    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
     SDL_RenderClear(System::sRenderer);
-
-    SDL_SetRenderLogicalPresentation(System::sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-
-
+    
     //ui아닌것들 렌더링
-    Map map = Map(3, 3);
-    map.Render();
+    objm.RenderObjects();
     
     //ui들 렌더링
     uim.RenderUIs(); 

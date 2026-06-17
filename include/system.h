@@ -5,6 +5,7 @@
 class UIManager;
 class ObjectManager;
 class GameState;
+class GameStateManager;
 
 class System {
     public:
@@ -26,7 +27,7 @@ class System {
     bool Init();
     bool LoadMedia();
     void Close();
-    bool HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameState* currentSt);
+    bool HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm);
 
     private:
 };
@@ -40,9 +41,14 @@ class Timer {
 };
 
 class Map;
+//아직은 멤버 변수 삭제 로직은 안만듬.
 class ObjectManager {
     public:
     ObjectManager();
 
+    void RenderObjects();
+    void DestroyObjects();
+
+    //오버맵에서 사용할 맵 객체다.
     Map* map{nullptr};
 };

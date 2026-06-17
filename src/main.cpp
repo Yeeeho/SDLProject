@@ -29,27 +29,26 @@ int main() {
     UIManager uim;
     ObjectManager objm;
 
-    //이새끼는 게임 상태들을 데리고 다닌다.
+    //게임 상태 매니저
     GameStateManager gsm;
 
     //초기 게임 상태를 현재 상태에 저장한다.
-    GameState* currentState = gsm.mIs;
-    currentState->Enter(uim, objm);
+    gsm.mCurrentState = gsm.mIs;
+    gsm.mCurrentState->Enter(uim, objm);
 
     //메인 루프
     while (quit == false) {
 
-        quit = sys.HandleEvents(e, uim, objm, currentState);
+        quit = sys.HandleEvents(e, uim, objm, gsm);
 
-        currentState->Update(uim, objm);
+        gsm.mCurrentState->Update(uim, objm, gsm);
 
         //게임 상태를 바꾼다.
-        if (currentState->mIsStateChange) {
-            currentState = gsm.SetCurrentState(currentState);
+        if (gsm.mIsStateChange) {
+            gsm.SetCurrentState(uim, objm);
         }
 
-        rend.RenderThings(uim);
-        currentState->Render(rend, uim, objm);
+        gsm.mCurrentState->Render(rend, uim, objm);
 
         rend.AdjustFps(timer);
     }
