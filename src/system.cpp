@@ -61,7 +61,9 @@ bool System::LoadMedia()
         SDL_Log("Could not load %s, SDL_ttf Error: %s\n", fontPath.c_str(), SDL_GetError());
         success = false;     
     }
-
+    else {
+        TTF_SetFontHinting(System::sFont, TTF_HINTING_NONE);
+    }
     return success;
 }
 

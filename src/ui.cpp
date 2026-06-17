@@ -62,11 +62,9 @@ void UI::RenderOnUpdate()
     //업데이트 플래그가 참이면
     SDL_Log("updating ui on update flag");
 
-    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND);
-    SDL_SetTextureScaleMode(mTexture, SDL_SCALEMODE_LINEAR);
-
     SDL_SetRenderTarget(System::sRenderer, mTexture); //렌더러 타겟으로 설정
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_NONE);
     SDL_RenderClear(System::sRenderer);
 
     mUIFrame->Render();
@@ -81,11 +79,11 @@ void UI::RenderOnUpdate()
         //3바이트 문자의 첫번째 바이트는 0b1110xxxx 이므로 비트 비교로 3바이트 문자 추출
         if ((mUIText[i] & 0b11110000) == 0b11100000) {
             //이새끼는 한글이구나
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), 0, textColor);
+            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), 20, textColor);
             i += 2;
         }
         else {
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), 0, textColor);
+            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), 20, textColor);
         }
 
         //텍스트 텍스처가 프레임 x축 범위를 넘어갔을 경우
