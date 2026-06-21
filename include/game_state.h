@@ -54,6 +54,18 @@ class OverMapState : public GameState {
     private:
 };
 
+class CityViewState : public GameState {
+    public:
+    void Enter(UIManager& uim, ObjectManager& objm) override;
+    void Exit(UIManager& uim, ObjectManager& objm) override;
+
+    void Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm) override;
+    void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY) override;
+    void Render(RenderManager& rend ,UIManager& uim, ObjectManager& objm) override;
+
+    CityViewState() = default;
+};
+
 //게임상태 매니저, 참조용 상태 객체들, 임시 상태 객체들, 상태를 바꾸는 메서드를 갖고있다.
 class GameStateManager {
     public:
@@ -72,4 +84,5 @@ class GameStateManager {
     //참조용 상태들. 해제하면 게임 터진다.
     IntroState* mIs{nullptr};
     OverMapState* mOms{nullptr};
+    CityViewState* mCvs{nullptr};
 };

@@ -67,6 +67,15 @@ bool System::LoadMedia()
     return success;
 }
 
+bool System::LoadObjects(ObjectManager& objm)
+{
+    bool success = true;
+
+    objm.map = new Map(3, 3);
+
+    return success;
+}
+
 void System::Close()
 {
     //믹서를 해제

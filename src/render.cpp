@@ -7,29 +7,14 @@
 #include "square.h"
 #include "texture.h"
 
-//렌더링 짬통, 메인 루프에서 한번만 호출
-void RenderManager::RenderThings(UIManager& uim, ObjectManager& objm)
+void RenderManager::RenderFps()
 {
-    bool test = true;
-
-    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_RenderClear(System::sRenderer);
-    
-    //ui아닌것들 렌더링
-    objm.RenderObjects();
-    
-    //ui들 렌더링
-    uim.RenderUIs(); 
-    
     //fps표시
     Timer timer;
     Texture sampleTextTexture;
     SDL_Color textColor {0x00, 0xB0, 0x00, 0xFF};
     sampleTextTexture.LoadFromRenderedText(std::to_string((mCurrentFps)), 0, textColor);
     sampleTextTexture.Render(1280 - sampleTextTexture.GetWidth(), 10.f);
-
-    //장면 업데이트
-    SDL_RenderPresent(System::sRenderer);
 }
 
 //렌더링 루프에 하나만 쓰세요

@@ -36,6 +36,9 @@ int main() {
     gsm.mCurrentState = gsm.mIs;
     gsm.mCurrentState->Enter(uim, objm);
 
+    //게임에 쓸것들 미리 만들어놓기
+    sys.LoadObjects(objm);
+
     //메인 루프
     while (quit == false) {
 

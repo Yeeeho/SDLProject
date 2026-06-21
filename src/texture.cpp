@@ -53,11 +53,38 @@ bool Texture::LoadFromRenderedText(std::string textureText, int size, SDL_Color 
     return success;
 }
 
+bool Texture::LoadFromFile(std::string path)
+{
+    Destroy();
+
+    //서페이스 로드
+    SDL_Surface* loadedSurface = IMG_Load(path.c_str());
+    if (loadedSurface == nullptr) {
+        SDL_Log("unable to load %s", path);
+        SDL_Log(SDL_GetError());
+    }
+    else {
+        
+        mTexture = SDL_CreateTextureFromSurface(System::sRenderer, loadedSurface);
+        if (mTexture == nullptr) {
+            SDL_Log(SDL_GetError());
+        }
+        else {
+            mWidth = loadedSurface->w;
+            mHeight = loadedSurface->h;
+        }
+
+        SDL_DestroySurface(loadedSurface);
+    }
+
+
+    return mTexture != nullptr;
+}
+
 void Texture::Render(float x, float y, SDL_FRect *clip, float width, float height, double degrees, SDL_FPoint *center, SDL_FlipMode flipmode)
 {
     //텍스처 위치 설정
     SDL_FRect dstRect {x, y, static_cast<float>(mWidth), static_cast<float>(mHeight)};
-
     if (clip != nullptr) {
         dstRect.w = clip->w;
         dstRect.h = clip->h;

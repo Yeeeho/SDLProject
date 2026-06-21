@@ -23,10 +23,10 @@ void Map::Render()
     mapFrame.Render();
     //세로줄을 긋는다.
     for (int i = 1; i < mXTiles; i++) {
-        SDL_RenderLine(System::sRenderer, mX + mTileLen*i, mY, mX + mTileLen*i, mY + mTileLen*mYTiles);
+        SDL_RenderLine(System::sRenderer, mX + mTileLen*i, mY, mX + mTileLen*i, mY + mTileLen*mYTiles -1);
     }
     //가로줄을 긋는다.
     for (int i = 1; i < mYTiles; i++) {
-        SDL_RenderLine(System::sRenderer, mX, mY + mTileLen*i , mX + mTileLen*mXTiles, mY + mTileLen*i);
+        SDL_RenderLine(System::sRenderer, mX, mY + mTileLen*i , mX + mTileLen*mXTiles -1, mY + mTileLen*i);
     }
 }

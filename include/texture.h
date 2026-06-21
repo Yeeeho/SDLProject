@@ -14,8 +14,10 @@ class Texture {
 
     void Destroy();
 
-    //텍스트 로드
+    //텍스트 텍스처 로드
     virtual bool LoadFromRenderedText(std::string textureText, int size, SDL_Color textColor);
+    //이미지 텍스처 로드
+    bool LoadFromFile(std::string path);
 
     //렌더링
     void Render(float x, float y, SDL_FRect *clip = nullptr,

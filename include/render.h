@@ -6,7 +6,8 @@ class Timer;
 
 class RenderManager {
     public:
-    void RenderThings(UIManager& uim, ObjectManager& objm);
+    void RenderFps();
+
     void AdjustFps(Timer& timer);
     
     int GetDesiredFps();

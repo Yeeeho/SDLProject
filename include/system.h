@@ -26,6 +26,7 @@ class System {
 
     bool Init();
     bool LoadMedia();
+    bool LoadObjects(ObjectManager&);
     void Close();
     bool HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm);
 

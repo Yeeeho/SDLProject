@@ -7,68 +7,11 @@
 #include "square.h"
 #include "ui.h"
 
-void IntroState::Enter(UIManager& uim, ObjectManager& objm)
-{
-    SDL_Log("enter intro");
-    uim.uiMap["introUI"] = new Button(new Square(10, 10, 300, 100), "버튼을 누르면 시작한다잉.", BtnType::Start);
-}
-
-void IntroState::Exit(UIManager& uim, ObjectManager& objm)
-{
-    SDL_Log("exit intro");
-    uim.DestroyUIs();
-}
-
-void IntroState::Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
-{
-
-}
-
-void IntroState::HandleEvent(SDL_Event& e,UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY)
-{
-    for (auto ui : uim.uiMap) {
-        ui.second->HandleEvent(e, gsm, mouseX, mouseY);
-    }
-}
-
-void IntroState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm)
-{
-    rend.RenderThings(uim, objm);
-}
-
-void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
-{
-    SDL_Log("enter overmap");
-    objm.map = new Map(3, 3); //맵 생성
-}
-
-void OverMapState::Exit(UIManager& uim, ObjectManager& objm)
-{
-    SDL_Log("exit overmap");
-
-    uim.DestroyUIs(); //ui파괴
-
-    delete objm.map;
-    objm.map = nullptr; //해제해준다.
-}
-
-void OverMapState::Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
-{
-}
-
-void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY)
-{
-}
-
-void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm)
-{
-    rend.RenderThings(uim, objm);
-}
-
 GameStateManager::GameStateManager()
 {
     mIs = new IntroState();
     mOms = new OverMapState();
+    mCvs = new CityViewState();
 }
 
 void GameStateManager::SetCurrentState(UIManager& uim, ObjectManager& objm)
@@ -95,4 +38,133 @@ void GameStateManager::SetCurrentState(UIManager& uim, ObjectManager& objm)
         //다음상태가 널이면 그냥 현재 상태를 반환함.
         return;
     }
+}
+
+void IntroState::Enter(UIManager& uim, ObjectManager& objm)
+{
+    SDL_Log("enter intro");
+    uim.uiMap["introUI"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 25, 200, 50), "시작", BtnType::OverMap);
+}
+
+void IntroState::Exit(UIManager& uim, ObjectManager& objm)
+{
+    SDL_Log("exit intro");
+    uim.DestroyUIs();
+}
+
+void IntroState::Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
+{
+
+}
+
+void IntroState::HandleEvent(SDL_Event& e,UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY)
+{
+    for (auto ui : uim.uiMap) {
+        ui.second->HandleEvent(e, gsm, mouseX, mouseY);
+    }
+}
+
+void IntroState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm)
+{
+    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_RenderClear(System::sRenderer);
+
+    uim.RenderUIs();
+    rend.RenderFps();
+
+    SDL_RenderPresent(System::sRenderer);
+}
+
+void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
+{
+    SDL_Log("enter overmap");
+    //사이드바 ui
+    uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
+    uim.uiMap["cityButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "도시", BtnType::City);
+
+    //상단 바 ui
+    uim.uiMap["supplyIcon"] = new IconUI(10, 5, 50, 50, "images/icons/supply.png");
+}
+
+void OverMapState::Exit(UIManager& uim, ObjectManager& objm)
+{
+    SDL_Log("exit overmap");
+    uim.DestroyUIs(); //ui파괴
+}
+
+void OverMapState::Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
+{
+}
+
+void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY)
+{
+    for (auto ui : uim.uiMap) {
+        ui.second->HandleEvent(e, gsm, mouseX, mouseY);
+    }
+}
+
+void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm)
+{
+    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_RenderClear(System::sRenderer);
+    
+    SDL_SetRenderLogicalPresentation(System::sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    //ui패널 렌더링
+    Square topPanel = Square(0, 0, System::sWindowWidth, uim.mTopPanelH);
+    topPanel.Render();
+
+    //오브젝트들 렌더링
+    objm.map->Render();
+    //ui들 렌더링
+    uim.RenderUIs();
+
+    rend.RenderFps();
+
+    SDL_RenderPresent(System::sRenderer);
+}
+
+void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
+{
+    SDL_Log("enter city view");
+    uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
+    uim.uiMap["overMapButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "오버맵", BtnType::OverMap);
+
+    uim.uiMap["icon1"] = new IconUI(10, 0, 60, 60, "images/icons/supply.png");
+    uim.uiMap["icon2"] = new IconUI(70, 0, 60, 60, "images/icons/turn.png");
+    uim.uiMap["icon3"] = new IconUI(130, 0, 60, 60, "images/icons/qmark.png");
+    uim.uiMap["icon4"] = new IconUI(190, 0, 60, 60, "images/icons/enemy.png");
+    uim.uiMap["icon5"] = new IconUI(250, 0, 60, 60, "images/icons/city.png");
+}
+
+void CityViewState::Exit(UIManager &uim, ObjectManager &objm)
+{
+    SDL_Log("exit city view");
+    uim.DestroyUIs(); //ui파괴
+}
+
+void CityViewState::Update(UIManager &uim, ObjectManager &objm, GameStateManager &gsm)
+{
+}
+
+void CityViewState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, GameStateManager &gsm, float mouseX, float mouseY)
+{
+    for (auto ui : uim.uiMap) {
+        ui.second->HandleEvent(e, gsm, mouseX, mouseY);
+    }
+}
+
+void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &objm)
+{
+    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_RenderClear(System::sRenderer);
+
+    //ui패널 렌더링
+    Square topPanel = Square(0, 0, System::sWindowWidth, uim.mTopPanelH);
+    topPanel.Render();
+    //ui렌더링
+    uim.RenderUIs();
+
+    rend.RenderFps();
+
+    SDL_RenderPresent(System::sRenderer);
 }

@@ -64,7 +64,7 @@ void UI::RenderOnUpdate()
 
     SDL_SetRenderTarget(System::sRenderer, mTexture); //렌더러 타겟으로 설정
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_NONE);
+    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
     SDL_RenderClear(System::sRenderer);
 
     mUIFrame->Render();
@@ -72,7 +72,7 @@ void UI::RenderOnUpdate()
     SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
 
     int totalHeight = 0;
-    float totalWidth = 0;
+    int totalWidth = 0;
     for (int i = 0; i < mUIText.length(); i++) {
 
         //utf-8에서 한글은 한 문자가 3바이트다. 그걸 구분해야함.
@@ -93,7 +93,7 @@ void UI::RenderOnUpdate()
         }
         
         //텍스트 텍스처가 프레임 y축 범위를 넘어갔을 경우
-        if (mUIFrame->GetY() + mPadding + totalHeight + textTexture.GetHeight() > mUIFrame->GetX() + mUIFrame->GetW() - mPadding) {
+        if (mUIFrame->GetY() + mPadding + totalHeight + textTexture.GetHeight() > mUIFrame->GetY() + mUIFrame->GetH() - mPadding) {
             break; //이제 그만 안식에 든다.
         }
         
@@ -110,6 +110,7 @@ void UI::RenderOnUpdate()
     }
 
     SDL_SetRenderTarget(System::sRenderer, NULL); //렌더러 타겟에서 해제
+
     mIsUIUpdate = false; //렌더링 완료하면 플래그 변수 초기화
 }
 
@@ -206,10 +207,20 @@ void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, floa
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
 
     //버튼 타입에 따라 반응함. 헤으응.
-    //시작 버튼을 눌렀을 경우
-    if (mType == BtnType::Start) {
-        SDL_Log("start button pressed");
+    //버튼을 눌렀을 경우
+    if (mType == BtnType::OverMap) {
+        SDL_Log("overmap button pressed");
         gsm.mNextState = gsm.mOms; //다음 타깃 상태는 오버맵 상태다.
+        gsm.mIsStateChange = true;
+    }
+    else if (mType == BtnType::City) {
+        SDL_Log("city button pressed");
+        gsm.mNextState = gsm.mCvs;
+        gsm.mIsStateChange = true;
+    }
+    else if (mType == BtnType::Title) {
+        SDL_Log("title button pressed");
+        gsm.mNextState = gsm.mIs; //다음 타깃 상태는 인트로다.
         gsm.mIsStateChange = true;
     }
     else {
@@ -233,10 +244,120 @@ void UIManager::DestroyUIs()
         if (ui.second->mTexture != nullptr) {
             SDL_DestroyTexture(ui.second->mTexture);
         }
-
+        if (ui.second->mMyTexture != nullptr) {
+            ui.second->mMyTexture->Destroy();
+            delete ui.second->mMyTexture;
+        }
         //ui 자체 메모리 해제
         delete ui.second;
     }
 
     uiMap.clear();
+}
+
+MaptileUI::MaptileUI()
+{
+
+}
+
+void MaptileUI::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float mouseY)
+{
+    //ui 안에 있는지 확인
+    if (e.button.x < mUIFrame->GetX()) return;
+    if (e.button.x > mUIFrame->GetX() + mUIFrame->GetW()) return;    
+    if (e.button.y < mUIFrame->GetY()) return;
+    if (e.button.y > mUIFrame->GetY() + mUIFrame->GetH()) return;    
+    
+    //여기에 마우스 오버 이벤트 로직을 입력.
+
+    //클릭했는지 확인
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+}
+
+TextUI::TextUI(int x, int y, int width, int height, std::string uiText)
+{
+    mUIText = uiText;
+    mX = x; mY = y; mW = width; mH = height;
+
+    mTexture = SDL_CreateTexture(
+        System::sRenderer,
+        SDL_PIXELFORMAT_RGBA8888,
+        SDL_TEXTUREACCESS_TARGET,
+        System::sWindowWidth, System::sWindowHeight
+    );
+}
+
+void TextUI::RenderOnUpdate()
+{
+    //업데이트 플래그가 거짓이면 저장된 텍스처를 렌더링한다.
+    if (mIsUIUpdate == false) {
+        SDL_RenderTexture(System::sRenderer ,mTexture, nullptr, nullptr);
+        return;
+    }
+    //업데이트 플래그가 참이면
+    SDL_Log("updating ui on update flag");
+
+    SDL_SetRenderTarget(System::sRenderer, mTexture); //렌더러 타겟으로 설정
+    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    SDL_RenderClear(System::sRenderer);
+
+    Texture textTexture;
+    SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
+
+    int totalHeight = 0;
+    int totalWidth = 0;
+    for (int i = 0; i < mUIText.length(); i++) {
+
+        //utf-8에서 한글은 한 문자가 3바이트다. 그걸 구분해야함.
+        //3바이트 문자의 첫번째 바이트는 0b1110xxxx 이므로 비트 비교로 3바이트 문자 추출
+        if ((mUIText[i] & 0b11110000) == 0b11100000) {
+            //이새끼는 한글이구나
+            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), 20, textColor);
+            i += 2;
+        }
+        else {
+            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), 20, textColor);
+        }
+
+        //렌더링
+        //총 넓이가 얼마였는지 기억해서 더해준다.
+        textTexture.Render(mX + mPadding + totalWidth, mY + mPadding + totalHeight);
+        //렌더링한 텍스처만큼 총 넓이 변수에 더해준다.
+        totalWidth += textTexture.GetWidth();
+    }
+
+    SDL_SetRenderTarget(System::sRenderer, NULL); //렌더러 타겟에서 해제
+
+    mIsUIUpdate = false; //렌더링 완료하면 플래그 변수 초기화
+}
+
+IconUI::IconUI(int x, int y, int width, int height, std::string path)
+{
+    mX = x; mY = y; mW = width; mH = height;
+    mMyTexture = new Texture();
+    if (mMyTexture->LoadFromFile(path) == false) {
+        SDL_Log("could not load icon");
+    }
+    
+    SDL_SetTextureBlendMode(mMyTexture->mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+}
+
+void IconUI::RenderOnUpdate()
+{
+    mMyTexture->Render(mX, mY, nullptr, mW, mH);
+}
+
+void IconUI::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float mouseY)
+{
+    //버튼 안에 있는지 확인
+    if (e.button.x < mX) return;
+    if (e.button.x > mX + mW) return;    
+    if (e.button.y < mY) return;
+    if (e.button.y > mY + mH) return;    
+    
+    //여기에 마우스 오버 이벤트 로직을 입력.
+
+    //클릭했는지 확인
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
 }
