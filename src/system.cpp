@@ -28,7 +28,6 @@ bool System::Init()
     //수직동기화
     if (SDL_SetRenderVSync(sRenderer, 1) == false) {
         SDL_Log(SDL_GetError());
-        SDL_Log(SDL_GetError());
         success = false;        
     }
     //폰트 초기화

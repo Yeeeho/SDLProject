@@ -83,7 +83,7 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
     uim.uiMap["cityButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "도시", BtnType::City);
 
     //상단 바 ui
-    uim.uiMap["supplyIcon"] = new IconUI(10, 5, 50, 50, "images/icons/supply.png");
+    uim.uiMap["supplyIcon"] = new IconUI(10, 0, 60, 60, "images/icons/supply.png");
 }
 
 void OverMapState::Exit(UIManager& uim, ObjectManager& objm)
