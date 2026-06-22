@@ -21,6 +21,7 @@ class System {
     inline static MIX_Mixer* sMixer{nullptr};
     //폰트
     inline static TTF_Font* sFont{nullptr};
+    inline static TTF_Font* sFont40{nullptr};
 
     /*함수 선언*/
 

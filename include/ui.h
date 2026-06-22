@@ -58,6 +58,9 @@ enum class BtnType {
 class TextUI : public UI {
     public:
     TextUI(int x, int y, int width, int height, std::string text);
+    TextUI(int x, int y, TTF_Font* font, std::string text);
+
+    TTF_Font* mFont{nullptr};
 
     void RenderOnUpdate() override;
 

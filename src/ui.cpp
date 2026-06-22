@@ -11,38 +11,9 @@ UI::UI(Square* uiFrame, std::string uiText)
 {
     mUIFrame = uiFrame;
     mUIText = uiText;
-    mTexture = SDL_CreateTexture(
-        System::sRenderer,
-        SDL_PIXELFORMAT_RGBA8888,
-        SDL_TEXTUREACCESS_TARGET,
-        System::sWindowWidth, System::sWindowHeight
-    );
-}
 
-float UI::ClipDesiredTextLength(TextTexture& ttexture)
-{
-    //실제 길이제한
-    float rawW = mUIFrame->GetW() - mPadding*4;
-
-    //누적된 길이
-    float accumulatedW = 0.f;
-    for (auto textinf = ttexture.mTextLengthVector.begin(); textinf != ttexture.mTextLengthVector.end();) {
-        
-        //텍스트 길이가 실제 제한을 벗어나면
-        if (accumulatedW > rawW) {
-            //길이 덧셈을 취소후 반환
-            accumulatedW -= *textinf;
-            break;
-        }
-
-        accumulatedW += *textinf;
-
-        //현재 요소를 맵에서 삭제함
-        //erase 함수는 다음 반복자를 반환하므로 내가 증감해줄 필요는 없다.
-        textinf = ttexture.mTextLengthVector.erase(textinf);
-    }
-
-    return accumulatedW;
+    TextureManager tm;
+    mTexture = tm.CreateTempTexture();
 }
 
 void UI::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, float mouseY)
@@ -64,7 +35,7 @@ void UI::RenderOnUpdate()
 
     SDL_SetRenderTarget(System::sRenderer, mTexture); //렌더러 타겟으로 설정
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED); //알파 이중 합성이 일어나지 않게 모드를 정한다.
     SDL_RenderClear(System::sRenderer);
 
     mUIFrame->Render();
@@ -79,11 +50,11 @@ void UI::RenderOnUpdate()
         //3바이트 문자의 첫번째 바이트는 0b1110xxxx 이므로 비트 비교로 3바이트 문자 추출
         if ((mUIText[i] & 0b11110000) == 0b11100000) {
             //이새끼는 한글이구나
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), 20, textColor);
+            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), textColor, System::sFont);
             i += 2;
         }
         else {
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), 20, textColor);
+            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), textColor, System::sFont);
         }
 
         //텍스트 텍스처가 프레임 x축 범위를 넘어갔을 경우
@@ -114,15 +85,16 @@ void UI::RenderOnUpdate()
     mIsUIUpdate = false; //렌더링 완료하면 플래그 변수 초기화
 }
 
+//이제 안쓴다. 이런게 있었다는 것을 기억해둬라.
 void UI::Render()
 {
     mUIFrame->Render();
-    TextTexture textTexture;
+    Texture textTexture;
     SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
 
     //줄바꾸는 로직을 더 성능 부하 적은 방법으로 만든다.
     //이친구를 사실상 스프라이트 시트로 쓰는거다..
-    textTexture.LoadFromRenderedText(mUIText, 20, textColor);
+    textTexture.LoadFromRenderedText(mUIText, textColor, System::sFont);
 
     //총 길이, 누적 길이를 기억해놓는다.
     float totalWidth = textTexture.GetWidth();
@@ -135,7 +107,7 @@ void UI::Render()
     bool complete = false;
     while (!complete) {
 
-        float tempBoi = ClipDesiredTextLength(textTexture);
+        float tempBoi = 1.5f; //디버그
 
         //텍스트가 프레임 y축을 벗어나는 것을 확인
         if (accumulatedHeight > mUIFrame->GetH() - mPadding*2) {
@@ -185,12 +157,8 @@ Button::Button(Square *uiFrame, std::string uiText, BtnType type)
     mUIText = uiText;
     mType = type;
 
-    mTexture = SDL_CreateTexture(
-        System::sRenderer,
-        SDL_PIXELFORMAT_RGBA8888,
-        SDL_TEXTUREACCESS_TARGET,
-        System::sWindowWidth, System::sWindowHeight
-    );
+    TextureManager tm;
+    mTexture = tm.CreateTempTexture();
 }
 
 void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, float mouseY)
@@ -279,12 +247,19 @@ TextUI::TextUI(int x, int y, int width, int height, std::string uiText)
     mUIText = uiText;
     mX = x; mY = y; mW = width; mH = height;
 
-    mTexture = SDL_CreateTexture(
-        System::sRenderer,
-        SDL_PIXELFORMAT_RGBA8888,
-        SDL_TEXTUREACCESS_TARGET,
-        System::sWindowWidth, System::sWindowHeight
-    );
+    TextureManager tm;
+    mTexture = tm.CreateTempTexture();
+}
+
+TextUI::TextUI(int x, int y, TTF_Font *font, std::string text)
+{
+    mUIText = text;
+    mX = x; mY = y;
+
+    mFont = font;
+
+    TextureManager tm;
+    mTexture = tm.CreateTempTexture();
 }
 
 void TextUI::RenderOnUpdate()
@@ -313,11 +288,11 @@ void TextUI::RenderOnUpdate()
         //3바이트 문자의 첫번째 바이트는 0b1110xxxx 이므로 비트 비교로 3바이트 문자 추출
         if ((mUIText[i] & 0b11110000) == 0b11100000) {
             //이새끼는 한글이구나
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), 20, textColor);
+            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), textColor, mFont);
             i += 2;
         }
         else {
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), 20, textColor);
+            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), textColor, mFont);
         }
 
         //렌더링

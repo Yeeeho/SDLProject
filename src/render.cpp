@@ -13,7 +13,7 @@ void RenderManager::RenderFps()
     Timer timer;
     Texture sampleTextTexture;
     SDL_Color textColor {0x00, 0xB0, 0x00, 0xFF};
-    sampleTextTexture.LoadFromRenderedText(std::to_string((mCurrentFps)), 0, textColor);
+    sampleTextTexture.LoadFromRenderedText(std::to_string((mCurrentFps)), textColor, System::sFont);
     sampleTextTexture.Render(1280 - sampleTextTexture.GetWidth(), 10.f);
 }
 

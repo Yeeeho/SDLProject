@@ -4,6 +4,11 @@
 #include <vector>
 #include <SDL3/SDL.h>
 
+class TextureManager {
+    public:
+    SDL_Texture* CreateTempTexture();
+};
+
 class Texture {
     public:
 
@@ -15,7 +20,7 @@ class Texture {
     void Destroy();
 
     //텍스트 텍스처 로드
-    virtual bool LoadFromRenderedText(std::string textureText, int size, SDL_Color textColor);
+    bool LoadFromRenderedText(std::string textureText, SDL_Color textColor, TTF_Font* font);
     //이미지 텍스처 로드
     bool LoadFromFile(std::string path);
 
@@ -46,5 +51,4 @@ class TextTexture : public Texture {
     public:
 
     std::vector<float> mTextLengthVector;
-    bool LoadFromRenderedText(std::string textureText, int size, SDL_Color textColor) override;
 };

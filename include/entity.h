@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-
+class Entity;
 class Team {
     public:
     Team();

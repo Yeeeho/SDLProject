@@ -126,14 +126,16 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
 void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
 {
     SDL_Log("enter city view");
+    //사이드바
     uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
     uim.uiMap["overMapButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "오버맵", BtnType::OverMap);
 
-    uim.uiMap["icon1"] = new IconUI(10, 0, 60, 60, "images/icons/supply.png");
-    uim.uiMap["icon2"] = new IconUI(70, 0, 60, 60, "images/icons/turn.png");
-    uim.uiMap["icon3"] = new IconUI(130, 0, 60, 60, "images/icons/qmark.png");
-    uim.uiMap["icon4"] = new IconUI(190, 0, 60, 60, "images/icons/enemy.png");
-    uim.uiMap["icon5"] = new IconUI(250, 0, 60, 60, "images/icons/city.png");
+    //탑 바
+    uim.uiMap["turnIcon"] = new IconUI(10, 0, 60, 60, "images/icons/turn.png");
+    uim.uiMap["turnText"] = new TextUI(70, 0, System::sFont40, "0");
+
+    uim.uiMap["supplyIcon"] = new IconUI(130, 0, 60, 60, "images/icons/supply.png");
+    uim.uiMap["supplyText"] = new TextUI(190, 0, System::sFont40, "0");
 }
 
 void CityViewState::Exit(UIManager &uim, ObjectManager &objm)
