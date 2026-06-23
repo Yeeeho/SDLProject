@@ -2,6 +2,7 @@
 
 #include "system.h"
 #include "map.h"
+#include "city.h"
 #include "game_state.h"
 #include "ui.h"
 
@@ -67,11 +68,15 @@ bool System::LoadMedia()
     return success;
 }
 
-bool System::LoadObjects(ObjectManager& objm)
+bool System::LoadObjects(ObjectManager& objm) //메인 루프 전에 한번만 호출함.
 {
     bool success = true;
 
     objm.map = new Map(3, 3);
+
+    objm.cityMap = new CityMap(); //도시 맵 객체 생성
+    //포함된 시설 객체들 생성
+    objm.cityMap->GenerateFacs(); 
 
     return success;
 }

@@ -30,10 +30,12 @@ Texture::~Texture()
 void Texture::Destroy()
 {
     //텍스처 정리
-    SDL_DestroyTexture(mTexture);
-    mTexture = nullptr;
-    mWidth = 0;
-    mHeight = 0;
+    if (mTexture != nullptr) {
+        SDL_DestroyTexture(mTexture);
+        mTexture = nullptr;
+        mWidth = 0;
+        mHeight = 0;
+    }
 }
 
 bool Texture::LoadFromRenderedText(std::string textureText, SDL_Color textColor, TTF_Font* font)

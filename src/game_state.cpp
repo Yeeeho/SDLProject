@@ -2,6 +2,7 @@
 
 #include "game_state.h"
 #include "map.h"
+#include "city.h"
 #include "system.h"
 #include "render.h"
 #include "square.h"
@@ -126,6 +127,10 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
 void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
 {
     SDL_Log("enter city view");
+
+    //도시 렌더링 플래그
+    objm.cityMap->mIsMapUpdate = true;
+
     //사이드바
     uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
     uim.uiMap["overMapButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "오버맵", BtnType::OverMap);
@@ -136,6 +141,8 @@ void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
 
     uim.uiMap["supplyIcon"] = new IconUI(130, 0, 60, 60, "images/icons/supply.png");
     uim.uiMap["supplyText"] = new TextUI(190, 0, System::sFont40, "0");
+
+    uim.uiMap["test"] = new IconUI(250, 0, 60, 60, "images/facility/frame.png");
 }
 
 void CityViewState::Exit(UIManager &uim, ObjectManager &objm)
@@ -160,12 +167,15 @@ void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &o
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
     SDL_RenderClear(System::sRenderer);
 
+    
     //ui패널 렌더링
     Square topPanel = Square(0, 0, System::sWindowWidth, uim.mTopPanelH);
     topPanel.Render();
     //ui렌더링
     uim.RenderUIs();
-
+    //도시 맵 렌더링
+    objm.cityMap->RenderOnUpdate();
+    
     rend.RenderFps();
 
     SDL_RenderPresent(System::sRenderer);

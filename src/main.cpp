@@ -31,13 +31,14 @@ int main() {
 
     //게임 상태 매니저
     GameStateManager gsm;
-
+    
+    //게임에 쓸것들 미리 만들어놓기
+    sys.LoadObjects(objm);
+    
     //초기 게임 상태를 현재 상태에 저장한다.
     gsm.mCurrentState = gsm.mIs;
     gsm.mCurrentState->Enter(uim, objm);
 
-    //게임에 쓸것들 미리 만들어놓기
-    sys.LoadObjects(objm);
 
     //메인 루프
     while (quit == false) {

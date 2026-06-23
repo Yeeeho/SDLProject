@@ -272,11 +272,13 @@ void TextUI::RenderOnUpdate()
     //업데이트 플래그가 참이면
     SDL_Log("updating ui on update flag");
 
-    SDL_SetRenderTarget(System::sRenderer, mTexture); //렌더러 타겟으로 설정
+    //렌더러 타겟팅
+    SDL_SetRenderTarget(System::sRenderer, mTexture);
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
     SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
     SDL_RenderClear(System::sRenderer);
 
+    //렌더링 실제 동작
     Texture textTexture;
     SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
 
@@ -302,9 +304,11 @@ void TextUI::RenderOnUpdate()
         totalWidth += textTexture.GetWidth();
     }
 
-    SDL_SetRenderTarget(System::sRenderer, NULL); //렌더러 타겟에서 해제
-
-    mIsUIUpdate = false; //렌더링 완료하면 플래그 변수 초기화
+    //렌더러 타겟 해제
+    SDL_SetRenderTarget(System::sRenderer, NULL);
+    
+    //렌더링 완료하면 플래그 변수 초기화
+    mIsUIUpdate = false;
 }
 
 IconUI::IconUI(int x, int y, int width, int height, std::string path)

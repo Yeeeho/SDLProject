@@ -42,7 +42,9 @@ class Timer {
     Uint64 GetPreviousTick();
 };
 
+//전방 선언
 class Map;
+class CityMap;
 //아직은 멤버 변수 삭제 로직은 안만듬.
 class ObjectManager {
     public:
@@ -51,6 +53,8 @@ class ObjectManager {
     void RenderObjects();
     void DestroyObjects();
 
-    //오버맵에서 사용할 맵 객체다.
+    //오버맵에서 사용할 월드맵 객체다.
     Map* map{nullptr};
+    //도시 뷰에서 사용할 도시 맵 객체다.
+    CityMap* cityMap{nullptr};
 };
