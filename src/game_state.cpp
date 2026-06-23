@@ -79,12 +79,17 @@ void IntroState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm
 void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
 {
     SDL_Log("enter overmap");
-    //사이드바 ui
-    uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
-    uim.uiMap["cityButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "도시", BtnType::City);
 
-    //상단 바 ui
-    uim.uiMap["supplyIcon"] = new IconUI(10, 0, 60, 60, "images/icons/supply.png");
+    //사이드바
+    uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
+    uim.uiMap["cityViewButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "도시", BtnType::City);
+
+    //탑 바
+    uim.uiMap["turnIcon"] = new IconUI(10, 0, 60, 60, "images/icons/turn.png");
+    uim.uiMap["turnText"] = new TextUI(70, 0, System::sFont40, "0");
+
+    uim.uiMap["supplyIcon"] = new IconUI(130, 0, 60, 60, "images/icons/supply.png");
+    uim.uiMap["supplyText"] = new TextUI(190, 0, System::sFont40, "0");
 }
 
 void OverMapState::Exit(UIManager& uim, ObjectManager& objm)
@@ -130,6 +135,7 @@ void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
 
     //도시 렌더링 플래그
     objm.cityMap->mIsMapUpdate = true;
+    objm.cityMap->mFacs[0]->ChangeTexture("images/facility/gear.png");
 
     //사이드바
     uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
@@ -141,8 +147,6 @@ void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
 
     uim.uiMap["supplyIcon"] = new IconUI(130, 0, 60, 60, "images/icons/supply.png");
     uim.uiMap["supplyText"] = new TextUI(190, 0, System::sFont40, "0");
-
-    uim.uiMap["test"] = new IconUI(250, 0, 60, 60, "images/facility/frame.png");
 }
 
 void CityViewState::Exit(UIManager &uim, ObjectManager &objm)

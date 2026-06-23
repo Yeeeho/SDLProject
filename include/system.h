@@ -26,6 +26,7 @@ class System {
     /*함수 선언*/
 
     bool Init();
+    bool LoadData();
     bool LoadMedia();
     bool LoadObjects(ObjectManager&);
     void Close();

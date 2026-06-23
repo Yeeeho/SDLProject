@@ -1,0 +1,9 @@
+{
+    "type" : "pawn",
+    "items" : {
+        "name" : "choonsik",
+        "flags": [
+            "healthy"
+        ]
+    }
+}

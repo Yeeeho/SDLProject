@@ -51,6 +51,13 @@ bool System::Init()
     return success;
 }
 
+bool System::LoadData()
+{
+    bool success = true;
+
+    return success;
+}
+
 bool System::LoadMedia()
 {
     bool success = true;
@@ -72,11 +79,11 @@ bool System::LoadObjects(ObjectManager& objm) //메인 루프 전에 한번만 �
 {
     bool success = true;
 
-    objm.map = new Map(3, 3);
+    objm.map = new Map(3, 3); //월드 맵 객체 생성
 
     objm.cityMap = new CityMap(); //도시 맵 객체 생성
     //포함된 시설 객체들 생성
-    objm.cityMap->GenerateFacs(); 
+    objm.cityMap->GenerateFacs(6, 5, 100); 
 
     return success;
 }

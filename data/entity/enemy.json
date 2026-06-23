@@ -1,0 +1,26 @@
+{
+    "type" : "enemy",
+    "items" : {
+        "error_enemy" : {
+            "name" : "error_enemy",
+            "race" : "error_race",
+
+            "max_hp" : "1",
+            "max_ap" : "1",            
+            "max_spd" : "1",
+            "max_atk" : "1",
+            "max_armor" : "1"
+        },
+
+        "slave" : {
+            "name" : "slave",
+            "race" : "roboflesh",
+            
+            "max_hp" : "100",
+            "max_ap" : "100",            
+            "max_spd" : "100",
+            "max_atk" : "10",
+            "max_armor" : "5"
+        }
+    }
+}

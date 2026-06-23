@@ -11,11 +11,21 @@ Facility::Facility(int x, int y, int w, int h)
 
     mFacTex = new Texture();
 
+    //초기 패스
     std::string path = "images/facility/frame.png";
+
     if (mFacTex->LoadFromFile(path) == false) {
         SDL_Log("could not load frame file");
     }
     SDL_SetTextureBlendMode(mFacTex->mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+}
+
+void Facility::ChangeTexture(std::string path)
+{
+    //텍스처 다시 로드
+    if (mFacTex->LoadFromFile(path) == false) {
+        SDL_Log(SDL_GetError());
+    }
 }
 
 City::City()
@@ -28,10 +38,20 @@ CityMap::CityMap()
     mTempTexture = tm.CreateTempTexture();
 }
 
-void CityMap::GenerateFacs()
+void CityMap::GenerateFacs(int xTiles, int yTiles, int len)
 {
-    Facility* fac = new Facility(0, 0, 100, 100);
-    facs.push_back(fac);
+    int id = 0;
+    //흔한 2차원 배열 만들기
+    for (int i = 0; i < yTiles; i++) {
+        for (int j = 0; j < xTiles; j++) {
+
+            Facility* fac = new Facility(j*len, i*len, len, len);
+            fac->mId = id; //id 할당
+            mFacs.push_back(fac);
+            
+            id++;
+        }
+    }
 }
 
 void CityMap::RenderOnUpdate()
@@ -49,13 +69,14 @@ void CityMap::RenderOnUpdate()
     SDL_RenderClear(System::sRenderer);
 
     //실제 렌더링
-    if (facs.empty()) {
-        SDL_Log("city map empty");
+    if (mFacs.empty()) {
+        SDL_Log("no facilities in the map");
     }
 
-    for (Facility* facility : facs) {
+    for (Facility* facility : mFacs) {
         facility->mFacTex->Render(
-            300 + facility->mX, 300 + facility->mY
+            //시작위치를 기준으로 시설의 위치를 더함.
+            mX + facility->mX, mY + facility->mY
         );
     }
 

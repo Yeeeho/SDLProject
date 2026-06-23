@@ -22,22 +22,28 @@ class Entity {
     Entity() = default;
     Entity(std::string name);
 
-    int maxHp;
-    int curHp;
+    std::string mName;
 
-    int maxAp;
-    int curAp;
+    //전투용 스탯
+    int mMaxHp; //max~ 는 최대치. 종족값
+    int mCurHp; //cur~ 는 현재 상태.
 
-    int maxSpd;
-    int curSpd;
+    int mMaxAp;
+    int mCurAp;
 
-    int maxAtk;
-    int curAtk;
+    int mMaxSpd;
+    int mCurSpd;
 
-    int maxArmor;
-    int curArmor;
+    int mMaxAtk;
+    int mCurAtk;
+
+    int mMaxArmor;
+    int mCurArmor;
     
-    std::unordered_map<EqType, Equipment*> eqs;
+    //여행용 스탯
+    int mSupplyDemand; //턴당 요구 보급품량
+
+    std::unordered_map<EqType, Equipment*> mEqs;
 };
 
 
