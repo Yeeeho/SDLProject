@@ -10,12 +10,11 @@ Facility::Facility(int x, int y, int w, int h)
     mW = w; mH = h;
 
     mFacTex = new Texture();
-
     //초기 패스
     std::string path = "images/facility/frame.png";
 
     if (mFacTex->LoadFromFile(path) == false) {
-        SDL_Log("could not load frame file");
+        SDL_Log("could not load facility frame file");
     }
     SDL_SetTextureBlendMode(mFacTex->mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
 }
@@ -61,6 +60,7 @@ void CityMap::RenderOnUpdate()
         SDL_RenderTexture(System::sRenderer , mTempTexture, nullptr, nullptr);
         return;
     }
+
     //업데이트가 참이면
     SDL_Log("updating cityMap on update flag");
     SDL_SetRenderTarget(System::sRenderer, mTempTexture); //렌더러 타겟으로 설정

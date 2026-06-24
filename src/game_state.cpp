@@ -1,7 +1,10 @@
 #include "pch.h"
 
 #include "game_state.h"
+#include "game_object.h"
 #include "map.h"
+#include "entity.h"
+#include "item.h"
 #include "city.h"
 #include "system.h"
 #include "render.h"
@@ -80,6 +83,10 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
 {
     SDL_Log("enter overmap");
 
+    //맵 렌더링 플래그
+    objm.map->mIsMapUpdate = true;
+    
+    //ui 생성
     //사이드바
     uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
     uim.uiMap["cityViewButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "도시", BtnType::City);
@@ -119,8 +126,9 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
     Square topPanel = Square(0, 0, System::sWindowWidth, uim.mTopPanelH);
     topPanel.Render();
 
-    //오브젝트들 렌더링
-    objm.map->Render();
+    //맵 렌더링
+    objm.map->RenderOnUpdate();
+
     //ui들 렌더링
     uim.RenderUIs();
 

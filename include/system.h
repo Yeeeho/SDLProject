@@ -1,11 +1,14 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include <json.hpp>
 
 class UIManager;
 class ObjectManager;
 class GameState;
 class GameStateManager;
+
+using json = nlohmann::json;
 
 class System {
     public:
@@ -26,7 +29,11 @@ class System {
     /*함수 선언*/
 
     bool Init();
-    bool LoadData();
+
+    //외부 데이터(json등) 로드
+    bool LoadData(ObjectManager&);
+
+    //폰트 등을 로드
     bool LoadMedia();
     bool LoadObjects(ObjectManager&);
     void Close();
@@ -43,19 +50,3 @@ class Timer {
     Uint64 GetPreviousTick();
 };
 
-//전방 선언
-class Map;
-class CityMap;
-//아직은 멤버 변수 삭제 로직은 안만듬.
-class ObjectManager {
-    public:
-    ObjectManager();
-
-    void RenderObjects();
-    void DestroyObjects();
-
-    //오버맵에서 사용할 월드맵 객체다.
-    Map* map{nullptr};
-    //도시 뷰에서 사용할 도시 맵 객체다.
-    CityMap* cityMap{nullptr};
-};

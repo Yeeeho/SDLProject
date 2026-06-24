@@ -1,9 +1,17 @@
 {
     "type" : "pawn",
     "items" : {
-        "name" : "choonsik",
-        "flags": [
-            "healthy"
-        ]
+        "error_pawn" : {
+            "name" : "error_pawn_name",
+            "flags" : [
+            ]
+        },
+
+        "choonsik" : {
+            "name" : "choonsik",
+            "flags": [
+                "healthy"
+            ]
+        }
     }
 }

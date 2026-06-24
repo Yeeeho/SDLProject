@@ -3,6 +3,8 @@
 #include "system.h"
 #include "map.h"
 #include "city.h"
+#include "game_json.h"
+#include "game_object.h"
 #include "game_state.h"
 #include "ui.h"
 
@@ -51,9 +53,14 @@ bool System::Init()
     return success;
 }
 
-bool System::LoadData()
+bool System::LoadData(ObjectManager& objm)
 {
     bool success = true;
+
+    objm.mJsm = new JsonManager();
+    objm.mJsm->LoadJsonFile(objm.mJsm->mPawnDb, "data/entity/pawn.json");
+    objm.mJsm->LoadJsonFile(objm.mJsm->mEnemyDb, "data/entity/enemy.json");
+    objm.mJsm->LoadJsonFile(objm.mJsm->mEquipmentDb, "data/item/equipment.json");
 
     return success;
 }
@@ -80,10 +87,11 @@ bool System::LoadObjects(ObjectManager& objm) //메인 루프 전에 한번만 �
     bool success = true;
 
     objm.map = new Map(3, 3); //월드 맵 객체 생성
+    objm.map->GenerateMapTiles();
+    objm.map->mMapTiles[5]->ChangeTexture("images/map/city.png");
 
     objm.cityMap = new CityMap(); //도시 맵 객체 생성
-    //포함된 시설 객체들 생성
-    objm.cityMap->GenerateFacs(6, 5, 100); 
+    objm.cityMap->GenerateFacs(6, 5, 100); //포함된 시설 객체들 생성
 
     return success;
 }
@@ -132,25 +140,4 @@ Uint64 Timer::StoreProgramTick()
 Uint64 Timer::GetPreviousTick()
 {
     return mNs;
-}
-
-ObjectManager::ObjectManager()
-{
-}
-
-void ObjectManager::RenderObjects()
-{
-    SDL_SetRenderLogicalPresentation(System::sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-
-    //맵 렌더링
-    if (map != nullptr) {
-        map->Render();
-    }
-    else {
-    }
-}
-
-void ObjectManager::DestroyObjects()
-{
-    //오브젝트 파괴하는 함수. 아직 미구현.
 }

@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h> 
 
 #include "system.h"
+#include "game_object.h"
 #include "game_state.h"
 #include "ui.h"
 #include "render.h"
@@ -32,7 +33,8 @@ int main() {
     //게임 상태 매니저
     GameStateManager gsm;
     
-    //게임에 쓸것들 미리 만들어놓기
+    //로딩
+    sys.LoadData(objm);
     sys.LoadObjects(objm);
     
     //초기 게임 상태를 현재 상태에 저장한다.

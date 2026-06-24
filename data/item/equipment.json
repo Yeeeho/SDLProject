@@ -1,8 +1,10 @@
 {
     "type" : "equipment",
     "items" : {
+        "error_equipment" : {
+        },
+        
         "naked" : {
-            
         }
     }
 }

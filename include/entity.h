@@ -3,14 +3,21 @@
 #include <string>
 #include <unordered_map>
 
+//전방 선언
 class Entity;
+class ObjectManager;
+class Texture;
+
 class Team {
     public:
-    Team();
+    Team(std::string path);
     
     int supply = 0;
-    
-    Entity* teammates{nullptr};
+
+    //실제 팀원인 엔티티 객체들을 저장하는 컨테이너
+    Entity* mTeamMates{nullptr}; 
+
+    Texture* mTeamTex{nullptr}; //텍스처
 };
 
 class Item;
@@ -23,7 +30,7 @@ class Entity {
     Entity(std::string name);
 
     std::string mName;
-
+    
     //전투용 스탯
     int mMaxHp; //max~ 는 최대치. 종족값
     int mCurHp; //cur~ 는 현재 상태.
@@ -40,19 +47,25 @@ class Entity {
     int mMaxArmor;
     int mCurArmor;
     
+    std::unordered_map<EqType, Equipment*> mEqs; //실제로 장비한 장비들 컨테이너
+
     //여행용 스탯
     int mSupplyDemand; //턴당 요구 보급품량
 
-    std::unordered_map<EqType, Equipment*> mEqs;
+    //텍스처
 };
 
+enum class PawnType {
+    Unique, Procedural
+};
 
 class Pawn : public Entity {
     public:
-    Pawn(std::string name);
+    Pawn(const ObjectManager& objm, std::string name, PawnType pType);
 };
 
 class Enemy : public Entity {
     public:
-    Enemy(std::string name);
+    Enemy(const ObjectManager& objm, std::string name, PawnType pType);
 };
+
