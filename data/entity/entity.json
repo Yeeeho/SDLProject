@@ -1,8 +1,8 @@
 {
-    "type" : "enemy",
+    "type" : "entity",
     "items" : {
-        "error_enemy" : {
-            "name" : "error_enemy",
+        "error_entity" : {
+            "name" : "error_entity",
             "race" : "error_race",
 
             "max_hp" : "1",
@@ -10,6 +10,11 @@
             "max_spd" : "1",
             "max_atk" : "1",
             "max_armor" : "1"
+        },
+
+        "null_entity" : {
+            "name" : "null_entity",
+            "race" : "null_race"            
         },
 
         "slave" : {

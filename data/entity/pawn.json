@@ -7,6 +7,12 @@
             ]
         },
 
+        "null_pawn" : {
+            "name" : "null_pawn_name",
+            "flags" : [
+            ]
+        },
+
         "choonsik" : {
             "name" : "choonsik",
             "flags": [

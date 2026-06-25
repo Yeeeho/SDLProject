@@ -2,6 +2,7 @@
 
 class RenderManager;
 class UIManager;
+class Texture;
 class Timer;
 
 class RenderManager {

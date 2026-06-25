@@ -11,7 +11,7 @@ class JsonManager {
     //json 파일에서 json 객체로 파싱
     bool LoadJsonFile(json& j, std::string path);
 
-    json mEnemyDb;
+    json mEntDb;
     json mPawnDb;
     json mEquipmentDb;
 };

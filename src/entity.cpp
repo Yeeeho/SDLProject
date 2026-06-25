@@ -6,9 +6,9 @@
 
 using json = nlohmann::json;
 
-Team::Team(std::string path)
+Team::Team(std::string path, int id)
 {
-    
+    mId = id;
 
     mTeamTex = new Texture();
     if (mTeamTex->LoadFromFile(path) == false) {
@@ -17,15 +17,51 @@ Team::Team(std::string path)
     }
 }
 
-Entity::Entity(std::string name)
+PawnTeam::PawnTeam(std::string path, int id)
 {
-    SDL_Log("this is abstract entity");
+    mId = id;
+
+    mTeamTex = new Texture();
+    if (mTeamTex->LoadFromFile(path) == false) {
+        std::string message = path + " not loaded";
+        SDL_Log(message.c_str());
+    }
+}
+
+TeamManager::TeamManager()
+{
+    for (int i = 0; i <(int)TeamSetting::MaxTeam;  i++) {
+        mTeamTable[i] = new Team("images/entity/team.png" , i);
+    }
+
+    for (int i = 0; i <(int)TeamSetting::MaxPawnTeam; i++) {
+        mPawnTeamTable[i] = new PawnTeam("images/entity/team.png", i);
+    }
+
+    TextureManager tm;
+    mTempTex = tm.CreateTempTexture();
+}
+
+EntityManager::EntityManager(ObjectManager& objm)
+{
+    for (int i = 0; i < (int)EntitySetting::MaxEnt; i++) {
+        mEntTable[i] = new Entity("null_entity", i);
+    }
+
+    for (int i = 0; i < (int)EntitySetting::MaxPawn; i++) {
+        mPawnTable[i] = new Pawn(objm, "null_pawn", PawnType::Null, i);
+    }
+}
+
+Entity::Entity(std::string name, int id)
+{
+    mId = id;
 }
 
 //부하 생성자
-Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType)
+Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
 {  
-
+    mId = id;
     mName = name;
 
     mMaxHp = 100;
@@ -46,8 +82,4 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType)
     if (pType == PawnType::Unique) {
         //아직 미구현
     }
-}
-
-Enemy::Enemy(const ObjectManager& objm, std::string name, PawnType pType)
-{
 }

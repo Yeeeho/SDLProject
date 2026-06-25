@@ -218,6 +218,7 @@ void UIManager::DestroyUIs()
         }
         //ui 자체 메모리 해제
         delete ui.second;
+        ui.second = nullptr;
     }
 
     uiMap.clear();

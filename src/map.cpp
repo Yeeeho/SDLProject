@@ -33,7 +33,9 @@ void Map::GenerateMapTiles()
     }
 }
 
-void Map::RenderOnUpdate()
+void Map::
+
+RenderOnUpdate()
 {
     if (mIsMapUpdate == false) {
         SDL_RenderTexture(System::sRenderer , mTempTex, nullptr, nullptr);
@@ -62,9 +64,8 @@ MapTile::MapTile(int x, int y, int w, int h)
 {
     mX = x; mY = y;
     mW = w; mH = h;
-    SDL_Log("a");
     mTileTex = new Texture();
-    SDL_Log("b");
+
     std::string path = "images/map/frame.png";
     if (mTileTex->LoadFromFile(path) == false) {
         std::string message = path + " not loaded";

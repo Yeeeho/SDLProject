@@ -59,7 +59,7 @@ bool System::LoadData(ObjectManager& objm)
 
     objm.mJsm = new JsonManager();
     objm.mJsm->LoadJsonFile(objm.mJsm->mPawnDb, "data/entity/pawn.json");
-    objm.mJsm->LoadJsonFile(objm.mJsm->mEnemyDb, "data/entity/enemy.json");
+    objm.mJsm->LoadJsonFile(objm.mJsm->mEntDb, "data/entity/entity.json");
     objm.mJsm->LoadJsonFile(objm.mJsm->mEquipmentDb, "data/item/equipment.json");
 
     return success;
