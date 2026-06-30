@@ -83,9 +83,12 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
 {
     SDL_Log("enter overmap");
 
+    //렌더링 플래그 일시 true
     //맵 렌더링 플래그
     objm.map->mIsMapUpdate = true;
-    
+    //오버맵에서 팀 렌더링 플래그
+    objm.mTeamm->mIsTeamUpdate = true;
+
     //ui 생성
     //사이드바
     uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
@@ -128,6 +131,8 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
 
     //맵 렌더링
     objm.map->RenderOnUpdate();
+    //엔티티 렌더링
+    objm.mTeamm->RenderOnUpdate();
 
     //ui들 렌더링
     uim.RenderUIs();

@@ -36,7 +36,7 @@ int main() {
     //로딩
     sys.LoadData(objm);
     sys.LoadObjects(objm);
-    
+
     //초기 게임 상태를 현재 상태에 저장한다.
     gsm.mCurrentState = gsm.mIs;
     gsm.mCurrentState->Enter(uim, objm);

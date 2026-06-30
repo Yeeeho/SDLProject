@@ -5,11 +5,11 @@
             "name" : "error_entity",
             "race" : "error_race",
 
-            "max_hp" : "1",
-            "max_ap" : "1",            
-            "max_spd" : "1",
-            "max_atk" : "1",
-            "max_armor" : "1"
+            "hp" : 1,
+            "ap" : 1,            
+            "spd" : 1,
+            "atk" : 1,
+            "armor" : 1
         },
 
         "null_entity" : {
@@ -21,11 +21,11 @@
             "name" : "slave",
             "race" : "roboflesh",
             
-            "max_hp" : "100",
-            "max_ap" : "100",            
-            "max_spd" : "100",
-            "max_atk" : "10",
-            "max_armor" : "5"
+            "hp" : 100,
+            "ap" : 100,            
+            "spd" : 100,
+            "atk" : 10,
+            "armor" : 5
         }
     }
 }

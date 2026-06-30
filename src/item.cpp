@@ -8,7 +8,7 @@ Item::Item(std::string name)
 {
 }
 
-Equipment::Equipment(const ObjectManager& objm, std::string name)
+Equipment:: Equipment(const ObjectManager& objm, std::string name)
 {
     const json& equipmentItems = objm.mJsm->mEquipmentDb["items"];
 

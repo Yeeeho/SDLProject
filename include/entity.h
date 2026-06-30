@@ -17,12 +17,18 @@ class Team {
 
     //식별용 아이디
     int mId = 0;
+    //게임에서 사용할 이름
+    std::string mName = "";
 
+    //오버맵에 존재하는가, 렌더링 제어용 플래그
+    bool isOnMap = false;
     //오버맵 위치
     int mMapPosX, mMapPosY = 0;
 
+    //팀 멤버 제한
+    int mMaxMember = 4;
     //실제 팀원인 엔티티 객체들을 저장하는 컨테이너
-    std::vector<Entity*> mTeamMates; 
+    std::unordered_map<int ,Entity*> mTeamMates; 
 
     //텍스처
     Texture* mTeamTex{nullptr};
@@ -44,6 +50,25 @@ class TeamManager {
     public:
     TeamManager();
 
+    //테이블에 실제 데이터를 할당하고 해제하는 함수
+    void AllocTeamOnTable(std::string name, int id);
+    void DeallocTeamOnTable(int id);
+    //우리 팀 할당/해제
+    void AllocPTeamOnTable(std::string name, int id);
+    void DeallocPTeamOnTable(int id);
+
+    //렌더링 관련 함수
+    void RenderOnUpdate();
+    void SpawnTeamOnMap(Team* team, int x, int y); //오버맵에 팀 생성
+
+    //팀에 엔티티 넣고 빼는 함수
+    void PutEntInTeam(Team* team, Entity* ent); //팀에 엔티티 삽입
+    void OutEntInTeam(Team* team, int id); //아이디에 해당하는 엔티티 제외
+
+    //업데이트 여부
+    bool mIsTeamUpdate = false;
+
+    //데이터 테이블
     Team* mTeamTable[static_cast<int>(TeamSetting::MaxTeam)]; //비 플레이어 팀 정보를 저장하는 컨테이너
     PawnTeam* mPawnTeamTable[static_cast<int>(TeamSetting::MaxPawnTeam)]; //플레이어 팀 정보를 저장하는 컨테이너
 
@@ -53,6 +78,7 @@ class TeamManager {
 
 class Item;
 class Equipment;
+enum class PawnType;
 enum class EqType;
 
 enum class EntitySetting {
@@ -63,6 +89,13 @@ class EntityManager {
     public:
     EntityManager(ObjectManager& objm);
     
+    //엔티티 할당 함수
+    void AllocEntityOnTable(ObjectManager& objm, std::string name, int id);
+    void AllocPawnOnTable(ObjectManager& objm, std::string name, PawnType pType, int id);
+    //엔티티 할당 해제 함수
+    void DeallocEntityOnTable(ObjectManager& objm, int id);
+    void DeallocPawnOnTable(ObjectManager& objm, int id);
+
     Entity* mEntTable[static_cast<int>(EntitySetting::MaxEnt)];
     Pawn* mPawnTable[static_cast<int>(EntitySetting::MaxPawn)];
 };
@@ -73,7 +106,8 @@ class Entity {
     Entity(std::string name, int id);
 
     std::string mName;
-    
+    std::string mRace;
+
     int mId; //뭔지알지?
 
     //전투용 스탯
@@ -107,4 +141,6 @@ enum class PawnType {
 class Pawn : public Entity {
     public:
     Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id);
+
+    PawnType mType;
 };

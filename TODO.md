@@ -12,4 +12,4 @@
 7. 맵 기본 ui: in progress
 8. 도시 기본 ui: in progress
 9. 엔티티 특성 클래스 : in progress
-10. 엔티티/ 팀 생성-삭제 동작: in progress
+10. 엔티티/ 팀 생성-삭제 동작: almost

@@ -6,6 +6,9 @@
 class Map;
 class CityMap;
 class JsonManager;
+class TeamManager;
+class EntityManager;
+
 //클래스 선언
 class ObjectManager {
     public:
@@ -16,6 +19,10 @@ class ObjectManager {
 
     //json 매니저
     JsonManager* mJsm{nullptr};
+    //팀 매니저
+    TeamManager* mTeamm{nullptr};
+    //엔티티 매니저
+    EntityManager* mEntm{nullptr};
 
     //오버맵에서 사용할 월드맵 객체다.
     Map* map{nullptr};

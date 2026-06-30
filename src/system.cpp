@@ -2,6 +2,7 @@
 
 #include "system.h"
 #include "map.h"
+#include "entity.h"
 #include "city.h"
 #include "game_json.h"
 #include "game_object.h"
@@ -86,9 +87,15 @@ bool System::LoadObjects(ObjectManager& objm) //메인 루프 전에 한번만 �
 {
     bool success = true;
 
+    objm.mEntm = new EntityManager(objm); //엔티니 매니저 생성 
+    objm.mTeamm = new TeamManager(); //팀 매니저 생성
+
     objm.map = new Map(3, 3); //월드 맵 객체 생성
     objm.map->GenerateMapTiles();
     objm.map->mMapTiles[5]->ChangeTexture("images/map/city.png");
+
+    //디버그
+    objm.mTeamm->AllocTeamOnTable("slaves", 0);
 
     objm.cityMap = new CityMap(); //도시 맵 객체 생성
     objm.cityMap->GenerateFacs(6, 5, 100); //포함된 시설 객체들 생성
