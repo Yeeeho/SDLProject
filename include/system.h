@@ -33,9 +33,10 @@ class System {
     //외부 데이터(json등) 로드
     bool LoadData(ObjectManager&);
 
-    //폰트 등을 로드
-    bool LoadMedia();
-    bool LoadObjects(ObjectManager&);
+    bool LoadMedia(); //폰트, 사운드 등 로드
+    bool LoadObjects(ObjectManager&); //객체 로드
+    bool LoadUIs(UIManager&, ObjectManager&); //ui 객체 로드
+
     void Close();
     bool HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm);
 

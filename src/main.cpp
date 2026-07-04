@@ -34,8 +34,9 @@ int main() {
     GameStateManager gsm;
     
     //로딩
-    sys.LoadData(objm);
-    sys.LoadObjects(objm);
+    sys.LoadData(objm); //json 데이터베이스 로드
+    sys.LoadObjects(objm); //게임에서 사용할 객체 로드
+    sys.LoadUIs(uim, objm); //ui객체 로드
 
     //초기 게임 상태를 현재 상태에 저장한다.
     gsm.mCurrentState = gsm.mIs;

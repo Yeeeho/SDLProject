@@ -90,6 +90,7 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
     objm.mTeamm->mIsTeamUpdate = true;
 
     //ui 생성
+
     //사이드바
     uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
     uim.uiMap["cityViewButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "도시", BtnType::City);
@@ -117,6 +118,12 @@ void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm
     for (auto ui : uim.uiMap) {
         ui.second->HandleEvent(e, gsm, mouseX, mouseY);
     }
+
+    //맵 타일 툴팁 이벤트 핸들링
+    for (MapTile* tile : objm.map->mMapTiles) {
+        uim.mToolTip->SetRefInfo(tile->mX, tile->mY, tile->mW, tile->mH);
+        uim.mToolTip->HandleEvent(e, gsm, mouseX, mouseY);
+    }
 }
 
 void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm)
@@ -136,6 +143,8 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
 
     //ui들 렌더링
     uim.RenderUIs();
+    //툴팁 렌더링
+    uim.mToolTip->RenderOnUpdate();
 
     rend.RenderFps();
 

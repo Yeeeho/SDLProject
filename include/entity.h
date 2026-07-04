@@ -51,7 +51,7 @@ class TeamManager {
     TeamManager();
 
     //테이블에 실제 데이터를 할당하고 해제하는 함수
-    void AllocTeamOnTable(std::string name, int id);
+    void AllocTeamOnTable(std::string name, std::string path, int id);
     void DeallocTeamOnTable(int id);
     //우리 팀 할당/해제
     void AllocPTeamOnTable(std::string name, int id);
@@ -108,7 +108,7 @@ class Entity {
     std::string mName;
     std::string mRace;
 
-    int mId; //뭔지알지?
+    int mId; //식별용 아이디
 
     //전투용 스탯
     int mMaxHp; //max~ 는 최대치. 종족값
@@ -130,7 +130,6 @@ class Entity {
 
     //여행용 스탯
     int mSupplyDemand = 0; //턴당 요구 보급품량
-
     //텍스처
 };
 

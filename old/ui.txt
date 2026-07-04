@@ -1,0 +1,55 @@
+//이제 안쓴다. 이런게 있었다는 것을 기억해둬라.
+void UI::Render()
+{
+    mUIFrame->Render();
+    Texture textTexture;
+    SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
+
+    //줄바꾸는 로직을 더 성능 부하 적은 방법으로 만든다.
+    //이친구를 사실상 스프라이트 시트로 쓰는거다..
+    textTexture.LoadFromRenderedText(mUIText, textColor, System::sFont);
+
+    //총 길이, 누적 길이를 기억해놓는다.
+    float totalWidth = textTexture.GetWidth();
+    float accumulatedWidth = 0.f;
+    float accumulatedHeight = 0.f;
+    //클립이 사용할 넓이값
+    float clipW = 0.f;
+
+    //텍스처가 프레임의 x축 한계선에 도달했을 경우 잘라내서 렌더링한다.
+    bool complete = false;
+    while (!complete) {
+
+        float tempBoi = 1.5f; //디버그
+
+        //텍스트가 프레임 y축을 벗어나는 것을 확인
+        if (accumulatedHeight > mUIFrame->GetH() - mPadding*2) {
+            complete = true;
+            break;
+        }
+
+        //남은 길이가 프레임 내부 x축제한보다 작을 경우
+        if (totalWidth < mUIFrame->GetW() - mPadding*2) {
+            clipW = totalWidth;
+            complete = true;
+        }
+        else {
+            clipW = tempBoi;
+        }
+
+        SDL_FRect clip {
+            accumulatedWidth, 0.f,
+            clipW, (float)textTexture.GetHeight()
+        };
+        
+        textTexture.Render(
+            mUIFrame->GetX() + mPadding, 
+            mUIFrame->GetY() + mPadding + accumulatedHeight, &clip
+        );
+                
+        //증감할거 증감해준다.
+        totalWidth -= tempBoi;
+        accumulatedHeight += textTexture.GetHeight();
+        accumulatedWidth += tempBoi;
+    }
+}

@@ -2,6 +2,8 @@
 #include "ui.h"
 
 #include "system.h"
+#include "map.h"
+#include "game_object.h"
 #include "game_state.h"
 #include "texture.h"
 #include "square.h"
@@ -85,72 +87,6 @@ void UI::RenderOnUpdate()
     mIsUIUpdate = false; //렌더링 완료하면 플래그 변수 초기화
 }
 
-//이제 안쓴다. 이런게 있었다는 것을 기억해둬라.
-void UI::Render()
-{
-    mUIFrame->Render();
-    Texture textTexture;
-    SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
-
-    //줄바꾸는 로직을 더 성능 부하 적은 방법으로 만든다.
-    //이친구를 사실상 스프라이트 시트로 쓰는거다..
-    textTexture.LoadFromRenderedText(mUIText, textColor, System::sFont);
-
-    //총 길이, 누적 길이를 기억해놓는다.
-    float totalWidth = textTexture.GetWidth();
-    float accumulatedWidth = 0.f;
-    float accumulatedHeight = 0.f;
-    //클립이 사용할 넓이값
-    float clipW = 0.f;
-
-    //텍스처가 프레임의 x축 한계선에 도달했을 경우 잘라내서 렌더링한다.
-    bool complete = false;
-    while (!complete) {
-
-        float tempBoi = 1.5f; //디버그
-
-        //텍스트가 프레임 y축을 벗어나는 것을 확인
-        if (accumulatedHeight > mUIFrame->GetH() - mPadding*2) {
-            complete = true;
-            break;
-        }
-
-        //남은 길이가 프레임 내부 x축제한보다 작을 경우
-        if (totalWidth < mUIFrame->GetW() - mPadding*2) {
-            clipW = totalWidth;
-            complete = true;
-        }
-        else {
-            clipW = tempBoi;
-        }
-
-        SDL_FRect clip {
-            accumulatedWidth, 0.f,
-            clipW, (float)textTexture.GetHeight()
-        };
-        
-        textTexture.Render(
-            mUIFrame->GetX() + mPadding, 
-            mUIFrame->GetY() + mPadding + accumulatedHeight, &clip
-        );
-                
-        //증감할거 증감해준다.
-        totalWidth -= tempBoi;
-        accumulatedHeight += textTexture.GetHeight();
-        accumulatedWidth += tempBoi;
-    }
-}
-
-void UI::SetPadding(float padding)
-{
-    mPadding = padding;
-}
-
-float UI::GetPadding()
-{
-    return mPadding;
-}
-
 Button::Button(Square *uiFrame, std::string uiText, BtnType type)
 {
     mUIFrame = uiFrame;
@@ -196,10 +132,16 @@ void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, floa
     }
 }
 
+UIManager::UIManager()
+{
+    mToolTip = new ToolTip();
+}
+
 void UIManager::RenderUIs()
 {
     SDL_SetRenderLogicalPresentation(System::sRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
 
+    //기본 ui 렌더링
     for (auto ui : uiMap) {
         ui.second->RenderOnUpdate();
     }
@@ -224,23 +166,103 @@ void UIManager::DestroyUIs()
     uiMap.clear();
 }
 
-MaptileUI::MaptileUI()
+ToolTip::ToolTip()
 {
+    mUIFrame = new Square(mX, mY, 100, 100);
 
+    TextureManager tm;
+    mTexture = tm.CreateTempTexture();
 }
 
-void MaptileUI::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float mouseY)
+void ToolTip::Destroy()
 {
-    //ui 안에 있는지 확인
-    if (e.button.x < mUIFrame->GetX()) return;
-    if (e.button.x > mUIFrame->GetX() + mUIFrame->GetW()) return;    
-    if (e.button.y < mUIFrame->GetY()) return;
-    if (e.button.y > mUIFrame->GetY() + mUIFrame->GetH()) return;    
-    
+    //ui 텍스처 파괴 로직
+    if (mTexture != nullptr) {
+        SDL_DestroyTexture(mTexture); //임시 텍스처 해제
+    }
+    if (mMyTexture != nullptr) {
+        mMyTexture->Destroy();
+        delete mMyTexture; //현재 텍스처 해제
+    }
+
+    delete this; //본인 해제
+}
+
+void ToolTip::SetRefInfo(int x, int y, int w, int h)
+{
+    mRefX = x; mRefY = y;
+    mRefW = w; mRefH = h;
+}
+
+void ToolTip::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float mouseY)
+{
+    //마우스가 참조 객체 좌표 안에 있는지 확인
+    //마우스가 프레임 밖에 있는가?
+    if (e.button.x < mRefX || e.button.x > mRefX + mRefW    
+        || e.button.y < mRefY || e.button.y > mRefY + mRefH) {
+            return;
+    }
+    //마우스가 프레임 안에 있을때
+
+    //저장된 좌표 정보가 현재 참조 좌표 정보와 일치함
+    if (mPrevX == mRefX && mPrevY == mRefY) {
+        mIsUIUpdate = false;
+    }
+    //새로운 좌표로 이동했음
+    else {
+        mIsUIUpdate = true;
+        mPrevX = mRefX; mPrevY = mRefY; //좌표 정보 다시 캐싱
+        mPrevW = mRefW; mPrevH = mRefH; 
+    }
+
     //여기에 마우스 오버 이벤트 로직을 입력.
+    mIsRender = true;
+    mX = mRefX + mRefW/2; //가운데쯤에 생성
+    mY = mRefY + mRefH/2;
 
     //클릭했는지 확인
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+}
+
+void ToolTip::RenderOnUpdate()
+{
+    //렌더링 할지말지 정한다.
+    if (mIsRender == false) {
+        return;
+    }
+
+    //업데이트 플래그가 거짓이면 저장된 텍스처를 렌더링한다.
+    if (mIsUIUpdate == false) {
+        SDL_RenderTexture(System::sRenderer ,mTexture, nullptr, nullptr);
+        return;
+    }
+    //업데이트 플래그가 참이면
+
+    //렌더러 타겟팅
+    SDL_SetRenderTarget(System::sRenderer, mTexture);
+    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    SDL_RenderClear(System::sRenderer);
+
+    //실제 로직
+    mUIFrame->SetX(mX); mUIFrame->SetY(mY);
+    mUIFrame->Render(0x00, 0xB0, 0x00, 0xFF, 0x08, 0x08, 0x08, 0xD0);
+
+    //렌더러 타겟 해제
+    SDL_SetRenderTarget(System::sRenderer, NULL);
+    
+    //렌더링 완료하면 플래그 변수 초기화
+    mIsUIUpdate = false;
+}
+
+void ToolTip::Render()
+{
+    if (mIsRender == false) {
+        return;
+    }
+
+    mUIFrame->SetX(mX); mUIFrame->SetY(mY);
+    mUIFrame->Render();
 }
 
 TextUI::TextUI(int x, int y, int width, int height, std::string uiText)
@@ -341,3 +363,4 @@ void IconUI::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float
     //클릭했는지 확인
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
 }
+

@@ -2,18 +2,23 @@
 
 class Square {
     public:
-    int GetX();
-    int GetY();
+    float GetX();
+    float SetX(float x);
+    float GetY();
+    float SetY(float y);
     int GetW();
+    int SetW(int w);
     int GetH();
+    int GetH(int h);
 
     Square(int x, int y,int width, int height);
 
     void Render();
+    void Render(Uint8 lineR, Uint8 lineB, Uint8 lineG, Uint8 lineA, Uint8 fillR, Uint8 fillG, Uint8 fillB, Uint8 fillA);
 
     private:
-    int mX{0};
-    int mY{0};
+    float mX{0};
+    float mY{0};
     int mWidth{0};
     int mHeight{0};
 };

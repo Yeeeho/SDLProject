@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "map.h"
+#include "ui.h"
 #include "texture.h"
 #include "system.h"
 #include "square.h"
@@ -64,6 +65,7 @@ MapTile::MapTile(int x, int y, int w, int h)
 {
     mX = x; mY = y;
     mW = w; mH = h;
+
     mTileTex = new Texture();
 
     std::string path = "images/map/frame.png";

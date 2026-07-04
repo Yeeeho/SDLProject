@@ -90,15 +90,34 @@ bool System::LoadObjects(ObjectManager& objm) //메인 루프 전에 한번만 �
     objm.mEntm = new EntityManager(objm); //엔티니 매니저 생성 
     objm.mTeamm = new TeamManager(); //팀 매니저 생성
 
-    objm.map = new Map(3, 3); //월드 맵 객체 생성
+    objm.map = new Map(6, 6); //월드 맵 객체 생성
     objm.map->GenerateMapTiles();
     objm.map->mMapTiles[5]->ChangeTexture("images/map/city.png");
 
-    //디버그
-    objm.mTeamm->AllocTeamOnTable("slaves", 0);
+    //엔티티/팀 로드 테스트
+    objm.mTeamm->AllocTeamOnTable("slaves", "images/entity/team/enemy_team_red.png", 0);
+    Team* targetTeam = objm.mTeamm->mTeamTable[0];
+
+    objm.mEntm->AllocEntityOnTable(objm, "slave", 0);
+    Entity* slave = objm.mEntm->mEntTable[0];
+
+    objm.mTeamm->SpawnTeamOnMap(targetTeam, objm.map->mX, objm.map->mY);
+    objm.mTeamm->PutEntInTeam(targetTeam, slave);
+    objm.mTeamm->OutEntInTeam(targetTeam, 0);
+
+    objm.mEntm->DeallocEntityOnTable(objm, 0);
+    objm.mEntm->DeallocEntityOnTable(objm, 0);
+    //테스트 종료
 
     objm.cityMap = new CityMap(); //도시 맵 객체 생성
     objm.cityMap->GenerateFacs(6, 5, 100); //포함된 시설 객체들 생성
+
+    return success;
+}
+
+bool System::LoadUIs(UIManager& uim, ObjectManager& objm)
+{
+    bool success = true;
 
     return success;
 }

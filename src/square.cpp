@@ -4,13 +4,25 @@
 #include "system.h"
 #include "square.h"
 
-int Square::GetX()
+float Square::GetX()
 {
     return mX;
 }
 
-int Square::GetY()
+float Square::SetX(float x)
 {
+    mX = x;
+    return mY;
+}
+
+float Square::GetY()
+{
+    return mY;
+}
+
+float Square::SetY(float y)
+{
+    mY = y;
     return mY;
 }
 
@@ -19,8 +31,20 @@ int Square::GetW()
     return mWidth;
 }
 
+int Square::SetW(int w)
+{
+    mWidth = w;
+    return mWidth;
+}
+
 int Square::GetH()
 {
+    return mHeight;
+}
+
+int Square::GetH(int h)
+{
+    mHeight = h;
     return mHeight;
 }
 
@@ -41,5 +65,17 @@ void Square::Render()
     SDL_RenderFillRect(System::sRenderer, &drawingRect);
     //테두리 
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0xB0, 0x00, 0xFF);
+    SDL_RenderRect(System::sRenderer, &drawingRect);
+}
+
+void Square::Render(Uint8 lineR, Uint8 lineG, Uint8 lineB, Uint8 lineA, Uint8 fillR, Uint8 fillG, Uint8 fillB, Uint8 fillA)
+{
+    SDL_FRect drawingRect{static_cast<float>(mX), static_cast<float>(mY), static_cast<float>(mWidth), static_cast<float>(mHeight)};
+
+    //채우기
+    SDL_SetRenderDrawColor(System::sRenderer, fillR, fillG, fillB, fillA);
+    SDL_RenderFillRect(System::sRenderer, &drawingRect);
+    //테두리
+    SDL_SetRenderDrawColor(System::sRenderer, lineR, lineG, lineB, lineA);
     SDL_RenderRect(System::sRenderer, &drawingRect);
 }

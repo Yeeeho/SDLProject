@@ -48,9 +48,13 @@ TeamManager::TeamManager()
 }
 
 //아직 로직 더 필요함.
-void TeamManager::AllocTeamOnTable(std::string name, int id)
+void TeamManager::AllocTeamOnTable(std::string name, std::string path, int id)
 {
-    mTeamTable[id]->mName = name;
+    Team* team = mTeamTable[id];
+
+    team->mName = name;
+
+    team->mTeamTex->LoadFromFile(path);
 }
 
 void TeamManager::DeallocTeamOnTable(int id)
@@ -122,6 +126,9 @@ void TeamManager::PutEntInTeam(Team* team, Entity* ent)
     }
     //멤버가 최대가 아닌 경우
     team->mTeamMates.insert({ent->mId, ent});
+
+    std::string message = "current teammates: " + std::to_string(team->mTeamMates.size());
+    SDL_Log(message.c_str());
 }
 
 void TeamManager::OutEntInTeam(Team *team, int id)
@@ -133,6 +140,9 @@ void TeamManager::OutEntInTeam(Team *team, int id)
     }
     //팀에서 엔티티 제외
     team->mTeamMates.erase(id);
+
+    std::string message = "current teammates: " + std::to_string(team->mTeamMates.size());
+    SDL_Log(message.c_str());
 }
 
 EntityManager::EntityManager(ObjectManager& objm)
@@ -181,6 +191,9 @@ void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name,  i
 
     if (entData.contains("armor")) ent->mMaxArmor = entData["armor"].get<int>();
     ent->mCurArmor = ent->mMaxArmor; 
+
+    std::string message = "entity id: " + std::to_string(id) + " name: " + name + " is allocated";
+    SDL_Log(message.c_str());
 }
 
 void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, PawnType pType, int id)
@@ -192,26 +205,21 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     pawn->mName = name;
     //하드코딩
     pawn->mRace = "human";
+
+    std::string message = "pawn id: " + std::to_string(id) + " name: " + name + " is allocated";
+    SDL_Log(message.c_str());
 }
 
 void EntityManager::DeallocEntityOnTable(ObjectManager& objm, int id)
 {
-    for (Entity* ent : mEntTable) {
-        if (ent->mId == id) {
-            AllocEntityOnTable(objm, "null_entity", id);
-            return;
-        }
-    }
+    AllocEntityOnTable(objm, "null_entity", id);
+    SDL_Log("deallocated entity");
 }
 
 void EntityManager::DeallocPawnOnTable(ObjectManager &objm, int id)
 {
-    for (Pawn* pawn : mPawnTable) {
-        if (pawn->mId == id) {
-            AllocPawnOnTable(objm, "null_pawn", PawnType::Null, id);
-            return;
-        }
-    }
+    AllocPawnOnTable(objm, "null_pawn", PawnType::Null, id);
+    SDL_Log("deallocated pawn");
 }
 
 Entity::Entity(std::string name, int id)

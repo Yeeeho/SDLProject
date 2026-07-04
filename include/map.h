@@ -5,6 +5,8 @@
 //전방 선언
 class MapTile;
 class Texture;
+class UI;
+
 //월드맵 클래스
 class Map {
     public:
@@ -23,6 +25,8 @@ class Map {
     SDL_Texture* mTempTex{nullptr}; //베이킹용 임시 텍스처
 };
 
+//전방선언
+class ToolTip;
 //타일 클래스
 class MapTile {
     public:
