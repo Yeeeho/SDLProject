@@ -1,4 +1,9 @@
-# disclaimer
+# License
+
+- 이 프로젝트는 오픈소스이나, 무단 복제와 배포를 금합니다.
+- Do not redistribute or copy without permission.
+
+# Sources
 
 컴파일러
 g++.exe (x86_64-posix-seh-rev1, Built by MinGW-Builds project) 16.1.0
