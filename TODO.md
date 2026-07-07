@@ -29,8 +29,10 @@ In Progress:
     - 툴팁 깜박임 해결: done
 
 - 범용 ui
-    - 텍스트 아틀라스 구현: in progress
-    - 텍스트에 따라 동적으로 크기가 변하는 ui 구현: in progress
-    - 툴팁 구현: in progress
+    - 텍스트 아틀라스 구현: maybe
+    - 툴팁 구현: done
+    - 툴팁 동적 렌더링: done
 
-- 엔티티 특성 클래스 : in progress
+- 엔티티:
+    - 맵 타일 객체에 엔티티 포인터 추가: in progress
+    - 엔티티 특성 클래스 : in progress

@@ -42,7 +42,7 @@ int Square::GetH()
     return mHeight;
 }
 
-int Square::GetH(int h)
+int Square::SetH(int h)
 {
     mHeight = h;
     return mHeight;

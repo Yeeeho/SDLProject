@@ -21,6 +21,7 @@ class UIManager {
     void DestroyUIs();
 
     // 맵 툴팁 관련
+    void LoadMapToolTip(const ObjectManager& objm, int tileId);
     void UpdateMapToolTip(const ObjectManager& objm);
     void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY);
 
@@ -100,18 +101,22 @@ class ToolTip : public UI {
     ToolTip();
     void Destroy();
 
-    void AppendText(std::string text, SDL_Color color, TTF_Font* font); //ui에 텍스트 데이터를 추가함.
+    void SetToolTipFrame();
+
     void SetRefInfo(int x, int y, int w, int h); //참조 좌표 설정
 
+    //업데이트
     void CheckUpdate(); //업데이트 로직에서 업데이트 유무를 검사함
-
+    //이벤트 핸들러
     void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
+    //렌더링 메서드
     void RenderOnUpdate() override;
     void Render();
 
     TextUI* mTui {nullptr};
 
     float mX, mY; //위치
+    int mW, mH; //크기
     int mRefX, mRefY, mRefW, mRefH {-1}; //참조용 좌표(실제 오브젝트 위치)
     int mPrevX, mPrevY, mPrevW, mPrevH {-1}; //저장할 이전 좌표
 };

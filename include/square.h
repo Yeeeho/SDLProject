@@ -9,7 +9,7 @@ class Square {
     int GetW();
     int SetW(int w);
     int GetH();
-    int GetH(int h);
+    int SetH(int h);
 
     Square(int x, int y,int width, int height);
 

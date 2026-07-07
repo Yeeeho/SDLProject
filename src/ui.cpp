@@ -169,7 +169,22 @@ void UIManager::DestroyUIs()
     uiMap.clear();
 }
 
-void UIManager::UpdateMapToolTip(const ObjectManager& objm)
+void UIManager::LoadMapToolTip(const ObjectManager& objm, int tileId)
+{
+    TextUI* tui = mToolTip->mTui;
+
+    SDL_Color tc {0x00, 0xB0, 0x00, 0xff};
+    tui->mTexts.push_back(TTFWord("타일 id:", tc, System::sFont));
+    tui->mTexts.push_back(TTFWord(System::sFont, TextType::Space));
+    tui->mTexts.push_back(TTFWord(std::to_string(tileId), tc, System::sFont));
+    tui->mTexts.push_back(TTFWord(System::sFont, TextType::NewLine));
+    
+    if (objm.mMap->mMapTiles[tileId]) {
+
+    }
+}
+
+void UIManager::UpdateMapToolTip(const ObjectManager &objm)
 {
     mToolTip->CheckUpdate();
 
@@ -177,7 +192,6 @@ void UIManager::UpdateMapToolTip(const ObjectManager& objm)
     if (mToolTip->mIsUIUpdate) {
         TextUI* tui = mToolTip->mTui;
         tui->mIsUIUpdate = true;
-        SDL_Color tc {0x00, 0xB0, 0x00, 0xff};
 
         tui->mTexts.clear();
         tui->mTotalWidth = 0; tui->mTotalHeight = 0;
@@ -186,10 +200,7 @@ void UIManager::UpdateMapToolTip(const ObjectManager& objm)
             objm.mMap->mXTiles, objm.mMap->mYTiles, objm.mMap->mTileLen, objm.mMap->mTileLen
         );
 
-        tui->mTexts.push_back(TTFWord("타일 id:", tc, System::sFont));
-        tui->mTexts.push_back(TTFWord(System::sFont, TextType::Space));
-        tui->mTexts.push_back(TTFWord(std::to_string(id), tc, System::sFont));
-        tui->mTexts.push_back(TTFWord(System::sFont, TextType::NewLine));
+        LoadMapToolTip(objm, id);
     }
 }
 
@@ -273,15 +284,57 @@ void ToolTip::Destroy()
     delete this; //본인 해제
 }
 
-void ToolTip::AppendText(std::string text, SDL_Color color, TTF_Font *font)
+void ToolTip::SetToolTipFrame()
 {
+    float currentW = 0.f, currentH = 0.f;
+    float maxW = 0.f, maxH = 0.f;
+    bool firstWord = true; //첫 단어에서 사용되고 거짓으로 바뀜
 
+    for (TTFWord word : mTui->mTexts) {
+        //폰트 높이 캐싱
+        int fontH = TTF_GetFontHeight(word.mFont);
+        //단어가 있으면 높이 추가
+        if (firstWord) {
+            maxH += fontH;
+            firstWord = false;
+        }
+
+        //띄어쓰기일때
+        if (word.mType == TextType::Space) {
+            currentW += fontH * 0.5; 
+        }
+        //줄바꿈일때
+        if (word.mType == TextType::NewLine) {
+
+            if (maxW <= currentW) maxW = currentW; //최대값 캐싱
+            currentW = 0; //초기화
+            maxH += fontH;
+        }
+        //문자일때
+        else {
+            for (int i = 0; i < word.mMessage.length(); i++) {
+                //언어 감지
+                if ((word.mMessage[i] & 0b11110000) == 0b11100000) {
+                    //한글
+                    currentW += fontH; //한글이니까 그대로
+                    i += 2;
+                }
+                else{
+                    currentW += fontH * 0.5;
+                } 
+            }
+        }
+    }
+    if (maxW <= currentW) maxW = currentW; //최대값 캐싱
+    currentW = 0; //초기화
+
+    SDL_Log(std::to_string(maxW).c_str());
+    mUIFrame->SetW(static_cast<int>(maxW));
+    mUIFrame->SetH(static_cast<int>(maxH));
 }
 
 void ToolTip::SetRefInfo(int x, int y, int w, int h)
 {
-    std::string message = "setting ref x: " + std::to_string(x);
-    SDL_Log(message.c_str());
     mRefX = x; mRefY = y;
     mRefW = w; mRefH = h;
 }
@@ -341,13 +394,8 @@ void ToolTip::RenderOnUpdate()
     SDL_RenderClear(System::sRenderer);
 
     //실제 로직
-    //TODO: 데이터를 텍스트 ui형태로 로드.
-    //TODO: 텍스트 크기에 맞춰서 프레임 크기 변경.
-
-    std::string message = "rendering pos x: " + std::to_string(mX);
-    SDL_Log(message.c_str());
-
     mUIFrame->SetX(0.f); mUIFrame->SetY(0.f); //위치 설정
+    SetToolTipFrame(); //동적 크기 설정
     mTui->mX = 0.f; mTui->mY = 0.f;
 
     mUIFrame->Render(0x00, 0xB0, 0x00, 0xFF, 0x08, 0x08, 0x08, 0xD0);
