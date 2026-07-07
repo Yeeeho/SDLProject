@@ -2,14 +2,15 @@
 
 #include "game_state.h"
 #include "game_object.h"
+#include "system.h"
 #include "map.h"
 #include "entity.h"
 #include "item.h"
 #include "city.h"
-#include "system.h"
 #include "render.h"
 #include "square.h"
 #include "ui.h"
+#include "text.h"
 
 GameStateManager::GameStateManager()
 {
@@ -85,7 +86,7 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
 
     //렌더링 플래그 일시 true
     //맵 렌더링 플래그
-    objm.map->mIsMapUpdate = true;
+    objm.mMap->mIsMapUpdate = true;
     //오버맵에서 팀 렌더링 플래그
     objm.mTeamm->mIsTeamUpdate = true;
 
@@ -96,11 +97,12 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
     uim.uiMap["cityViewButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "도시", BtnType::City);
 
     //탑 바
+    SDL_Color tc = {0x00, 0xD0, 0x00, 0xFF};
     uim.uiMap["turnIcon"] = new IconUI(10, 0, 60, 60, "images/icons/turn.png");
-    uim.uiMap["turnText"] = new TextUI(70, 0, System::sFont40, "0");
+    uim.uiMap["turnText"] = new TextUI(70, 0);
 
     uim.uiMap["supplyIcon"] = new IconUI(130, 0, 60, 60, "images/icons/supply.png");
-    uim.uiMap["supplyText"] = new TextUI(190, 0, System::sFont40, "0");
+    uim.uiMap["supplyText"] = new TextUI(190, 0);
 }
 
 void OverMapState::Exit(UIManager& uim, ObjectManager& objm)
@@ -111,6 +113,7 @@ void OverMapState::Exit(UIManager& uim, ObjectManager& objm)
 
 void OverMapState::Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
+    uim.UpdateMapToolTip(objm);
 }
 
 void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY)
@@ -119,11 +122,7 @@ void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm
         ui.second->HandleEvent(e, gsm, mouseX, mouseY);
     }
 
-    //맵 타일 툴팁 이벤트 핸들링
-    for (MapTile* tile : objm.map->mMapTiles) {
-        uim.mToolTip->SetRefInfo(tile->mX, tile->mY, tile->mW, tile->mH);
-        uim.mToolTip->HandleEvent(e, gsm, mouseX, mouseY);
-    }
+    uim.HandleMapToolTipEvent(e, gsm, objm, mouseX, mouseY);
 }
 
 void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm)
@@ -137,7 +136,7 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
     topPanel.Render();
 
     //맵 렌더링
-    objm.map->RenderOnUpdate();
+    objm.mMap->RenderOnUpdate();
     //엔티티 렌더링
     objm.mTeamm->RenderOnUpdate();
 
@@ -156,8 +155,8 @@ void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
     SDL_Log("enter city view");
 
     //도시 렌더링 플래그
-    objm.cityMap->mIsMapUpdate = true;
-    objm.cityMap->mFacs[0]->ChangeTexture("images/facility/gear.png");
+    objm.mCityMap->mIsMapUpdate = true;
+    objm.mCityMap->mFacs[0]->ChangeTexture("images/facility/gear.png");
 
     //사이드바
     uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
@@ -165,10 +164,15 @@ void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
 
     //탑 바
     uim.uiMap["turnIcon"] = new IconUI(10, 0, 60, 60, "images/icons/turn.png");
-    uim.uiMap["turnText"] = new TextUI(70, 0, System::sFont40, "0");
+
+    TextUI* turnTui = new TextUI(70, 0);
+    SDL_Color tc = {0x00, 0xD0, 0x00, 0xFF};
+    turnTui->mTexts.push_back(TTFWord("0", tc, System::sFont40));
+
+    uim.uiMap["turnText"] = turnTui;
 
     uim.uiMap["supplyIcon"] = new IconUI(130, 0, 60, 60, "images/icons/supply.png");
-    uim.uiMap["supplyText"] = new TextUI(190, 0, System::sFont40, "0");
+    uim.uiMap["supplyText"] = new TextUI(190, 0);
 }
 
 void CityViewState::Exit(UIManager &uim, ObjectManager &objm)
@@ -200,7 +204,7 @@ void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &o
     //ui렌더링
     uim.RenderUIs();
     //도시 맵 렌더링
-    objm.cityMap->RenderOnUpdate();
+    objm.mCityMap->RenderOnUpdate();
     
     rend.RenderFps();
 

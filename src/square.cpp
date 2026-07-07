@@ -12,7 +12,7 @@ float Square::GetX()
 float Square::SetX(float x)
 {
     mX = x;
-    return mY;
+    return mX;
 }
 
 float Square::GetY()

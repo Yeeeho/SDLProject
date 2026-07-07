@@ -25,7 +25,7 @@ class ObjectManager {
     EntityManager* mEntm{nullptr};
 
     //오버맵에서 사용할 월드맵 객체다.
-    Map* map{nullptr};
+    Map* mMap{nullptr};
     //도시 뷰에서 사용할 도시 맵 객체다.
-    CityMap* cityMap{nullptr};
+    CityMap* mCityMap{nullptr};
 };

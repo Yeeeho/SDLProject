@@ -46,8 +46,11 @@ class System {
 class Timer {
     public:
     Uint64 mNs = 0;
+    Uint64 mMs = 0;
 
     Uint64 StoreProgramTick();
     Uint64 GetPreviousTick();
+
+    Uint64 StoreProgramTickMs();
 };
 

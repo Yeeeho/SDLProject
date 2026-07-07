@@ -2,9 +2,11 @@
 #include "ui.h"
 
 #include "system.h"
+#include "util.h"
 #include "map.h"
 #include "game_object.h"
 #include "game_state.h"
+#include "text.h"
 #include "texture.h"
 #include "square.h"
 
@@ -52,6 +54,7 @@ void UI::RenderOnUpdate()
         //3바이트 문자의 첫번째 바이트는 0b1110xxxx 이므로 비트 비교로 3바이트 문자 추출
         if ((mUIText[i] & 0b11110000) == 0b11100000) {
             //이새끼는 한글이구나
+
             textTexture.LoadFromRenderedText(mUIText.substr(i, 3), textColor, System::sFont);
             i += 2;
         }
@@ -166,9 +169,90 @@ void UIManager::DestroyUIs()
     uiMap.clear();
 }
 
+void UIManager::UpdateMapToolTip(const ObjectManager& objm)
+{
+    mToolTip->CheckUpdate();
+
+    // 툴팁 내부 텍스트, 툴팁이 업데이트 되었을때 로드
+    if (mToolTip->mIsUIUpdate) {
+        TextUI* tui = mToolTip->mTui;
+        tui->mIsUIUpdate = true;
+        SDL_Color tc {0x00, 0xB0, 0x00, 0xff};
+
+        tui->mTexts.clear();
+        tui->mTotalWidth = 0; tui->mTotalHeight = 0;
+
+        int id = WhatTileOnPoint(mToolTip->mRefX, mToolTip->mRefY, objm.mMap->mX, objm.mMap->mY,
+            objm.mMap->mXTiles, objm.mMap->mYTiles, objm.mMap->mTileLen, objm.mMap->mTileLen
+        );
+
+        tui->mTexts.push_back(TTFWord("타일 id:", tc, System::sFont));
+        tui->mTexts.push_back(TTFWord(System::sFont, TextType::Space));
+        tui->mTexts.push_back(TTFWord(std::to_string(id), tc, System::sFont));
+        tui->mTexts.push_back(TTFWord(System::sFont, TextType::NewLine));
+    }
+}
+
+void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager &objm, float mouseX, float mouseY)
+{
+   //마우스가 맵 안에 있는지 확인
+    bool mouseIn = MouseCollisionCheck(mouseX, mouseY, 
+        static_cast<float>(objm.mMap->mX), static_cast<float>(objm.mMap->mY),
+        static_cast<float>(objm.mMap->mW), static_cast<float>(objm.mMap->mH)
+    );
+    //마우스가 맵 안에 있으면 렌더링함.
+    if (mouseIn) mToolTip->mIsRender = true;
+    else mToolTip->mIsRender = false;
+
+    //mouseover 중인 타일의 id를 구함
+    int id = WhatTileOnPoint(mouseX, mouseY, objm.mMap->mX, objm.mMap->mY,
+        objm.mMap->mXTiles, objm.mMap->mYTiles, objm.mMap->mTileLen, objm.mMap->mTileLen
+    );
+    MapTile* tile = objm.mMap->mMapTiles[id];
+    //타일 좌표를 툴팁의 참조 좌표에 할당해줌
+    mToolTip->SetRefInfo(tile->mX, tile->mY, tile->mW, tile->mH);
+    //툴팁 이벤트 핸들링
+    mToolTip->HandleEvent(e, gsm, mouseX, mouseY);
+}
+
+bool UIManager::MouseCollisionCheck(float mouseX, float mouseY, float mX, float mY, float mW, float mH)
+{
+    bool mouseIn = false;
+
+    if (mouseX < mX) return mouseIn;
+    if (mouseX > mX + mW) return mouseIn;
+    if (mouseY < mY) return mouseIn;
+    if (mouseY > mY + mH) return mouseIn;
+
+    //마우스가 안에 있음
+    mouseIn = true;
+    return mouseIn;
+}
+
+int UIManager::WhatTileOnPoint(float mouseX, float mouseY, int mX, int mY, int xTiles, int yTiles, int xTileLen, int yTileLen)
+{
+    float xDis = mouseX - static_cast<float>(mX);
+    float yDis = mouseY - static_cast<float>(mY);
+    int xPos = xDis/xTileLen; //x축 타일 좌표 검사. 첫번째는 0
+    int yPos = yDis/yTileLen; //y축도 동일
+
+    //타일 좌표 클램핑
+    if (xPos >= xTiles) xPos = xTiles - 1; 
+    if (yPos >= yTiles) yPos = yTiles - 1;
+    if (xPos < 0) xPos = 0;
+    if (yPos < 0) yPos = 0;
+
+    //맵 아이디를 구한다.
+    int id = xPos + (xTiles * yPos);
+
+    return id;
+}
+
 ToolTip::ToolTip()
 {
     mUIFrame = new Square(mX, mY, 100, 100);
+
+    mTui = new TextUI(0.f, 0.f);
 
     TextureManager tm;
     mTexture = tm.CreateTempTexture();
@@ -184,26 +268,26 @@ void ToolTip::Destroy()
         mMyTexture->Destroy();
         delete mMyTexture; //현재 텍스처 해제
     }
+    if (mTui != nullptr) delete mTui;
 
     delete this; //본인 해제
 }
 
+void ToolTip::AppendText(std::string text, SDL_Color color, TTF_Font *font)
+{
+
+}
+
 void ToolTip::SetRefInfo(int x, int y, int w, int h)
 {
+    std::string message = "setting ref x: " + std::to_string(x);
+    SDL_Log(message.c_str());
     mRefX = x; mRefY = y;
     mRefW = w; mRefH = h;
 }
 
-void ToolTip::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float mouseY)
+void ToolTip::CheckUpdate()
 {
-    //마우스가 참조 객체 좌표 안에 있는지 확인
-    //마우스가 프레임 밖에 있는가?
-    if (e.button.x < mRefX || e.button.x > mRefX + mRefW    
-        || e.button.y < mRefY || e.button.y > mRefY + mRefH) {
-            return;
-    }
-    //마우스가 프레임 안에 있을때
-
     //저장된 좌표 정보가 현재 참조 좌표 정보와 일치함
     if (mPrevX == mRefX && mPrevY == mRefY) {
         mIsUIUpdate = false;
@@ -211,14 +295,24 @@ void ToolTip::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, floa
     //새로운 좌표로 이동했음
     else {
         mIsUIUpdate = true;
+        SDL_Log("upate tooltip");
+        mX = mRefX + mRefW * 0.5; //가운데쯤에 생성
+        mY = mRefY + mRefH * 0.5;
+        
         mPrevX = mRefX; mPrevY = mRefY; //좌표 정보 다시 캐싱
         mPrevW = mRefW; mPrevH = mRefH; 
     }
+}
 
-    //여기에 마우스 오버 이벤트 로직을 입력.
-    mIsRender = true;
-    mX = mRefX + mRefW/2; //가운데쯤에 생성
-    mY = mRefY + mRefH/2;
+void ToolTip::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float mouseY)
+{
+    //마우스가 참조 객체 좌표 안에 있는지 확인
+    //마우스가 프레임 밖에 있는가?
+    if (mouseX < mRefX || mouseX > mRefX + mRefW    
+        || mouseY < mRefY || mouseY > mRefY + mRefH) {
+            return;
+    }
+    //마우스가 프레임 안에 있을때
 
     //클릭했는지 확인
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
@@ -233,7 +327,9 @@ void ToolTip::RenderOnUpdate()
 
     //업데이트 플래그가 거짓이면 저장된 텍스처를 렌더링한다.
     if (mIsUIUpdate == false) {
-        SDL_RenderTexture(System::sRenderer ,mTexture, nullptr, nullptr);
+        //위치 정보에 따라 사각형 생성
+        SDL_FRect fr = {mX, mY, static_cast<float>(System::sWindowWidth), static_cast<float>(System::sWindowHeight)};
+        SDL_RenderTexture(System::sRenderer ,mTexture, nullptr, &fr);
         return;
     }
     //업데이트 플래그가 참이면
@@ -245,8 +341,17 @@ void ToolTip::RenderOnUpdate()
     SDL_RenderClear(System::sRenderer);
 
     //실제 로직
-    mUIFrame->SetX(mX); mUIFrame->SetY(mY);
+    //TODO: 데이터를 텍스트 ui형태로 로드.
+    //TODO: 텍스트 크기에 맞춰서 프레임 크기 변경.
+
+    std::string message = "rendering pos x: " + std::to_string(mX);
+    SDL_Log(message.c_str());
+
+    mUIFrame->SetX(0.f); mUIFrame->SetY(0.f); //위치 설정
+    mTui->mX = 0.f; mTui->mY = 0.f;
+
     mUIFrame->Render(0x00, 0xB0, 0x00, 0xFF, 0x08, 0x08, 0x08, 0xD0);
+    mTui->RenderWords();
 
     //렌더러 타겟 해제
     SDL_SetRenderTarget(System::sRenderer, NULL);
@@ -255,6 +360,7 @@ void ToolTip::RenderOnUpdate()
     mIsUIUpdate = false;
 }
 
+//실시간 렌더링 함수. 지금은 쓰지 않음.
 void ToolTip::Render()
 {
     if (mIsRender == false) {
@@ -265,24 +371,59 @@ void ToolTip::Render()
     mUIFrame->Render();
 }
 
-TextUI::TextUI(int x, int y, int width, int height, std::string uiText)
+TextUI::TextUI(float x, float y)
 {
-    mUIText = uiText;
-    mX = x; mY = y; mW = width; mH = height;
+    mX = x; mY = y;
 
     TextureManager tm;
     mTexture = tm.CreateTempTexture();
 }
 
-TextUI::TextUI(int x, int y, TTF_Font *font, std::string text)
+void TextUI::RenderWords()
 {
-    mUIText = text;
-    mX = x; mY = y;
+    for (TTFWord word : mTexts) {
+        if (word.mType == TextType::NewLine) NewLine(word.mFont);
+        else if (word.mType == TextType::Space) AddSpace(word.mFont);
+        else RenderAtLine(word);
+    }
+}
 
-    mFont = font;
+void TextUI::RenderAtLine(const TTFWord &word)
+{
+    Texture textTexture; //렌더링할 텍스처
 
-    TextureManager tm;
-    mTexture = tm.CreateTempTexture();
+    std::string message = word.mMessage;
+    TTF_Font* font = word.mFont;
+    SDL_Color color = word.mColor;
+
+    for (int i = 0; i < message.length(); i++) {
+
+        if ((message[i] & 0b11110000) == 0b11100000) {
+            //이새끼는 한글이구나
+            textTexture.LoadFromRenderedText(message.substr(i, 3), color, font);
+            i += 2;
+        }
+        else{
+            textTexture.LoadFromRenderedText(message.substr(i, 1), color, font);
+        } 
+
+        //렌더링
+        //총 넓이가 얼마였는지 기억해서 더해준다.
+        textTexture.Render(mX + mPadding + mTotalWidth, mY + mPadding + mTotalHeight);
+        //렌더링한 텍스처만큼 총 넓이 변수에 더해준다.
+        mTotalWidth += textTexture.GetWidth();
+    }
+}
+
+void TextUI::NewLine(TTF_Font* font)
+{
+    mTotalWidth = 0; //총 길이 초기화
+    mTotalHeight += TTF_GetFontHeight(font);
+}
+
+void TextUI::AddSpace(TTF_Font *font)
+{
+    mTotalWidth += TTF_GetFontHeight(font)/2;
 }
 
 void TextUI::RenderOnUpdate()
@@ -293,7 +434,7 @@ void TextUI::RenderOnUpdate()
         return;
     }
     //업데이트 플래그가 참이면
-    SDL_Log("updating ui on update flag");
+    SDL_Log("updating text ui on update flag");
 
     //렌더러 타겟팅
     SDL_SetRenderTarget(System::sRenderer, mTexture);
@@ -302,30 +443,7 @@ void TextUI::RenderOnUpdate()
     SDL_RenderClear(System::sRenderer);
 
     //렌더링 실제 동작
-    Texture textTexture;
-    SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
-
-    int totalHeight = 0;
-    int totalWidth = 0;
-    for (int i = 0; i < mUIText.length(); i++) {
-
-        //utf-8에서 한글은 한 문자가 3바이트다. 그걸 구분해야함.
-        //3바이트 문자의 첫번째 바이트는 0b1110xxxx 이므로 비트 비교로 3바이트 문자 추출
-        if ((mUIText[i] & 0b11110000) == 0b11100000) {
-            //이새끼는 한글이구나
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), textColor, mFont);
-            i += 2;
-        }
-        else {
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), textColor, mFont);
-        }
-
-        //렌더링
-        //총 넓이가 얼마였는지 기억해서 더해준다.
-        textTexture.Render(mX + mPadding + totalWidth, mY + mPadding + totalHeight);
-        //렌더링한 텍스처만큼 총 넓이 변수에 더해준다.
-        totalWidth += textTexture.GetWidth();
-    }
+    RenderWords();
 
     //렌더러 타겟 해제
     SDL_SetRenderTarget(System::sRenderer, NULL);
@@ -363,4 +481,3 @@ void IconUI::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float
     //클릭했는지 확인
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
 }
-

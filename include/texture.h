@@ -43,10 +43,6 @@ class Texture {
     private:
 };
 
-enum class TextType {
-    BLANK ,SQUARE, NARROW
-};
-
 class TextTexture : public Texture {
     public:
 

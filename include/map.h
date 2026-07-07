@@ -17,8 +17,9 @@ class Map {
 
     bool mIsMapUpdate = false;
 
-    int mXTiles, mYTiles = 0; //축의 타일 개수
     int mX, mY = 0; //맵 시작 위치
+    int mW, mH = 0; //맵의 크기. 타일 길이 * 타일 개수
+    int mXTiles, mYTiles = 0; //축의 타일 개수
     int mTileLen = 100; //타일 한 변 길이
 
     std::vector<MapTile*> mMapTiles; //맵타일들 담는 컨테이너

@@ -11,6 +11,9 @@ Map::Map(int xt, int yt)
     mTileLen = 100;
     mXTiles = xt; mYTiles = yt;
 
+    mW = mTileLen*mXTiles;
+    mH = mTileLen*mYTiles;
+
     mX = System::sWindowWidth/2 - (mXTiles*mTileLen/2);
     mY = 100;
 

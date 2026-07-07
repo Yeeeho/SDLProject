@@ -5,12 +5,12 @@
 
 //전방선언 리스트
 class ObjectManager;
+class TTFWord;
 class UI;
 class ToolTip;
 class Square;
 class Texture;
 class GameStateManager;
-class MapTile;
 
 class UIManager {
     public:
@@ -19,6 +19,15 @@ class UIManager {
 
     void RenderUIs();
     void DestroyUIs();
+
+    // 맵 툴팁 관련
+    void UpdateMapToolTip(const ObjectManager& objm);
+    void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY);
+
+    //이거는 물리엔진 클래스를 따로 만들어서 거기에 넣어야할듯
+    bool MouseCollisionCheck(float mouseX, float mouseY, float mX, float mY, float mW, float mH); //마우스 충돌 검사
+    //mouseover 중인 타일의 id를 반환하는 함수
+    int WhatTileOnPoint(float pointX, float pointY, int mX, int mY, int xTiles, int yTiles, int xTileLen, int yTileLen);
 
     //툴팁
     ToolTip* mToolTip{nullptr};
@@ -51,18 +60,22 @@ class UI {
     private:
 };
 
-//일단은 이벤트 핸들링이 안되는 텍스트 ui
+//텍스트만 있는 ui
 class TextUI : public UI {
     public:
-    TextUI(int x, int y, int width, int height, std::string text);
-    TextUI(int x, int y, TTF_Font* font, std::string text);
+    TextUI(float x, float y);
 
-    TTF_Font* mFont{nullptr};
+    void RenderWords();
+    void RenderAtLine(const TTFWord& text);
+    void NewLine(TTF_Font* font);
+    void AddSpace(TTF_Font* font);
 
     void RenderOnUpdate() override;
+    
+    float mX, mY;
+    int mTotalWidth {0}, mTotalHeight {0}; //텍스처 렌더링 좌표 계산용
 
-    private:
-    int mX, mY, mW, mH;
+    std::vector<TTFWord> mTexts;
 };
 
 //버튼 기능 타입
@@ -87,11 +100,16 @@ class ToolTip : public UI {
     ToolTip();
     void Destroy();
 
-    void SetRefInfo(int x, int y, int w, int h);
+    void AppendText(std::string text, SDL_Color color, TTF_Font* font); //ui에 텍스트 데이터를 추가함.
+    void SetRefInfo(int x, int y, int w, int h); //참조 좌표 설정
 
-    void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY) override;
+    void CheckUpdate(); //업데이트 로직에서 업데이트 유무를 검사함
+
+    void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
     void RenderOnUpdate() override;
     void Render();
+
+    TextUI* mTui {nullptr};
 
     float mX, mY; //위치
     int mRefX, mRefY, mRefW, mRefH {-1}; //참조용 좌표(실제 오브젝트 위치)
