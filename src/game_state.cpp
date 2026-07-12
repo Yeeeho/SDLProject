@@ -113,7 +113,7 @@ void OverMapState::Exit(UIManager& uim, ObjectManager& objm)
 
 void OverMapState::Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
-    uim.UpdateMapToolTip(objm);
+    uim.UpdateMapToolTip(objm.mMap);
 }
 
 void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY)
@@ -122,7 +122,7 @@ void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm
         ui.second->HandleEvent(e, gsm, mouseX, mouseY);
     }
 
-    uim.HandleMapToolTipEvent(e, gsm, objm, mouseX, mouseY);
+    uim.HandleMapToolTipEvent(e, gsm, objm.mMap, mouseX, mouseY);
 }
 
 void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm)
@@ -155,8 +155,7 @@ void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
     SDL_Log("enter city view");
 
     //도시 렌더링 플래그
-    objm.mCityMap->mIsMapUpdate = true;
-    objm.mCityMap->mFacs[0]->ChangeTexture("images/facility/gear.png");
+    objm.mCity->mCityMap->mIsMapUpdate = true;
 
     //사이드바
     uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
@@ -183,6 +182,7 @@ void CityViewState::Exit(UIManager &uim, ObjectManager &objm)
 
 void CityViewState::Update(UIManager &uim, ObjectManager &objm, GameStateManager &gsm)
 {
+    uim.UpdateMapToolTip(objm.mCity->mCityMap);
 }
 
 void CityViewState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, GameStateManager &gsm, float mouseX, float mouseY)
@@ -190,6 +190,8 @@ void CityViewState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &obj
     for (auto ui : uim.uiMap) {
         ui.second->HandleEvent(e, gsm, mouseX, mouseY);
     }
+
+    uim.HandleMapToolTipEvent(e, gsm, objm.mCity->mCityMap, mouseX, mouseY);
 }
 
 void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &objm)
@@ -203,9 +205,12 @@ void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &o
     topPanel.Render();
     //ui렌더링
     uim.RenderUIs();
+
     //도시 맵 렌더링
-    objm.mCityMap->RenderOnUpdate();
-    
+    objm.mCity->mCityMap->RenderOnUpdate();
+    //툴팁 렌더링
+    uim.mToolTip->RenderOnUpdate();
+
     rend.RenderFps();
 
     SDL_RenderPresent(System::sRenderer);

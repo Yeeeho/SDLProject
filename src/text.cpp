@@ -20,3 +20,10 @@ TTFWord::TTFWord(std::string message, SDL_Color color, TTF_Font *font)
     //기본값으로 설정
     mType = TextType::Default;
 }
+
+void TTFWord::Destroy()
+{
+    if (this != nullptr) {
+        delete this;
+    }
+}

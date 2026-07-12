@@ -6,6 +6,7 @@
 //전방선언 리스트
 class ObjectManager;
 class TTFWord;
+class Map;
 class UI;
 class ToolTip;
 class Square;
@@ -21,14 +22,12 @@ class UIManager {
     void DestroyUIs();
 
     // 맵 툴팁 관련
-    void LoadMapToolTip(const ObjectManager& objm, int tileId);
-    void UpdateMapToolTip(const ObjectManager& objm);
-    void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY);
+    void LoadMapToolTip(Map* map, int tileId);
+    void UpdateMapToolTip(Map* map);
+    void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, Map* map, float mouseX, float mouseY);
 
     //이거는 물리엔진 클래스를 따로 만들어서 거기에 넣어야할듯
     bool MouseCollisionCheck(float mouseX, float mouseY, float mX, float mY, float mW, float mH); //마우스 충돌 검사
-    //mouseover 중인 타일의 id를 반환하는 함수
-    int WhatTileOnPoint(float pointX, float pointY, int mX, int mY, int xTiles, int yTiles, int xTileLen, int yTileLen);
 
     //툴팁
     ToolTip* mToolTip{nullptr};
@@ -74,6 +73,7 @@ class TextUI : public UI {
     void RenderOnUpdate() override;
     
     float mX, mY;
+    int mLineSpacing = 4;
     int mTotalWidth {0}, mTotalHeight {0}; //텍스처 렌더링 좌표 계산용
 
     std::vector<TTFWord> mTexts;
@@ -113,7 +113,7 @@ class ToolTip : public UI {
     void RenderOnUpdate() override;
     void Render();
 
-    TextUI* mTui {nullptr};
+    TextUI* mTui {nullptr}; //텍스트
 
     float mX, mY; //위치
     int mW, mH; //크기

@@ -5,9 +5,14 @@
 
 //전방 선언
 class Entity;
+class Map;
 class Pawn;
 class ObjectManager;
 class Texture;
+
+enum class TeamType {
+    Unknown, Friendly, Enemy, Neutral
+};
 
 //일반 팀
 class Team {
@@ -15,6 +20,7 @@ class Team {
     Team() = default;
     Team(std::string path, int id);
 
+    TeamType mType {TeamType::Neutral};
     //식별용 아이디
     int mId = 0;
     //게임에서 사용할 이름
@@ -24,6 +30,7 @@ class Team {
     bool isOnMap = false;
     //오버맵 위치
     int mMapPosX, mMapPosY = 0;
+    int mTileId;
 
     //팀 멤버 제한
     int mMaxMember = 4;
@@ -46,9 +53,14 @@ enum class TeamSetting {
     MaxTeam = 32, MaxPawnTeam = 4
 };
 
+class MapTile;
+
 class TeamManager {
     public:
     TeamManager();
+
+    //렌더링 관련 함수
+    void RenderOnUpdate();
 
     //테이블에 실제 데이터를 할당하고 해제하는 함수
     void AllocTeamOnTable(std::string name, std::string path, int id);
@@ -57,9 +69,11 @@ class TeamManager {
     void AllocPTeamOnTable(std::string name, int id);
     void DeallocPTeamOnTable(int id);
 
-    //렌더링 관련 함수
-    void RenderOnUpdate();
-    void SpawnTeamOnMap(Team* team, int x, int y); //오버맵에 팀 생성
+    //맵 관련
+    //생성
+    void SpawnTeamOnMap(Map* map, Team* team, int id);
+    void SpawnTeamOnMap(Map* map, Team* team, int x, int y);
+    void LoadDataInTile(MapTile* tile, Team* team); //타일의 참조 데이터 컨테이너에 팀 데이터를 삽입한다.
 
     //팀에 엔티티 넣고 빼는 함수
     void PutEntInTeam(Team* team, Entity* ent); //팀에 엔티티 삽입

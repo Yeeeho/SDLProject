@@ -1,10 +1,12 @@
 #include "pch.h"
 
+#include "entity.h"
 #include "system.h"
 #include "game_object.h"
+#include "map.h"
+#include "text.h"
 #include "game_json.h"
 #include "texture.h"
-#include "entity.h"
 #include "item.h"
 
 using json = nlohmann::json;
@@ -104,10 +106,47 @@ void TeamManager::RenderOnUpdate()
     mIsTeamUpdate = false;
 }
 
-void TeamManager::SpawnTeamOnMap(Team *team, int x, int y)
+void TeamManager::SpawnTeamOnMap(Map *map, Team *team, int id)
+{
+    team->isOnMap = true;
+
+    //아이디로 좌표를 구한다.
+    MapManager mm;
+    std::unordered_map<std::string, int> xy;
+    xy = mm.PosXYByTileId(id, map);
+
+    team->mMapPosX = map->mX + map->mTileLen * xy["x"];
+    team->mMapPosY = map->mY + map->mTileLen * xy["y"];
+    team->mId = id;
+
+    MapTile* tile = map->mMapTiles[id];
+    LoadDataInTile(tile, team);
+}
+
+void TeamManager::SpawnTeamOnMap(Map *map, Team *team, int x, int y)
 {
     team->isOnMap = true;
     team->mMapPosX = x; team->mMapPosY = y;
+
+    //타일 id 구함
+    MapManager mm;
+    int id = mm.WhatTileOnPoint(x, y, map);
+    //타일 아이디 팀에 할당
+    team->mTileId = id;
+
+    //타일에 데이터 로드
+    //타일 객체 구함
+    MapTile* tile = map->mMapTiles[id];
+    LoadDataInTile(tile, team);
+}
+
+void TeamManager::LoadDataInTile(MapTile* tile, Team *team)
+{
+    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+    TTFWord* teamName = new TTFWord(team->mName, tc, System::sFont);
+
+    tile->mInfos.push_back(teamName);
+    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
 }
 
 void TeamManager::PutEntInTeam(Team* team, Entity* ent)
@@ -156,7 +195,7 @@ EntityManager::EntityManager(ObjectManager& objm)
     }
 }
 
-void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name,  int id)
+void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, int id)
 {
     const json& entItems = objm.mJsm->mEntDb["items"]; //데이터베이스 가져오기
 
@@ -198,6 +237,12 @@ void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name,  i
 
 void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, PawnType pType, int id)
 {
+    const json& pawnItems = objm.mJsm->mPawnDb["items"];
+
+    if (!pawnItems.contains(name)) {
+        name = "error_pawn";
+    }
+
     Pawn* pawn = mPawnTable[id];
     
     pawn->mType = pType;

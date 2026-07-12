@@ -14,6 +14,8 @@ class TTFWord {
     TTFWord(TTF_Font* font, TextType type);
     TTFWord(std::string message, SDL_Color color, TTF_Font* font);
 
+    void Destroy();
+
     std::string mMessage {""};
     SDL_Color mColor {0x00, 0x00, 0x00, 0x00};
     TTF_Font* mFont {nullptr};

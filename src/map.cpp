@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "map.h"
+#include "text.h"
 #include "ui.h"
 #include "texture.h"
 #include "system.h"
@@ -37,6 +38,23 @@ void Map::GenerateMapTiles()
     }
 }
 
+void Map::GenerateCityTiles()
+{
+    int id = 0;
+    std::string path = "images/facility/frame.png";
+
+    for (int i = 0; i < mYTiles; i++) {
+        for (int j = 0; j < mXTiles; j++) {
+            MapTile* tile = new MapTile(mX + j*mTileLen, mY + i*mTileLen, mTileLen, mTileLen, path);
+            tile->mId = id;
+
+            mMapTiles.push_back(tile);
+
+            id++;
+        }
+    }
+}
+
 void Map::
 
 RenderOnUpdate()
@@ -64,14 +82,13 @@ RenderOnUpdate()
     mIsMapUpdate = false;
 }
 
-MapTile::MapTile(int x, int y, int w, int h)
+MapTile::MapTile(int x, int y, int w, int h, std::string path)
 {
     mX = x; mY = y;
     mW = w; mH = h;
 
     mTileTex = new Texture();
 
-    std::string path = "images/map/frame.png";
     if (mTileTex->LoadFromFile(path) == false) {
         std::string message = path + " not loaded";
         SDL_Log(message.c_str());
@@ -84,4 +101,42 @@ void MapTile::ChangeTexture(std::string path)
     if (mTileTex->LoadFromFile(path) == false) {
         SDL_Log(SDL_GetError());
     }
+}
+
+void MapTile::DestroyInfos()
+{
+    for (TTFWord* word : mInfos) {
+        word->Destroy();
+    }
+
+    mInfos.clear();
+}
+
+int MapManager::WhatTileOnPoint(float x, float y, Map *map)
+{
+    float xDis = x - static_cast<float>(map->mX);
+    float yDis = y - static_cast<float>(map->mY);
+    int xPos = xDis/map->mTileLen; //상대 거리를 타일 크기로 나누어 타일 좌표를 구한다.
+    int yPos = yDis/map->mTileLen;
+
+    //클램핑
+    if (xPos >= map->mXTiles) xPos = map->mXTiles - 1;
+    if (yPos >= map->mYTiles) yPos = map->mYTiles - 1;
+    if (xPos < 0) xPos = 0;
+    if (yPos < 0) yPos = 0;
+
+    //맵 아이디를 구한다.
+    int id = xPos + (map->mXTiles * yPos);
+    return id;
+}
+std::unordered_map<std::string, int> MapManager::PosXYByTileId(int id, Map *map)
+{
+    int posY = id / map->mXTiles;
+    int posX = id - posY * map->mXTiles;
+
+    std::unordered_map<std::string, int> ret;
+    ret.insert({"x", posX});
+    ret.insert({"y", posY});
+
+    return ret;
 }

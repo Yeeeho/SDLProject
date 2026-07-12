@@ -13,7 +13,7 @@ g++ src/*.cpp^
 
  -L./lib/SDL3/lib -L./lib/SDL3_ttf/lib -L./lib/SDL3_image/lib -L./lib/SDL3_mixer/lib^
  -lSDL3 -lSDL3_ttf -lSDL3_image -lSDL3_mixer^
- -include include/pch.h -o geimu.exe -H
+ -include include/pch.h -o geimu.exe
 
 @echo deleting pch file
 erase ".\include\pch.h.gch"

@@ -169,22 +169,24 @@ void UIManager::DestroyUIs()
     uiMap.clear();
 }
 
-void UIManager::LoadMapToolTip(const ObjectManager& objm, int tileId)
+void UIManager::LoadMapToolTip(Map* map, int tileId)
 {
     TextUI* tui = mToolTip->mTui;
 
-    SDL_Color tc {0x00, 0xB0, 0x00, 0xff};
+    SDL_Color tc {0x00, 0xB0, 0x00, 0xFF};
     tui->mTexts.push_back(TTFWord("타일 id:", tc, System::sFont));
     tui->mTexts.push_back(TTFWord(System::sFont, TextType::Space));
     tui->mTexts.push_back(TTFWord(std::to_string(tileId), tc, System::sFont));
     tui->mTexts.push_back(TTFWord(System::sFont, TextType::NewLine));
-    
-    if (objm.mMap->mMapTiles[tileId]) {
 
+    //타일 객체를 구함
+    MapTile* tile = map->mMapTiles[tileId];
+    for (TTFWord* word : tile->mInfos) {
+        tui->mTexts.push_back(*word);
     }
 }
 
-void UIManager::UpdateMapToolTip(const ObjectManager &objm)
+void UIManager::UpdateMapToolTip(Map* map)
 {
     mToolTip->CheckUpdate();
 
@@ -196,30 +198,29 @@ void UIManager::UpdateMapToolTip(const ObjectManager &objm)
         tui->mTexts.clear();
         tui->mTotalWidth = 0; tui->mTotalHeight = 0;
 
-        int id = WhatTileOnPoint(mToolTip->mRefX, mToolTip->mRefY, objm.mMap->mX, objm.mMap->mY,
-            objm.mMap->mXTiles, objm.mMap->mYTiles, objm.mMap->mTileLen, objm.mMap->mTileLen
-        );
+        MapManager mm;
+        int id = mm.WhatTileOnPoint(mToolTip->mRefX, mToolTip->mRefY, map);
 
-        LoadMapToolTip(objm, id);
+        LoadMapToolTip(map, id);
     }
 }
 
-void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager &objm, float mouseX, float mouseY)
+void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, Map* map, float mouseX, float mouseY)
 {
    //마우스가 맵 안에 있는지 확인
     bool mouseIn = MouseCollisionCheck(mouseX, mouseY, 
-        static_cast<float>(objm.mMap->mX), static_cast<float>(objm.mMap->mY),
-        static_cast<float>(objm.mMap->mW), static_cast<float>(objm.mMap->mH)
+        static_cast<float>(map->mX), static_cast<float>(map->mY),
+        static_cast<float>(map->mW), static_cast<float>(map->mH)
     );
     //마우스가 맵 안에 있으면 렌더링함.
     if (mouseIn) mToolTip->mIsRender = true;
     else mToolTip->mIsRender = false;
 
     //mouseover 중인 타일의 id를 구함
-    int id = WhatTileOnPoint(mouseX, mouseY, objm.mMap->mX, objm.mMap->mY,
-        objm.mMap->mXTiles, objm.mMap->mYTiles, objm.mMap->mTileLen, objm.mMap->mTileLen
-    );
-    MapTile* tile = objm.mMap->mMapTiles[id];
+    MapManager mm;
+    int id = mm.WhatTileOnPoint(mouseX, mouseY, map);
+
+    MapTile* tile = map->mMapTiles[id];
     //타일 좌표를 툴팁의 참조 좌표에 할당해줌
     mToolTip->SetRefInfo(tile->mX, tile->mY, tile->mW, tile->mH);
     //툴팁 이벤트 핸들링
@@ -238,25 +239,6 @@ bool UIManager::MouseCollisionCheck(float mouseX, float mouseY, float mX, float 
     //마우스가 안에 있음
     mouseIn = true;
     return mouseIn;
-}
-
-int UIManager::WhatTileOnPoint(float mouseX, float mouseY, int mX, int mY, int xTiles, int yTiles, int xTileLen, int yTileLen)
-{
-    float xDis = mouseX - static_cast<float>(mX);
-    float yDis = mouseY - static_cast<float>(mY);
-    int xPos = xDis/xTileLen; //x축 타일 좌표 검사. 첫번째는 0
-    int yPos = yDis/yTileLen; //y축도 동일
-
-    //타일 좌표 클램핑
-    if (xPos >= xTiles) xPos = xTiles - 1; 
-    if (yPos >= yTiles) yPos = yTiles - 1;
-    if (xPos < 0) xPos = 0;
-    if (yPos < 0) yPos = 0;
-
-    //맵 아이디를 구한다.
-    int id = xPos + (xTiles * yPos);
-
-    return id;
 }
 
 ToolTip::ToolTip()
@@ -309,6 +291,7 @@ void ToolTip::SetToolTipFrame()
             if (maxW <= currentW) maxW = currentW; //최대값 캐싱
             currentW = 0; //초기화
             maxH += fontH;
+            maxH += mTui->mLineSpacing;
         }
         //문자일때
         else {
@@ -467,6 +450,7 @@ void TextUI::NewLine(TTF_Font* font)
 {
     mTotalWidth = 0; //총 길이 초기화
     mTotalHeight += TTF_GetFontHeight(font);
+    mTotalHeight += mLineSpacing;
 }
 
 void TextUI::AddSpace(TTF_Font *font)
