@@ -13,11 +13,9 @@ class RenderManager {
     
     int GetDesiredFps();
 
-    //ui 업데이트용 플래그 변수
-    bool mIsUIUpdate = true;
+    void SetRenderTarget(SDL_Renderer*, SDL_Texture*);
 
     private:
-
     bool mCapFpsOn = true;
     bool mVsyncOn = true;
 

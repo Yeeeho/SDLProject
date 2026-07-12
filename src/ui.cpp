@@ -2,6 +2,7 @@
 #include "ui.h"
 
 #include "system.h"
+#include "render.h"
 #include "util.h"
 #include "map.h"
 #include "game_object.h"
@@ -18,6 +19,15 @@ UI::UI(Square* uiFrame, std::string uiText)
 
     TextureManager tm;
     mTexture = tm.CreateTempTexture();
+}
+
+void UI::Destroy()
+{
+    if (mUIFrame != nullptr) delete mUIFrame;
+    if (mTexture != nullptr) SDL_DestroyTexture(mTexture);
+    if (mMyTexture != nullptr) mMyTexture->Destroy();
+
+    delete this;
 }
 
 void UI::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, float mouseY)
@@ -37,10 +47,8 @@ void UI::RenderOnUpdate()
     //업데이트 플래그가 참이면
     SDL_Log("updating ui on update flag");
 
-    SDL_SetRenderTarget(System::sRenderer, mTexture); //렌더러 타겟으로 설정
-    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED); //알파 이중 합성이 일어나지 않게 모드를 정한다.
-    SDL_RenderClear(System::sRenderer);
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTexture);
 
     mUIFrame->Render();
     Texture textTexture;
@@ -148,6 +156,10 @@ void UIManager::RenderUIs()
     for (auto ui : uiMap) {
         ui.second->RenderOnUpdate();
     }
+
+    for (auto ftui : ftuiMap) {
+        ftui.second->RenderOnUpdate();
+    }
 }
 
 void UIManager::DestroyUIs()
@@ -166,7 +178,13 @@ void UIManager::DestroyUIs()
         ui.second = nullptr;
     }
 
+    for (auto ftui : ftuiMap) {
+        ftui.second->Destroy();
+        ftui.second = nullptr;
+    }
+
     uiMap.clear();
+    ftuiMap.clear();
 }
 
 void UIManager::LoadMapToolTip(Map* map, int tileId)
@@ -202,6 +220,8 @@ void UIManager::UpdateMapToolTip(Map* map)
         int id = mm.WhatTileOnPoint(mToolTip->mRefX, mToolTip->mRefY, map);
 
         LoadMapToolTip(map, id);
+
+        tui->mIsUIUpdate = false; //플래그 초기화
     }
 }
 
@@ -213,8 +233,19 @@ void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, Map* 
         static_cast<float>(map->mW), static_cast<float>(map->mH)
     );
     //마우스가 맵 안에 있으면 렌더링함.
-    if (mouseIn) mToolTip->mIsRender = true;
-    else mToolTip->mIsRender = false;
+    if (mouseIn) {
+        mToolTip->mIsRender = true;
+        
+        if (mWasOutMap) {
+            SDL_Log("mouse in map");
+            mToolTip->mIsUIUpdate = true;
+            mWasOutMap = false;
+        }
+    } 
+    else {
+        mToolTip->mIsRender = false;
+        mWasOutMap = true;
+    } 
 
     //mouseover 중인 타일의 id를 구함
     MapManager mm;
@@ -251,19 +282,12 @@ ToolTip::ToolTip()
     mTexture = tm.CreateTempTexture();
 }
 
+//ui 텍스처 파괴 로직
 void ToolTip::Destroy()
 {
-    //ui 텍스처 파괴 로직
-    if (mTexture != nullptr) {
-        SDL_DestroyTexture(mTexture); //임시 텍스처 해제
-    }
-    if (mMyTexture != nullptr) {
-        mMyTexture->Destroy();
-        delete mMyTexture; //현재 텍스처 해제
-    }
     if (mTui != nullptr) delete mTui;
 
-    delete this; //본인 해제
+    Destroy(); //부모 클래스 파괴 메서드, 본인도 파괴함
 }
 
 void ToolTip::SetToolTipFrame()
@@ -295,20 +319,11 @@ void ToolTip::SetToolTipFrame()
         }
         //문자일때
         else {
-            for (int i = 0; i < word.mMessage.length(); i++) {
-                //언어 감지
-                if ((word.mMessage[i] & 0b11110000) == 0b11100000) {
-                    //한글
-                    currentW += fontH; //한글이니까 그대로
-                    i += 2;
-                }
-                else{
-                    currentW += fontH * 0.5;
-                } 
-            }
+            currentW += word.GetWordWidth();
         }
     }
     if (maxW <= currentW) maxW = currentW; //최대값 캐싱
+    maxW += mPadding; //패딩 추가
     currentW = 0; //초기화
 
     SDL_Log(std::to_string(maxW).c_str());
@@ -326,12 +341,12 @@ void ToolTip::CheckUpdate()
 {
     //저장된 좌표 정보가 현재 참조 좌표 정보와 일치함
     if (mPrevX == mRefX && mPrevY == mRefY) {
-        mIsUIUpdate = false;
+
     }
     //새로운 좌표로 이동했음
     else {
         mIsUIUpdate = true;
-        SDL_Log("upate tooltip");
+        SDL_Log("update tooltip");
         mX = mRefX + mRefW * 0.5; //가운데쯤에 생성
         mY = mRefY + mRefH * 0.5;
         
@@ -371,10 +386,8 @@ void ToolTip::RenderOnUpdate()
     //업데이트 플래그가 참이면
 
     //렌더러 타겟팅
-    SDL_SetRenderTarget(System::sRenderer, mTexture);
-    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
-    SDL_RenderClear(System::sRenderer);
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTexture);
 
     //실제 로직
     mUIFrame->SetX(0.f); mUIFrame->SetY(0.f); //위치 설정
@@ -408,6 +421,44 @@ TextUI::TextUI(float x, float y)
 
     TextureManager tm;
     mTexture = tm.CreateTempTexture();
+}
+
+void TextUI::ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font)
+{
+    std::string message = "";
+
+    for (int i = 0; i < text.length(); i++) {
+        //공백일 경우
+        if (text.substr(i, 1) == " "){
+            //텍스트를 푸시하고 공백도 푸시함
+            mTexts.push_back(TTFWord(message, color, font));
+            mTexts.push_back(TTFWord(font, TextType::Space));
+
+            message = ""; //초기화
+        }
+        //한글 등 문자당 3바이트를 쓰는 언어일 경우
+        else if ((text[i] & 0b11110000) == 0b11100000) {
+            message += text.substr(i, 3);
+
+            //문장 끝에 도달함
+            if (i == text.length() - 3) {
+                mTexts.push_back(TTFWord(message, color, font));
+                return;
+            }
+
+            i += 2;
+        }
+        //문자당 1바이트인 언어일 경우
+        else {
+            message += text.substr(i, 1);
+
+            //문장 끝에 도달함
+            if (i == text.length() - 1) {
+                mTexts.push_back(TTFWord(message, color, font));
+                return;
+            }
+        }
+    }
 }
 
 void TextUI::RenderWords()
@@ -469,19 +520,115 @@ void TextUI::RenderOnUpdate()
     SDL_Log("updating text ui on update flag");
 
     //렌더러 타겟팅
-    SDL_SetRenderTarget(System::sRenderer, mTexture);
-    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
-    SDL_RenderClear(System::sRenderer);
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTexture);
 
     //렌더링 실제 동작
     RenderWords();
 
     //렌더러 타겟 해제
     SDL_SetRenderTarget(System::sRenderer, NULL);
-    
     //렌더링 완료하면 플래그 변수 초기화
     mIsUIUpdate = false;
+}
+
+
+FramedTUI::FramedTUI(int x, int y, int w, int h)
+{
+    mX = x; mY = y; mW = w; mH = h;
+
+    mUIFrame = new Square(x, y, w, h);
+    mTui = new TextUI(x, y);
+
+    TextureManager tm;
+    mTexture = tm.CreateTempTexture();
+}
+
+void FramedTUI::AddWord(TTFWord word)
+{
+    mTui->mTexts.push_back(word);
+}
+
+void FramedTUI::ClearText()
+{
+    mTui->mTexts.clear();
+}
+
+//공사중
+void FramedTUI::RenderOnUpdate()
+{
+    if (mIsRender == false) return;
+
+    if (mIsUIUpdate == false) {
+        SDL_RenderTexture(System::sRenderer, mTexture, nullptr, nullptr);
+        return;
+    }
+
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTexture);
+
+
+    //실제 로직
+    Render();
+
+    //렌더러 타겟 해제 및 초기화
+    SDL_SetRenderTarget(System::sRenderer, NULL);
+    mIsUIUpdate = false;
+}
+
+//공사중
+void FramedTUI::Render()
+{
+    SDL_Log("rendering uiframe");
+    mUIFrame->Render();
+    SDL_Log("rendered uiframe");
+    //프레임에 맞춰서 줄바꿈
+
+    int mTotalW = 0;
+    int mTotalH = 0;
+    for (TTFWord word: mTui->mTexts) {
+        if (word.mType == TextType::NewLine) {
+            mTotalW = 0;
+            mTotalH += word.GetWordHeight();
+            mTotalH += mTui->mLineSpacing;
+
+            mTui->NewLine(word.mFont);
+        }
+        else if (word.mType == TextType::Space) {
+            mTotalW += word.GetWordWidth();
+
+            //넓이가 프레임을 벗어났는지 검사함, 넘어가면 줄바꿈
+            if (mTotalW + mPadding * 2 > mW) {
+                mTotalW = 0;
+                mTui->NewLine(word.mFont);
+            }
+            else mTui->AddSpace(word.mFont); 
+        }
+        else {
+            mTotalW += word.GetWordWidth();
+            //넓이 검사
+            if (mTotalW + mPadding * 2 > mW) {
+                //줄바꿈후 원문 렌더링
+
+                mTotalW = 0; //초기화 후 길이 더하기 
+                mTotalW += word.GetWordWidth();
+                mTui->NewLine(word.mFont);
+                mTui->RenderAtLine(word);    
+            }
+            else mTui->RenderAtLine(word);    
+        } 
+
+        //ui 프레임을 벗어났는지 검사함.
+        if (mTotalH + mPadding * 2 > mH) {
+            SDL_Log("ftui hitting height limit boi");
+            return;
+        }
+    }
+}
+
+//공사중
+void FramedTUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
+{
 }
 
 IconUI::IconUI(int x, int y, int width, int height, std::string path)

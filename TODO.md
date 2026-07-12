@@ -19,6 +19,12 @@ Done:
 - 물리엔진:
     - 랜덤 클래스 구현: in progress
 
+- 그래픽:
+    - 히트 스프라이트 구현: in progress
+
+- 시나리오:
+    - 인트로 부분 구현: in progress
+
 - 맵
     - 카메라 구현: in progress
 
@@ -33,6 +39,9 @@ Done:
 - 도시 기본 ui
     - ui 클래스와 맵 클래스 연결(ui manager): done
     - 툴팁: done
+
+- 텍스트
+    - 스스로의 길이를 구하는 메서드
 
 - 범용 ui
     - 텍스트 아틀라스 구현: maybe

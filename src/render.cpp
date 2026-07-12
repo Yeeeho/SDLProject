@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "system.h"
+#include "render.h"
 #include "map.h"
 #include "ui.h"
 #include "render.h"
@@ -40,4 +41,12 @@ void RenderManager::AdjustFps(Timer& timer)
 int RenderManager::GetDesiredFps()
 {
     return mDesiredFps;
+}
+
+void RenderManager::SetRenderTarget(SDL_Renderer* renderer, SDL_Texture* tex)
+{
+    SDL_SetRenderTarget(renderer, tex);
+    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    SDL_RenderClear(renderer);
 }

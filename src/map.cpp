@@ -119,7 +119,7 @@ int MapManager::WhatTileOnPoint(float x, float y, Map *map)
     int xPos = xDis/map->mTileLen; //상대 거리를 타일 크기로 나누어 타일 좌표를 구한다.
     int yPos = yDis/map->mTileLen;
 
-    //클램핑
+    //좌표에 한계를 지정한다.
     if (xPos >= map->mXTiles) xPos = map->mXTiles - 1;
     if (yPos >= map->mYTiles) yPos = map->mYTiles - 1;
     if (xPos < 0) xPos = 0;

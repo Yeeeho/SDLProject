@@ -91,13 +91,18 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
     objm.mTeamm->mIsTeamUpdate = true;
 
     //ui 생성
-
     //사이드바
     uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
     uim.uiMap["cityViewButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "도시", BtnType::City);
 
+    uim.ftuiMap["babo"] = new FramedTUI(100, 100, 200, 400);
+    FramedTUI* ftui = uim.ftuiMap["babo"];
+
+    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+    ftui->mTui->ProcessAndAddText("hi my name is babo and i would like to die 그리고 응애에요.", tc, System::sFont);
+
     //탑 바
-    SDL_Color tc = {0x00, 0xD0, 0x00, 0xFF};
+    tc = {0x00, 0xD0, 0x00, 0xFF};
     uim.uiMap["turnIcon"] = new IconUI(10, 0, 60, 60, "images/icons/turn.png");
     uim.uiMap["turnText"] = new TextUI(70, 0);
 
@@ -120,6 +125,11 @@ void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm
 {
     for (auto ui : uim.uiMap) {
         ui.second->HandleEvent(e, gsm, mouseX, mouseY);
+    }
+
+    for (auto ftui : uim.ftuiMap) {
+        SDL_Log("handling ftui");
+        ftui.second->HandleEvent(e, gsm, mouseX, mouseY);
     }
 
     uim.HandleMapToolTipEvent(e, gsm, objm.mMap, mouseX, mouseY);

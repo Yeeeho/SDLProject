@@ -1,5 +1,6 @@
 {
     "type" : "pawn",
+    "desc" : "database for unique pawns",
     "items" : {
         "error_pawn" : {
             "name" : "error_pawn_name",
@@ -13,8 +14,9 @@
             ]
         },
 
-        "choonsik" : {
-            "name" : "choonsik",
+        "aki" : {
+            "name" : "aki",
+            "desc_kr" : "",
             "flags": [
                 "healthy"
             ]
