@@ -16,6 +16,18 @@ SDL_Texture* TextureManager::CreateTempTexture()
     return texture;
 }
 
+SDL_Texture *TextureManager::CreateTempTexture(SDL_Renderer* rd, int w, int h)
+{
+    SDL_Texture* texture = SDL_CreateTexture(
+        rd,
+        SDL_PIXELFORMAT_RGBA8888,
+        SDL_TEXTUREACCESS_TARGET,
+        w, h
+    );
+
+    return texture;
+}
+
 Texture::Texture() : 
     mTexture{nullptr},
     mWidth{0},

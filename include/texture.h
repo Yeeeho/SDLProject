@@ -7,6 +7,7 @@
 class TextureManager {
     public:
     SDL_Texture* CreateTempTexture();
+    SDL_Texture* CreateTempTexture(SDL_Renderer* rd, int w, int h);
 };
 
 class Texture {

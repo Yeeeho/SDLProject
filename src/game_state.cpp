@@ -3,6 +3,7 @@
 #include "game_state.h"
 #include "game_object.h"
 #include "system.h"
+#include "camera.h"
 #include "map.h"
 #include "entity.h"
 #include "item.h"
@@ -17,6 +18,7 @@ GameStateManager::GameStateManager()
     mIs = new IntroState();
     mOms = new OverMapState();
     mCvs = new CityViewState();
+    mSms = new SubMapState();
 }
 
 void GameStateManager::SetCurrentState(UIManager& uim, ObjectManager& objm)
@@ -48,7 +50,8 @@ void GameStateManager::SetCurrentState(UIManager& uim, ObjectManager& objm)
 void IntroState::Enter(UIManager& uim, ObjectManager& objm)
 {
     SDL_Log("enter intro");
-    uim.uiMap["introUI"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 25, 200, 50), "시작", BtnType::OverMap);
+    uim.uiMap["introBtn"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 25, 200, 50), "시작", BtnType::OverMap);
+    uim.uiMap["debugProlBtn"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 150, 200, 50), "도입부 디버그", BtnType::SubMap);
 }
 
 void IntroState::Exit(UIManager& uim, ObjectManager& objm)
@@ -102,12 +105,7 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
     ftui->mTui->ProcessAndAddText("hi my name is babo and i would like to die 그리고 응애에요.", tc, System::sFont);
 
     //탑 바
-    tc = {0x00, 0xD0, 0x00, 0xFF};
-    uim.uiMap["turnIcon"] = new IconUI(10, 0, 60, 60, "images/icons/turn.png");
-    uim.uiMap["turnText"] = new TextUI(70, 0);
-
-    uim.uiMap["supplyIcon"] = new IconUI(130, 0, 60, 60, "images/icons/supply.png");
-    uim.uiMap["supplyText"] = new TextUI(190, 0);
+    uim.InitTopBar();
 }
 
 void OverMapState::Exit(UIManager& uim, ObjectManager& objm)
@@ -123,14 +121,9 @@ void OverMapState::Update(UIManager& uim, ObjectManager& objm, GameStateManager&
 
 void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY)
 {
-    for (auto ui : uim.uiMap) {
-        ui.second->HandleEvent(e, gsm, mouseX, mouseY);
-    }
+    objm.mMap->HandleMapCamEvent(e);
 
-    for (auto ftui : uim.ftuiMap) {
-        SDL_Log("handling ftui");
-        ftui.second->HandleEvent(e, gsm, mouseX, mouseY);
-    }
+    uim.HandleUIEvent(e, gsm, mouseX, mouseY);
 
     uim.HandleMapToolTipEvent(e, gsm, objm.mMap, mouseX, mouseY);
 }
@@ -141,9 +134,6 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
     SDL_RenderClear(System::sRenderer);
     
     SDL_SetRenderLogicalPresentation(System::sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-    //ui패널 렌더링
-    Square topPanel = Square(0, 0, System::sWindowWidth, uim.mTopPanelH);
-    topPanel.Render();
 
     //맵 렌더링
     objm.mMap->RenderOnUpdate();
@@ -160,6 +150,52 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
     SDL_RenderPresent(System::sRenderer);
 }
 
+void SubMapState::Enter(UIManager& uim, ObjectManager& objm) 
+{
+    SDL_Log("enter submap");
+    objm.mSubMap->mIsMapUpdate = true;
+
+    uim.InitTopBar();
+}
+
+void SubMapState::Exit(UIManager &uim, ObjectManager &objm)
+{
+    SDL_Log("exit submap");
+    uim.DestroyUIs();
+}
+
+void SubMapState::Update(UIManager &uim, ObjectManager &objm, GameStateManager &gsm)
+{
+    objm.mSubMap->mCam->Move();
+    uim.UpdateMapToolTip(objm.mSubMap);
+}
+
+void SubMapState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, GameStateManager &gsm, float mouseX, float mouseY)
+{
+    objm.mSubMap->HandleMapCamEvent(e);
+
+    uim.HandleUIEvent(e, gsm, mouseX, mouseY);
+    uim.HandleMapToolTipEvent(e, gsm, objm.mSubMap, mouseX, mouseY);
+}
+
+void SubMapState::Render(RenderManager &rend, UIManager &uim, ObjectManager &objm)
+{
+    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
+    SDL_RenderClear(System::sRenderer);
+    
+    SDL_SetRenderLogicalPresentation(System::sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    
+    //맵 렌더링
+    objm.mSubMap->RenderOnUpdate();
+    
+
+    //ui들 렌더링
+    uim.RenderUIs();
+    uim.mToolTip->RenderOnUpdate();
+
+    SDL_RenderPresent(System::sRenderer);
+}
+
 void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
 {
     SDL_Log("enter city view");
@@ -172,16 +208,7 @@ void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
     uim.uiMap["overMapButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "오버맵", BtnType::OverMap);
 
     //탑 바
-    uim.uiMap["turnIcon"] = new IconUI(10, 0, 60, 60, "images/icons/turn.png");
-
-    TextUI* turnTui = new TextUI(70, 0);
-    SDL_Color tc = {0x00, 0xD0, 0x00, 0xFF};
-    turnTui->mTexts.push_back(TTFWord("0", tc, System::sFont40));
-
-    uim.uiMap["turnText"] = turnTui;
-
-    uim.uiMap["supplyIcon"] = new IconUI(130, 0, 60, 60, "images/icons/supply.png");
-    uim.uiMap["supplyText"] = new TextUI(190, 0);
+    uim.InitTopBar();
 }
 
 void CityViewState::Exit(UIManager &uim, ObjectManager &objm)
@@ -197,9 +224,7 @@ void CityViewState::Update(UIManager &uim, ObjectManager &objm, GameStateManager
 
 void CityViewState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, GameStateManager &gsm, float mouseX, float mouseY)
 {
-    for (auto ui : uim.uiMap) {
-        ui.second->HandleEvent(e, gsm, mouseX, mouseY);
-    }
+    uim.HandleUIEvent(e, gsm, mouseX, mouseY);
 
     uim.HandleMapToolTipEvent(e, gsm, objm.mCity->mCityMap, mouseX, mouseY);
 }
@@ -209,10 +234,6 @@ void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &o
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
     SDL_RenderClear(System::sRenderer);
 
-    
-    //ui패널 렌더링
-    Square topPanel = Square(0, 0, System::sWindowWidth, uim.mTopPanelH);
-    topPanel.Render();
     //ui렌더링
     uim.RenderUIs();
 

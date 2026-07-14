@@ -54,6 +54,18 @@ class OverMapState : public GameState {
     private:
 };
 
+class SubMapState: public GameState {
+    public:
+    void Enter(UIManager& uim, ObjectManager& objm) override;
+    void Exit(UIManager& uim, ObjectManager& objm) override;
+
+    void Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm) override;
+    void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY) override;
+    void Render(RenderManager& rend ,UIManager& uim, ObjectManager& objm) override;
+
+    SubMapState() = default;
+};
+
 class CityViewState : public GameState {
     public:
     void Enter(UIManager& uim, ObjectManager& objm) override;
@@ -84,5 +96,6 @@ class GameStateManager {
     //참조용 상태들. 해제하면 게임 터진다.
     IntroState* mIs{nullptr};
     OverMapState* mOms{nullptr};
+    SubMapState* mSms {nullptr};
     CityViewState* mCvs{nullptr};
 };

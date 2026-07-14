@@ -68,6 +68,18 @@ void Square::Render()
     SDL_RenderRect(System::sRenderer, &drawingRect);
 }
 
+void Square::Render(SDL_Color lineColor, SDL_Color fillColor)
+{
+    SDL_FRect drawingRect{static_cast<float>(mX), static_cast<float>(mY), static_cast<float>(mWidth), static_cast<float>(mHeight)};
+    
+    //채우기
+    SDL_SetRenderDrawColor(System::sRenderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
+    SDL_RenderFillRect(System::sRenderer, &drawingRect);
+    //테두리
+    SDL_SetRenderDrawColor(System::sRenderer, lineColor.r, lineColor.g, lineColor.b, lineColor.a);
+    SDL_RenderFillRect(System::sRenderer, &drawingRect);
+}
+
 void Square::Render(Uint8 lineR, Uint8 lineG, Uint8 lineB, Uint8 lineA, Uint8 fillR, Uint8 fillG, Uint8 fillB, Uint8 fillA)
 {
     SDL_FRect drawingRect{static_cast<float>(mX), static_cast<float>(mY), static_cast<float>(mWidth), static_cast<float>(mHeight)};

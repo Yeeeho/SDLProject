@@ -20,18 +20,20 @@ Done:
     - 랜덤 클래스 구현: in progress
 
 - 그래픽:
+    - 디버그용 엔티티 스프라이트: done
     - 히트 스프라이트 구현: in progress
 
 - 시나리오:
     - 인트로 부분 구현: in progress
 
 - 맵
-    - 카메라 구현: in progress
+    - 카메라 구현: done
+    - 줌인 줌아웃 구현: in progress
 
-- 맵 기본 ui: in progress
+- 맵 기본 ui
     - 맵 툴팁 구현: done
     - 맵 객체에 존재하는 다른 정보 로드: done
-    - 타일 객체의 정보 컨테이너 클린업 기능: in progress
+    - 타일 객체의 정보 컨테이너 클린업 기능: done
 
 - 서브 맵:
     - 전투/탐험용 서브맵 구현: in progress

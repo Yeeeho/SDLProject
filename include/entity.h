@@ -123,6 +123,8 @@ class Entity {
     std::string mRace;
 
     int mId; //식별용 아이디
+    
+    Texture* mTexture {nullptr}; //엔티티 텍스처
 
     //전투용 스탯
     int mMaxHp; //max~ 는 최대치. 종족값
@@ -141,6 +143,7 @@ class Entity {
     int mCurArmor;
     
     std::unordered_map<EqType, Equipment*> mEqs; //실제로 장비한 장비들 컨테이너
+
 
     //여행용 스탯
     int mSupplyDemand = 0; //턴당 요구 보급품량

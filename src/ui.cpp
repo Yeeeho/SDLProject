@@ -2,6 +2,7 @@
 #include "ui.h"
 
 #include "system.h"
+#include "camera.h"
 #include "render.h"
 #include "util.h"
 #include "map.h"
@@ -138,6 +139,11 @@ void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, floa
         gsm.mNextState = gsm.mIs; //다음 타깃 상태는 인트로다.
         gsm.mIsStateChange = true;
     }
+    else if (mType == BtnType::SubMap) {
+        SDL_Log("change to submap state");
+        gsm.mNextState = gsm.mSms;
+        gsm.mIsStateChange = true;
+    }
     else {
         SDL_Log("おはよう");
     }
@@ -148,9 +154,43 @@ UIManager::UIManager()
     mToolTip = new ToolTip();
 }
 
+void UIManager::InitTopBar()
+{
+    //탑 바 패널 생성
+    mPanels["topPanel"] = new Square(0, 0, System::sWindowWidth, mTopPanelH);
+
+    //ui 객체들 생성
+    uiMap["turnIcon"] = new IconUI(10, 0, 60, 60, "images/icons/turn.png");
+
+    TextUI* turnTui = new TextUI(70, 0);
+    SDL_Color tc = {0x00, 0xD0, 0x00, 0xFF};
+    turnTui->mTexts.push_back(TTFWord("0", tc, System::sFont40));
+
+    uiMap["turnText"] = turnTui;
+
+    uiMap["supplyIcon"] = new IconUI(130, 0, 60, 60, "images/icons/supply.png");
+    uiMap["supplyText"] = new TextUI(190, 0);
+}
+
+void UIManager::HandleUIEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
+{
+    for (auto ui : uiMap) {
+        ui.second->HandleEvent(e, gsm, mouseX, mouseY);
+    }
+
+    for (auto ftui : ftuiMap) {
+        ftui.second->HandleEvent(e, gsm, mouseX, mouseY);
+    }
+}
+
 void UIManager::RenderUIs()
 {
     SDL_SetRenderLogicalPresentation(System::sRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+
+    //ui 패널 렌더링
+    for (auto panel : mPanels) {
+        panel.second->Render();
+    }
 
     //기본 ui 렌더링
     for (auto ui : uiMap) {
@@ -160,6 +200,11 @@ void UIManager::RenderUIs()
     for (auto ftui : ftuiMap) {
         ftui.second->RenderOnUpdate();
     }
+
+}
+
+void UIManager::RenderMapToolTip(Map *map)
+{
 }
 
 void UIManager::DestroyUIs()
@@ -182,9 +227,14 @@ void UIManager::DestroyUIs()
         ftui.second->Destroy();
         ftui.second = nullptr;
     }
+    for (auto square : mPanels) {
+        delete square.second;
+        square.second = nullptr;
+    }
 
     uiMap.clear();
     ftuiMap.clear();
+    mPanels.clear();
 }
 
 void UIManager::LoadMapToolTip(Map* map, int tileId)
@@ -210,6 +260,10 @@ void UIManager::UpdateMapToolTip(Map* map)
 
     // 툴팁 내부 텍스트, 툴팁이 업데이트 되었을때 로드
     if (mToolTip->mIsUIUpdate) {
+        //카메라 보정
+        mToolTip->mX -= map->mCam->mSight.x;
+        mToolTip->mY -= map->mCam->mSight.y;
+
         TextUI* tui = mToolTip->mTui;
         tui->mIsUIUpdate = true;
 
@@ -227,7 +281,11 @@ void UIManager::UpdateMapToolTip(Map* map)
 
 void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, Map* map, float mouseX, float mouseY)
 {
-   //마우스가 맵 안에 있는지 확인
+    //카메라 때문에 생긴 오차 보정
+    mouseX += map->mCam->mSight.x;
+    mouseY += map->mCam->mSight.y;
+
+    //마우스가 맵 안에 있는지 확인
     bool mouseIn = MouseCollisionCheck(mouseX, mouseY, 
         static_cast<float>(map->mX), static_cast<float>(map->mY),
         static_cast<float>(map->mW), static_cast<float>(map->mH)
@@ -241,11 +299,15 @@ void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, Map* 
             mToolTip->mIsUIUpdate = true;
             mWasOutMap = false;
         }
-    } 
+    }
     else {
         mToolTip->mIsRender = false;
         mWasOutMap = true;
     } 
+    //맵이 움직이고 있으면 렌더링 하지 않음
+    if (map->mIsMapMoving == true) {
+        mToolTip->mIsRender = false;
+    }
 
     //mouseover 중인 타일의 id를 구함
     MapManager mm;

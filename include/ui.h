@@ -18,11 +18,21 @@ class UIManager {
     public:
     UIManager();
 
+    //ui 컨테이너
     std::unordered_map<std::string, UI*> uiMap;
     std::unordered_map<std::string, FramedTUI*> ftuiMap;
-
-    void RenderUIs();
+    std::unordered_map<std::string, Square*> mPanels;
+    
+    //파괴자
     void DestroyUIs();
+
+    void InitTopBar(); //탑 바를 초기화하는 녀석
+    //이벤트 핸들링
+    void HandleUIEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mousey);
+    
+    //렌더링
+    void RenderUIs();
+    void RenderMapToolTip(Map* map);
 
     // 맵 툴팁 관련
     void LoadMapToolTip(Map* map, int tileId);
@@ -108,7 +118,7 @@ class FramedTUI : public UI {
 //버튼 기능 타입
 enum class BtnType {
     Title,
-    OverMap, City
+    OverMap, SubMap,City
 };
 
 //일반적인 버튼

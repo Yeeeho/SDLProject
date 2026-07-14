@@ -1,25 +1,77 @@
 #include "pch.h"
 
 #include "map.h"
+#include "camera.h"
 #include "text.h"
 #include "ui.h"
 #include "texture.h"
 #include "system.h"
 #include "square.h"
 
-Map::Map(int xt, int yt)
+Map::Map(int x, int y, int xTiles, int yTiles, int tileLen)
 {
-    mTileLen = 100;
-    mXTiles = xt; mYTiles = yt;
+    mTileLen = tileLen;
+    mXTiles = xTiles; mYTiles = yTiles;
 
     mW = mTileLen*mXTiles;
     mH = mTileLen*mYTiles;
 
-    mX = System::sWindowWidth/2 - (mXTiles*mTileLen/2);
-    mY = 100;
+    mX = x; mY = y;
+    mInitX = x; mInitY = y;
+
+    mCam = new Camera(10, System::sWindowWidth + 4000, System::sWindowHeight + 4000);
 
     TextureManager tm;
-    mTempTex = tm.CreateTempTexture();
+    mTempTex = tm.CreateTempTexture(
+        System::sRenderer,
+        System::sWindowWidth + 4000, System::sWindowHeight + 4000
+    );
+}
+
+void Map::Destroy()
+{
+    if (mTempTex != nullptr) {
+        SDL_DestroyTexture(mTempTex);
+        mTempTex = nullptr;
+    }
+
+    for (MapTile* tile : mMapTiles) {
+        tile->Destroy();
+        tile = nullptr;
+    }
+
+    mMapTiles.clear();
+
+    delete this;
+}
+
+//최적화/기능 추가 여지가 남아있음.
+void Map::HandleMapEvent(SDL_Event &e)
+{
+    
+}
+
+void Map::HandleMapCamEvent(SDL_Event &e)
+{
+    if (e.type == SDL_EVENT_KEY_DOWN) {
+        if (e.key.key == SDLK_W) {
+            mCam->mYSpeed = -mCam->mVelocity;
+        }
+        if (e.key.key == SDLK_S) {
+            mCam->mYSpeed = mCam->mVelocity;
+        }
+        if (e.key.key == SDLK_A) {
+            mCam->mXSpeed = -mCam->mVelocity;
+        }
+        if (e.key.key == SDLK_D) {
+            mCam->mXSpeed = mCam->mVelocity;
+        }
+    }
+    if (e.type == SDL_EVENT_KEY_UP) {
+        if (e.key.key == SDLK_W || e.key.key == SDLK_S) mCam->mYSpeed = 0;
+        if (e.key.key == SDLK_A || e.key.key == SDLK_D) mCam->mXSpeed = 0; 
+    }
+
 }
 
 void Map::GenerateMapTiles()
@@ -55,12 +107,10 @@ void Map::GenerateCityTiles()
     }
 }
 
-void Map::
-
-RenderOnUpdate()
+void Map::RenderOnUpdate()
 {
     if (mIsMapUpdate == false) {
-        SDL_RenderTexture(System::sRenderer , mTempTex, nullptr, nullptr);
+        SDL_RenderTexture(System::sRenderer, mTempTex, &mCam->mSight, nullptr);
         return;
     }
 
@@ -72,7 +122,8 @@ RenderOnUpdate()
 
     for (MapTile* tile : mMapTiles) {
         tile->mTileTex->Render(
-            tile->mX, tile->mY
+            tile->mX, tile->mY, nullptr,
+            static_cast<float>(mTileLen), static_cast<float>(mTileLen) 
         );
     }
 
@@ -94,6 +145,16 @@ MapTile::MapTile(int x, int y, int w, int h, std::string path)
         SDL_Log(message.c_str());
     }
     SDL_SetTextureBlendMode(mTileTex->mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    SDL_SetTextureScaleMode(mTileTex->mTexture, SDL_SCALEMODE_NEAREST);
+}
+
+void MapTile::Destroy()
+{
+    if (mTileTex != nullptr) {
+        mTileTex->Destroy();
+    }
+
+    delete this;
 }
 
 void MapTile::ChangeTexture(std::string path)
