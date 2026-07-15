@@ -1,9 +1,9 @@
 #include "pch.h"
 
 #include "map.h"
+#include "physics.h"
 #include "camera.h"
 #include "text.h"
-#include "ui.h"
 #include "texture.h"
 #include "system.h"
 #include "square.h"
@@ -46,31 +46,8 @@ void Map::Destroy()
 }
 
 //최적화/기능 추가 여지가 남아있음.
-void Map::HandleMapEvent(SDL_Event &e)
+void Map::HandleEvent(SDL_Event &e, float mouseX, float mouseY)
 {
-    
-}
-
-void Map::HandleMapCamEvent(SDL_Event &e)
-{
-    if (e.type == SDL_EVENT_KEY_DOWN) {
-        if (e.key.key == SDLK_W) {
-            mCam->mYSpeed = -mCam->mVelocity;
-        }
-        if (e.key.key == SDLK_S) {
-            mCam->mYSpeed = mCam->mVelocity;
-        }
-        if (e.key.key == SDLK_A) {
-            mCam->mXSpeed = -mCam->mVelocity;
-        }
-        if (e.key.key == SDLK_D) {
-            mCam->mXSpeed = mCam->mVelocity;
-        }
-    }
-    if (e.type == SDL_EVENT_KEY_UP) {
-        if (e.key.key == SDLK_W || e.key.key == SDLK_S) mCam->mYSpeed = 0;
-        if (e.key.key == SDLK_A || e.key.key == SDLK_D) mCam->mXSpeed = 0; 
-    }
 
 }
 

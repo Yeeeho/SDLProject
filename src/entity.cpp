@@ -1,9 +1,11 @@
 #include "pch.h"
 
 #include "entity.h"
+#include "render.h"
 #include "system.h"
 #include "game_object.h"
 #include "map.h"
+#include "camera.h"
 #include "text.h"
 #include "game_json.h"
 #include "texture.h"
@@ -46,7 +48,9 @@ TeamManager::TeamManager()
     }
 
     TextureManager tm;
-    mTempTex = tm.CreateTempTexture();
+    mTempTex = tm.CreateTempTexture(System::sRenderer,
+        System::sWindowWidth + 4000, System::sWindowHeight + 4000
+    );
 }
 
 //아직 로직 더 필요함.
@@ -74,18 +78,17 @@ void TeamManager::DeallocPTeamOnTable(int id)
     mPawnTeamTable[id]->mName = "null_pawn_team";
 }
 
-void TeamManager::RenderOnUpdate()
+void TeamManager::RenderOnUpdate(Map* map)
 {
     if (mIsTeamUpdate == false) {
-        SDL_RenderTexture(System::sRenderer , mTempTex, nullptr, nullptr);
+        SDL_RenderTexture(System::sRenderer , mTempTex, &map->mCam->mSight, nullptr);
         return;
     }
 
     SDL_Log("updating teams on update flag");
-    SDL_SetRenderTarget(System::sRenderer, mTempTex); //렌더러 타겟으로 설정
-    SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_SetTextureBlendMode(mTempTex, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
-    SDL_RenderClear(System::sRenderer);
+
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTempTex);
 
     //실제 렌더링 로직, 아직 미구현
     for (Team* team : mTeamTable) {
@@ -193,9 +196,15 @@ EntityManager::EntityManager(ObjectManager& objm)
     for (int i = 0; i < (int)EntitySetting::MaxPawn; i++) {
         mPawnTable[i] = new Pawn(objm, "null_pawn", PawnType::Null, i);
     }
+
+    TextureManager tm;
+    mTempTex = tm.CreateTempTexture(System::sRenderer,
+        System::sWindowWidth + 4000, System::sWindowHeight + 4000
+    );
+    SDL_SetTextureScaleMode(mTempTex, SDL_SCALEMODE_NEAREST);
 }
 
-void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, int id)
+void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, int subMapX, int subMapY, int id)
 {
     const json& entItems = objm.mJsm->mEntDb["items"]; //데이터베이스 가져오기
 
@@ -206,16 +215,21 @@ void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, in
         entData = entItems[name];
     }
     else {
+        SDL_Log("entity name not found");
         name = "error_entity";
         entData = entItems[name];
     }
 
     Entity* ent = mEntTable[id];
 
-    ent->mName = name;
+    ent->mSubMapX = subMapX;
+    ent->mSubMapY = subMapY;
 
+    ent->mName = entData["name"].get<std::string>();
     ent->mRace = entData["race"].get<std::string>();
-
+    //텍스처 할당
+    ent->mTexture->LoadFromFile(entData["img_path"].get<std::string>());
+    
     if (entData.contains("hp")) ent->mMaxHp = entData["hp"].get<int>();
     ent->mCurHp = ent->mMaxHp;
 
@@ -242,12 +256,16 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     if (!pawnItems.contains(name)) {
         name = "error_pawn";
     }
+    json pawnData = pawnItems[name];
 
     Pawn* pawn = mPawnTable[id];
-    
+
+    //텍스처 할당
+    pawn->mTexture->LoadFromFile(pawnData["img_path"].get<std::string>());
+
     pawn->mType = pType;
 
-    pawn->mName = name;
+    pawn->mName = pawnData["name"].get<std::string>();
     //하드코딩
     pawn->mRace = "human";
 
@@ -257,7 +275,7 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
 
 void EntityManager::DeallocEntityOnTable(ObjectManager& objm, int id)
 {
-    AllocEntityOnTable(objm, "null_entity", id);
+    AllocEntityOnTable(objm, "null_entity", -1, -1, id);
     SDL_Log("deallocated entity");
 }
 
@@ -267,9 +285,77 @@ void EntityManager::DeallocPawnOnTable(ObjectManager &objm, int id)
     SDL_Log("deallocated pawn");
 }
 
+void EntityManager::LoadDataInTile(MapTile *tile, Entity *ent)
+{
+    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+    TTFWord* name = new TTFWord(ent->mName, tc, System::sFont);
+
+    tile->mInfos.push_back(name);
+    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
+
+    tc = {0xB0, 0xB0, 0xB0, 0xFF};
+    tile->mInfos.push_back(new TTFWord("클릭하여 자세한 정보를 보기(미구현)", tc, System::sFont));
+    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
+}
+
+void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent)
+{
+
+}
+
+void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent, int tileId)
+{
+    ent->mIsOnMap = true;
+
+    ent->mTileId = tileId;
+
+    std::unordered_map<std::string, int> xy;
+    MapManager mm;
+    xy = mm.PosXYByTileId(tileId, map);
+
+    ent->mSubMapX = map->mX + map->mTileLen * xy["x"];
+    ent->mSubMapY = map->mY + map->mTileLen * xy["y"];
+
+    MapTile* tile = map->mMapTiles[tileId];
+
+    LoadDataInTile(tile, ent);
+}
+
+void EntityManager::RenderOnUpdate(Map* map)
+{
+    if (mIsRenderUpdate == false) {
+        SDL_RenderTexture(System::sRenderer, mTempTex, &map->mCam->mSight, nullptr);
+        return;
+    }
+
+    SDL_Log("render update");
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTempTex);
+
+    for (Entity* ent : mEntTable) {
+        if (!ent->mIsOnMap) continue;
+        ent->mTexture->Render(ent->mSubMapX, ent->mSubMapY, nullptr,
+           (float) map->mTileLen, (float) map->mTileLen
+        );
+ 
+    }
+    for (Pawn* pawn : mPawnTable) {
+        if (!pawn->mIsOnMap) continue;
+        pawn->mTexture->Render(pawn->mSubMapX, pawn->mSubMapY, nullptr,
+           (float) map->mTileLen, (float) map->mTileLen
+        );
+    }
+
+    //렌더러 타겟 해제
+    SDL_SetRenderTarget(System::sRenderer, nullptr);
+    mIsRenderUpdate = false;
+}
+
 Entity::Entity(std::string name, int id)
 {
     mId = id;
+
+    mTexture = new Texture();
 }
 
 //부하 생성자
@@ -277,6 +363,8 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
 {  
     mId = id;
     mName = name;
+
+    mTexture = new Texture();
 
     mMaxHp = 100;
     mMaxAp = 100;

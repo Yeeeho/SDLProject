@@ -11,6 +11,28 @@ Camera::Camera(unsigned int velocity, int xlimit, int ylimit)
     mVelocity = velocity;
 }
 
+void Camera::HandleEvent(SDL_Event &e)
+{
+    if (e.type == SDL_EVENT_KEY_DOWN) {
+        if (e.key.key == SDLK_W) {
+            mYSpeed = -mVelocity;
+        }
+        if (e.key.key == SDLK_S) {
+            mYSpeed = mVelocity;
+        }
+        if (e.key.key == SDLK_A) {
+            mXSpeed = -mVelocity;
+        }
+        if (e.key.key == SDLK_D) {
+            mXSpeed = mVelocity;
+        }
+    }
+    if (e.type == SDL_EVENT_KEY_UP) {
+        if (e.key.key == SDLK_W || e.key.key == SDLK_S) mYSpeed = 0;
+        if (e.key.key == SDLK_A || e.key.key == SDLK_D) mXSpeed = 0; 
+    }
+}
+
 void Camera::Move()
 {
     mSight.x += mXSpeed;

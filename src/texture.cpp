@@ -28,6 +28,25 @@ SDL_Texture *TextureManager::CreateTempTexture(SDL_Renderer* rd, int w, int h)
     return texture;
 }
 
+void TextureManager::Resize(SDL_Texture *target, SDL_Texture *source)
+{
+    float targetW = 0.f, targetH = 0.f;
+    SDL_GetTextureSize(target, &targetW, &targetH);
+    std::string message = std::to_string(targetW) + " " + std::to_string(targetH);
+    SDL_Log(message.c_str());
+
+    float w = 0.f, h = 0.f;
+    SDL_GetTextureSize(source, &w, &h);
+    message = std::to_string(w) + " " + std::to_string(h);
+    SDL_Log(message.c_str());
+
+    if (targetW != w || targetH != h) {
+        SDL_DestroyTexture(source);
+    
+        source = CreateTempTexture(System::sRenderer, (int) targetW, (int) targetH);
+    }
+}
+
 Texture::Texture() : 
     mTexture{nullptr},
     mWidth{0},
@@ -90,8 +109,7 @@ bool Texture::LoadFromFile(std::string path)
         SDL_Log("unable to load %s", path);
         SDL_Log(SDL_GetError());
     }
-    else {
-        
+    else {  
         mTexture = SDL_CreateTextureFromSurface(System::sRenderer, loadedSurface);
         if (mTexture == nullptr) {
             SDL_Log(SDL_GetError());

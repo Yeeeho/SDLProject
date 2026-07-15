@@ -3,6 +3,9 @@
 #include <string>
 #include <unordered_map>
 
+#include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
+
 //전방선언 리스트
 class ObjectManager;
 class TTFWord;
@@ -23,10 +26,12 @@ class UIManager {
     std::unordered_map<std::string, FramedTUI*> ftuiMap;
     std::unordered_map<std::string, Square*> mPanels;
     
+    void InitTopBar(); //탑 바를 초기화하는 녀석
+    void InitUIs(); //게임 상태마다 초기화 할 ui들을 초기화
+
     //파괴자
     void DestroyUIs();
 
-    void InitTopBar(); //탑 바를 초기화하는 녀석
     //이벤트 핸들링
     void HandleUIEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mousey);
     
@@ -39,10 +44,7 @@ class UIManager {
     void UpdateMapToolTip(Map* map);
     void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, Map* map, float mouseX, float mouseY);
 
-    bool mWasOutMap {false}; //마우스가 맵 밖에 있었나?
-
-    //이거는 물리엔진 클래스를 따로 만들어서 거기에 넣어야할듯
-    bool MouseCollisionCheck(float mouseX, float mouseY, float mX, float mY, float mW, float mH); //마우스 충돌 검사
+    bool mWasMouseOnMap {false};
 
     //툴팁
     ToolTip* mToolTip{nullptr};
@@ -68,8 +70,11 @@ class UI {
 
     Square* mUIFrame{nullptr}; //프레임
 
-    SDL_Texture* mTexture{nullptr}; //여기다 저장해놓고 업데이트시에 이걸 렌더링
-    Texture* mMyTexture{nullptr};
+    //비주얼
+    void SetFrameColor(SDL_Color fillcolor, SDL_Color linecolor);
+
+    SDL_Texture* mTempTex {nullptr}; //여기다 저장해놓고 업데이트시에 이걸 렌더링
+    Texture* mMyTexture {nullptr};
 
     float mPadding = 10.f;
     private:
@@ -117,8 +122,9 @@ class FramedTUI : public UI {
 
 //버튼 기능 타입
 enum class BtnType {
-    Title,
-    OverMap, SubMap,City
+    Title, 
+    NewGame, LoadGame,
+    OverMap, SubMap, City
 };
 
 //일반적인 버튼
@@ -151,10 +157,10 @@ class ToolTip : public UI {
 
     TextUI* mTui {nullptr}; //텍스트
 
-    float mX, mY; //위치
+    float mX {0}, mY {0}; //위치
     int mW, mH; //크기
-    int mRefX, mRefY, mRefW, mRefH {-1}; //참조용 좌표(실제 오브젝트 위치)
-    int mPrevX, mPrevY, mPrevW, mPrevH {-1}; //저장할 이전 좌표
+    int mRefX {-1}, mRefY {-1}, mRefW {-1}, mRefH {-1}; //참조용 좌표(실제 오브젝트 위치)
+    int mPrevX {-1}, mPrevY {-1}, mPrevW {-1}, mPrevH {-1}; //저장할 이전 좌표
 };
 
 //이미지를 로딩해서 쓰는 ui

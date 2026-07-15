@@ -13,8 +13,8 @@ using json = nlohmann::json;
 class System {
     public:
 
-    inline static int sWindowWidth{1280};
-    inline static int sWindowHeight{720};
+    inline static int sWindowWidth{1920};
+    inline static int sWindowHeight{1080};
 
     //윈도우
     inline static SDL_Window* sWindow{nullptr};

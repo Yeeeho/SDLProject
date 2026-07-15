@@ -23,7 +23,12 @@ Done:
     - 디버그용 엔티티 스프라이트: done
     - 히트 스프라이트 구현: in progress
 
+- 데이터
+    - 시나리오 데이터 로드: in progress
+    - 유저 데이터 세이브/로드: in progress
+
 - 시나리오:
+    - 시나리오 클래스 구현: done
     - 인트로 부분 구현: in progress
 
 - 맵
@@ -36,14 +41,16 @@ Done:
     - 타일 객체의 정보 컨테이너 클린업 기능: done
 
 - 서브 맵:
-    - 전투/탐험용 서브맵 구현: in progress
+    - 전투/탐험용 서브맵 구현: done
+    - 서브맵 지형 구현: in progress
+    - 오버맵으로 이동 기능 구현: in progress
 
 - 도시 기본 ui
     - ui 클래스와 맵 클래스 연결(ui manager): done
     - 툴팁: done
 
 - 텍스트
-    - 스스로의 길이를 구하는 메서드
+    - 스스로의 길이를 구하는 메서드: done
 
 - 범용 ui
     - 텍스트 아틀라스 구현: maybe
@@ -51,6 +58,7 @@ Done:
     - 툴팁 동적 렌더링: done
     - 툴팁 깜박임 해결: done
     - 로그 ui 구현: in progress
+    - 대화 ui 구현: in progress
 
 - 엔티티:
     - 엔티티 특성 클래스 : in progress

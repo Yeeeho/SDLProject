@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h> 
 
 #include "system.h"
+#include "scenario.h"
 #include "game_object.h"
 #include "game_state.h"
 #include "ui.h"
@@ -18,7 +19,7 @@ int main() {
         SDL_Log("Unable to load media");
     }
 
-    bool quit{false};
+    bool quit {false};
 
     SDL_Event e;
     SDL_zero(e);
@@ -32,7 +33,7 @@ int main() {
 
     //게임 상태 매니저
     GameStateManager gsm;
-    
+
     //로딩
     sys.LoadData(objm); //json 데이터베이스 로드
     sys.LoadObjects(objm); //게임에서 사용할 객체 로드
@@ -41,8 +42,7 @@ int main() {
 
     //초기 게임 상태를 현재 상태에 저장한다.
     gsm.mCurrentState = gsm.mIs;
-    gsm.mCurrentState->Enter(uim, objm);
-
+    gsm.mCurrentState->Enter(uim, objm, *gsm.mScm);
 
     //메인 루프
     while (quit == false) {

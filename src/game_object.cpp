@@ -30,18 +30,4 @@ void ObjectManager::InitStartObjects()
     SDL_Color tc = {0xE0, 0xE0, 0xE0, 0xFF};
     mMap->mMapTiles[cityIdx]->mInfos.push_back(new TTFWord("당신의 도시", tc, System::sFont));
     mMap->mMapTiles[cityIdx]->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
-
-    //도시 맵 초기화
-
-    //오버맵에 팀 생성
-    mTeamm->AllocTeamOnTable("slaves", "images/entity/team/enemy_team_red.png", 0);
-    Team* targetTeam = mTeamm->mTeamTable[0];
-    mEntm->AllocEntityOnTable(*this, "slave", 0);
-    Entity* slave = mEntm->mEntTable[0];
-
-    mTeamm->SpawnTeamOnMap(mMap, targetTeam, cityIdx + 1);
-    mTeamm->PutEntInTeam(targetTeam, slave);
-
-    mTeamm->AllocPTeamOnTable("당신의 팀", 0);
-    mEntm->AllocPawnOnTable(*this, "", PawnType::Unique, 0);
 }

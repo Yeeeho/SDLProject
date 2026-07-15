@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "game_state.h"
+#include "scenario.h"
 #include "game_object.h"
 #include "system.h"
 #include "camera.h"
@@ -19,6 +20,8 @@ GameStateManager::GameStateManager()
     mOms = new OverMapState();
     mCvs = new CityViewState();
     mSms = new SubMapState();
+
+    mScm = new ScenarioManager();
 }
 
 void GameStateManager::SetCurrentState(UIManager& uim, ObjectManager& objm)
@@ -32,8 +35,8 @@ void GameStateManager::SetCurrentState(UIManager& uim, ObjectManager& objm)
     if (mNextState != nullptr) {
         //다음상태에 뭔가가 할당되어 있다.
 
-        mCurrentState->Exit(uim, objm); //현재 상태 탈출 메서드
-        mNextState->Enter(uim, objm); //다음 상태 진입 메서드
+        mCurrentState->Exit(uim, objm, *mScm); //현재 상태 탈출 메서드
+        mNextState->Enter(uim, objm, *mScm); //다음 상태 진입 메서드
 
         //다음 상태를 임시 객체에 할당해줌
         GameState* tempState = mNextState;
@@ -47,14 +50,18 @@ void GameStateManager::SetCurrentState(UIManager& uim, ObjectManager& objm)
     }
 }
 
-void IntroState::Enter(UIManager& uim, ObjectManager& objm)
+GameState::GameState()
 {
-    SDL_Log("enter intro");
-    uim.uiMap["introBtn"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 25, 200, 50), "시작", BtnType::OverMap);
-    uim.uiMap["debugProlBtn"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 150, 200, 50), "도입부 디버그", BtnType::SubMap);
 }
 
-void IntroState::Exit(UIManager& uim, ObjectManager& objm)
+void IntroState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
+{
+    SDL_Log("enter intro");
+    uim.uiMap["debugBtn"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 25, 200, 50), "디버그", BtnType::OverMap);
+    uim.uiMap["newGameBtn"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 150, 200, 50), "새 게임", BtnType::NewGame);
+}
+
+void IntroState::Exit(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
 {
     SDL_Log("exit intro");
     uim.DestroyUIs();
@@ -83,7 +90,7 @@ void IntroState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm
     SDL_RenderPresent(System::sRenderer);
 }
 
-void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
+void OverMapState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
 {
     SDL_Log("enter overmap");
 
@@ -106,9 +113,10 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm)
 
     //탑 바
     uim.InitTopBar();
+    uim.InitUIs();
 }
 
-void OverMapState::Exit(UIManager& uim, ObjectManager& objm)
+void OverMapState::Exit(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
 {
     SDL_Log("exit overmap");
     uim.DestroyUIs(); //ui파괴
@@ -116,12 +124,13 @@ void OverMapState::Exit(UIManager& uim, ObjectManager& objm)
 
 void OverMapState::Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
+    objm.mMap->mCam->Move();
     uim.UpdateMapToolTip(objm.mMap);
 }
 
 void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY)
 {
-    objm.mMap->HandleMapCamEvent(e);
+    objm.mMap->mCam->HandleEvent(e);
 
     uim.HandleUIEvent(e, gsm, mouseX, mouseY);
 
@@ -137,8 +146,8 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
 
     //맵 렌더링
     objm.mMap->RenderOnUpdate();
-    //엔티티 렌더링
-    objm.mTeamm->RenderOnUpdate();
+    //팀 렌더링
+    objm.mTeamm->RenderOnUpdate(objm.mMap);
 
     //ui들 렌더링
     uim.RenderUIs();
@@ -150,17 +159,22 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
     SDL_RenderPresent(System::sRenderer);
 }
 
-void SubMapState::Enter(UIManager& uim, ObjectManager& objm) 
+void SubMapState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& scm) 
 {
     SDL_Log("enter submap");
     objm.mSubMap->mIsMapUpdate = true;
 
+    scm.LoadThings(objm);
+
     uim.InitTopBar();
+    uim.InitUIs();
 }
 
-void SubMapState::Exit(UIManager &uim, ObjectManager &objm)
+void SubMapState::Exit(UIManager &uim, ObjectManager &objm, ScenarioManager& scm)
 {
     SDL_Log("exit submap");
+    scm.ClearThings(objm);
+
     uim.DestroyUIs();
 }
 
@@ -172,7 +186,8 @@ void SubMapState::Update(UIManager &uim, ObjectManager &objm, GameStateManager &
 
 void SubMapState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, GameStateManager &gsm, float mouseX, float mouseY)
 {
-    objm.mSubMap->HandleMapCamEvent(e);
+    objm.mSubMap->mCam->HandleEvent(e);
+    objm.mSubMap->HandleEvent(e, mouseX, mouseY);
 
     uim.HandleUIEvent(e, gsm, mouseX, mouseY);
     uim.HandleMapToolTipEvent(e, gsm, objm.mSubMap, mouseX, mouseY);
@@ -187,16 +202,17 @@ void SubMapState::Render(RenderManager &rend, UIManager &uim, ObjectManager &obj
     
     //맵 렌더링
     objm.mSubMap->RenderOnUpdate();
-    
+    //엔티티 렌더링
+    objm.mEntm->RenderOnUpdate(objm.mSubMap);
 
     //ui들 렌더링
     uim.RenderUIs();
-    uim.mToolTip->RenderOnUpdate();
+    uim.RenderMapToolTip(objm.mSubMap);
 
     SDL_RenderPresent(System::sRenderer);
 }
 
-void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
+void CityViewState::Enter(UIManager &uim, ObjectManager &objm, ScenarioManager& scm)
 {
     SDL_Log("enter city view");
 
@@ -209,9 +225,10 @@ void CityViewState::Enter(UIManager &uim, ObjectManager &objm)
 
     //탑 바
     uim.InitTopBar();
+    uim.InitUIs();
 }
 
-void CityViewState::Exit(UIManager &uim, ObjectManager &objm)
+void CityViewState::Exit(UIManager &uim, ObjectManager &objm, ScenarioManager& scm)
 {
     SDL_Log("exit city view");
     uim.DestroyUIs(); //ui파괴
@@ -246,3 +263,4 @@ void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &o
 
     SDL_RenderPresent(System::sRenderer);
 }
+

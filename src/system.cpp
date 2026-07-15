@@ -95,7 +95,7 @@ bool System::LoadObjects(ObjectManager& objm) //메인 루프 전에 한번만 �
     objm.mMap = new Map(System::sWindowWidth/2 - 6 * 50 , 100, 6 ,6, 100); //월드 맵 객체 생성
     objm.mMap->GenerateMapTiles();
 
-    objm.mSubMap = new Map(System::sWindowWidth*0.5 - 6*40, 100, 32, 32, 80); //서브맵 객체 생성
+    objm.mSubMap = new Map(System::sWindowWidth*0.5 - 6*40, 100, 16, 16, 80); //서브맵 객체 생성
     objm.mSubMap->GenerateMapTiles();
 
     objm.mCity = new City(5, 5); //도시 객체 생성

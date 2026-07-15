@@ -4,6 +4,7 @@
         "error_entity" : {
             "name" : "error_entity",
             "race" : "error_race",
+            "img_path" : "images/error.png",
 
             "hp" : 1,
             "ap" : 1,            
@@ -14,15 +15,41 @@
 
         "null_entity" : {
             "name" : "null_entity",
-            "race" : "null_race"            
+            "race" : "null_race",
+            "img_path" : "images/null.png"            
         },
 
-        "slave" : {
-            "name" : "slave",
+        "rat" : {
+            "name" : "들쥐",
+            "race" : "beast",
+            "img_path" : "images/entity/npc/rat.png",
+
+            "hp" : 20,
+            "ap" : 10,
+            "spd" : 200,
+            "atk" : 10,
+            "armor" : 5
+        },
+
+        "rf_slave" : {
+            "name" : "노예",
             "race" : "roboflesh",
-            
+            "img_path" : "images/entity/npc/rf_slave.png",
+
             "hp" : 100,
             "ap" : 100,            
+            "spd" : 100,
+            "atk" : 10,
+            "armor" : 5
+        },
+
+        "raider_brute" : {
+            "name" : "레이더 브루트",
+            "race" : "human",
+            "img_path" : "images/entity/npc/raider_brute.png",
+
+            "hp" : 100,
+            "ap" : 100,
             "spd" : 100,
             "atk" : 10,
             "armor" : 5

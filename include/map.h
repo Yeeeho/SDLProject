@@ -20,19 +20,18 @@ class Map {
     void Destroy();
 
     //이벤트 핸들링
-    void HandleMapEvent(SDL_Event& e);
-    void HandleMapCamEvent(SDL_Event& e);
+    void HandleEvent(SDL_Event& e, float mouseX, float mouseY);
+
+    //업데이트 관련
+    bool mIsMapUpdate {true};
 
     //렌더링 관련
     void RenderOnUpdate();
 
-    bool mIsMapUpdate {true};
-    bool mIsMapMoving {false};
     //맵 카메라
     Camera* mCam {nullptr};
 
-    int mVelocity = 10; //맵의 속도
-
+    //일반적인 정보
     int mX {0}, mY {0}; //맵 위치
     int mInitX {0}, mInitY {0}; //맵 시작 위치
 

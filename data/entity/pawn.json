@@ -4,21 +4,24 @@
     "items" : {
         "error_pawn" : {
             "name" : "error_pawn_name",
+            "img_path" : "images/error.png",
             "flags" : [
             ]
         },
 
         "null_pawn" : {
             "name" : "null_pawn_name",
+            "img_path" : "images/null.png",
             "flags" : [
             ]
         },
 
-        "aki" : {
-            "name" : "aki",
+        "nameless_girl" : {
+            "name" : "이름 없는 소녀",
+            "img_path" : "images/entity/pawn/unique/nameless_girl.png",
             "desc_kr" : "",
             "flags": [
-                "healthy"
+
             ]
         }
     }

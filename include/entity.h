@@ -60,7 +60,7 @@ class TeamManager {
     TeamManager();
 
     //렌더링 관련 함수
-    void RenderOnUpdate();
+    void RenderOnUpdate(Map* map);
 
     //테이블에 실제 데이터를 할당하고 해제하는 함수
     void AllocTeamOnTable(std::string name, std::string path, int id);
@@ -104,11 +104,22 @@ class EntityManager {
     EntityManager(ObjectManager& objm);
     
     //엔티티 할당 함수
-    void AllocEntityOnTable(ObjectManager& objm, std::string name, int id);
+    void AllocEntityOnTable(ObjectManager& objm, std::string name, int xMapPos, int yMapPos, int id);
     void AllocPawnOnTable(ObjectManager& objm, std::string name, PawnType pType, int id);
     //엔티티 할당 해제 함수
     void DeallocEntityOnTable(ObjectManager& objm, int id);
     void DeallocPawnOnTable(ObjectManager& objm, int id);
+
+    //서브맵
+    void LoadDataInTile(MapTile* tile, Entity* ent); //타일에 데이터 로드
+    void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent);
+    void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent, int tileId);
+
+    //렌더링
+    void RenderOnUpdate(Map* map);
+
+    bool mIsRenderUpdate {true};
+    SDL_Texture* mTempTex {nullptr};
 
     Entity* mEntTable[static_cast<int>(EntitySetting::MaxEnt)];
     Pawn* mPawnTable[static_cast<int>(EntitySetting::MaxPawn)];
@@ -119,35 +130,40 @@ class Entity {
     Entity() = default;
     Entity(std::string name, int id);
 
-    std::string mName;
-    std::string mRace;
+    std::string mName {""};
+    std::string mRace {""};
 
     int mId; //식별용 아이디
     
     Texture* mTexture {nullptr}; //엔티티 텍스처
 
+    //서브맵
+    bool mIsOnMap {false};
+
+    int mTileId {-1};
+    int mSubMapX {-1};
+    int mSubMapY {-1};
+
     //전투용 스탯
-    int mMaxHp; //max~ 는 최대치. 종족값
-    int mCurHp; //cur~ 는 현재 상태.
+    int mMaxHp {0}; //max~ 는 최대치. 종족값
+    int mCurHp {0}; //cur~ 는 현재 상태.
 
-    int mMaxAp;
-    int mCurAp;
+    int mMaxAp {0};
+    int mCurAp {0};
 
-    int mMaxSpd;
-    int mCurSpd;
+    int mMaxSpd {0};
+    int mCurSpd {0};
 
-    int mMaxAtk;
-    int mCurAtk;
+    int mMaxAtk {0};
+    int mCurAtk {0};
 
-    int mMaxArmor;
-    int mCurArmor;
+    int mMaxArmor {0};
+    int mCurArmor {0};
     
     std::unordered_map<EqType, Equipment*> mEqs; //실제로 장비한 장비들 컨테이너
 
-
     //여행용 스탯
     int mSupplyDemand = 0; //턴당 요구 보급품량
-    //텍스처
 };
 
 enum class PawnType {

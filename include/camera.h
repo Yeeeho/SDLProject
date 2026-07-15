@@ -6,7 +6,9 @@ class Camera {
     public:
     Camera(unsigned int velocity, int xlimit, int ylimit);
 
-    SDL_FRect mSight;
+    SDL_FRect mSight; //시야 박스
+
+    void HandleEvent(SDL_Event& e);
 
     unsigned int mVelocity {0};
 
