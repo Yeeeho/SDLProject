@@ -53,6 +53,14 @@ Texture::Texture() :
     mHeight{0}
 {}
 
+Texture::Texture(std::string path) :
+    mTexture{nullptr},
+    mWidth{0},
+    mHeight{0}
+{
+    this->LoadFromFile(path);
+}
+
 Texture::~Texture()
 {
     Destroy();

@@ -33,7 +33,7 @@ void UI::Destroy()
     delete this;
 }
 
-void UI::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, float mouseY)
+void UI::HandleEvent(SDL_Event &e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY)
 {
 
 }
@@ -114,7 +114,7 @@ Button::Button(Square *uiFrame, std::string uiText, BtnType type)
     mTempTex = tm.CreateTempTexture();
 }
 
-void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, float mouseY)
+void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY)
 {
     //버튼 안에 있는지 확인
     if (e.button.x < mUIFrame->GetX()) return;
@@ -152,7 +152,7 @@ void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, floa
     else if (mType == BtnType::NewGame) {
         SDL_Log("new game start");
         gsm.mNextState = gsm.mSms;
-        gsm.mScm->SetCurrentScenario(new NGScenario());
+        gsm.mScm->SetCurrentScenario(new NGScenario(), objm);
         gsm.mIsStateChange = true;
     }
     else {
@@ -162,7 +162,11 @@ void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, float mouseX, floa
 
 UIManager::UIManager()
 {
+    int panelX = System::sWindowWidth * 0.5 - 400;
+    int panelY = System::sWindowHeight - 300;
+
     mToolTip = new ToolTip();
+    mDialogueUI = new DialogueUI((float) panelX,(float) panelY);
 }
 
 void UIManager::InitTopBar()
@@ -185,27 +189,15 @@ void UIManager::InitTopBar()
 
 void UIManager::InitUIs()
 {
-    int panelX = System::sWindowWidth * 0.5 - 400;
-    int panelY = System::sWindowHeight - 300;
-
-    //대화창을 초기화한다.
-    mPanels["dialoguePanel"] = new Square(panelX, panelY, 800, 200);
-    uiMap["speakerBg"] = new IconUI(panelX + 20, panelY + 20, 160, 160, "images/black.png");
-    uiMap["speakerImg"] = new IconUI(panelX + 20, panelY + 20, 160, 160, "images/blank.png");
-    ftuiMap["dialogueFTUI"] = new FramedTUI(panelX + 200, panelY + 20,  500, 160);
-
-    SDL_Color black = {0x00, 0x00, 0x00, 0xFF};
-    SDL_Color darkgreen = {0x00, 0x30, 0x00, 0xFF};
-    ftuiMap["dialogueFTUI"]->SetFrameColor(black, darkgreen);
 }
 
-void UIManager::HandleUIEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
+void UIManager::HandleUIEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager& objm, float mouseX, float mouseY)
 {
     for (auto ui : uiMap) {
-        ui.second->HandleEvent(e, gsm, mouseX, mouseY);
+        ui.second->HandleEvent(e, gsm, objm, mouseX, mouseY);
     }
     for (auto ftui : ftuiMap) {
-        ftui.second->HandleEvent(e, gsm, mouseX, mouseY);
+        ftui.second->HandleEvent(e, gsm, objm, mouseX, mouseY);
     }
 }
 
@@ -220,13 +212,14 @@ void UIManager::RenderUIs()
     for (auto panel : mPanels) {
         panel.second->Render(lineColor, fillColor);
     }
+    
+    for (auto ftui : ftuiMap) {
+        ftui.second->RenderOnUpdate();
+    }
+
     //기본 ui 렌더링
     for (auto ui : uiMap) {
         ui.second->RenderOnUpdate();
-    }
-
-    for (auto ftui : ftuiMap) {
-        ftui.second->RenderOnUpdate();
     }
 
 }
@@ -503,6 +496,13 @@ TextUI::TextUI(float x, float y)
     mTempTex = tm.CreateTempTexture();
 }
 
+void TextUI::ClearTexts()
+{
+    mTexts.clear();
+    mTotalWidth = 0;
+    mTotalHeight = 0;
+}
+
 void TextUI::ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font)
 {
     std::string message = "";
@@ -706,7 +706,7 @@ void FramedTUI::Render()
 }
 
 //공사중
-void FramedTUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
+void FramedTUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager& objm, float mouseX, float mouseY)
 {
 }
 
@@ -726,7 +726,7 @@ void IconUI::RenderOnUpdate()
     mMyTexture->Render(mX, mY, nullptr, mW, mH);
 }
 
-void IconUI::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float mouseY)
+void IconUI::HandleEvent(SDL_Event &e, GameStateManager &gs, ObjectManager& objm, float mouseX, float mouseY)
 {
     //버튼 안에 있는지 확인
     if (e.button.x < mX) return;
@@ -738,4 +738,103 @@ void IconUI::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float
 
     //클릭했는지 확인
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+}
+
+DialogueUI::DialogueUI(float x, float y)
+{
+    mX = x; mY = y;
+
+    TextureManager tm;
+    mTempTex = tm.CreateTempTexture();
+
+    SDL_Color black = {0x00, 0x00, 0x00, 0xFF};
+
+    //대화창을 초기화한다.
+    mPanel = new Square(mX, mY, 800, 200);
+    mSpeakerBg = new Texture("images/black.png");
+    mSpeakerImg = new Texture("images/blank.png");
+    mSpkrBlackImg = new Texture("images/black.png");
+    mSpeakerFrame = new Texture("images/ui/dialogue_pic_frame.png");
+   
+    mDialogueBody = new FramedTUI(mX + 200, mY + 20,  500, 160);
+    mDialogueBody->SetFrameColor(black, black);
+    mDialogueBody->mIsRender = true;
+
+    mDialogueBodyFrame = new Texture("images/ui/dialogue_frame.png");
+}
+
+void DialogueUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
+{
+    Physics ps;
+    bool mouseIn = ps.IsPointInSquare(mouseX, mouseY,
+         mPanel->GetX(), mPanel->GetY(), (float) mPanel->GetW(), (float) mPanel->GetH()
+    );
+    
+    if (!mouseIn) return;
+    //마우스 오버
+
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+    //클릭 동작
+
+    SDL_Log("clicked dialogue panel");
+    gsm.mScm->mCurrentSc->mIsDialogueUpdate = true;
+}
+
+void DialogueUI::Update(ScenarioManager &scm)
+{
+    if (!mIsUpdate) return;
+
+    mIsUpdate = false;
+}
+
+void DialogueUI::RenderOnUpdate()
+{
+    if (!mIsRender) return;
+    
+    if (!mIsRenderUpdate) {
+        SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, nullptr);
+        return;
+    }
+
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTempTex);
+
+    SDL_Color black = {0x00, 0x00, 0x00, 0xFF};
+    SDL_Color darkgrey = {0x10, 0x10, 0x10, 0xFF};
+
+    //실제 로직
+    mPanel->Render(darkgrey, darkgrey);
+    mSpeakerBg->Render(mX + 20, mY + 20, nullptr, 160.f, 160.f);
+    mSpeakerImg->Render(mX + 20, mY + 20, nullptr, 160.f, 160.f);
+    mSpeakerFrame->Render(mX + 20, mY + 20, nullptr, 160.f, 160.f);
+
+    mDialogueBody->Render();
+    mDialogueBodyFrame->Render(mX + 200, mY + 20, nullptr, 500.f, 160.f);
+
+    SDL_SetRenderTarget(System::sRenderer, nullptr);
+    mIsRenderUpdate = false;
+}
+
+void DialogueUI::SetUI(Texture* pic, TTFWord name, std::string text)
+{
+    mSpeakerImg = pic; 
+
+    TextUI* tui = mDialogueBody->mTui;
+    //이름 설정
+    tui->mTexts.push_back(name);
+    tui->mTexts.push_back(TTFWord(":", name.mColor, System::sFont));
+    tui->mTexts.push_back(TTFWord(System::sFont, TextType::Space));
+    //본문
+    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+    tui->ProcessAndAddText(text, tc, System::sFont);
+}
+
+void DialogueUI::SetUI(std::string text)
+{
+    TextUI* tui = mDialogueBody->mTui;
+
+    mSpeakerImg = mSpkrBlackImg;
+
+    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+    tui->ProcessAndAddText(text, tc, System::sFont);
 }

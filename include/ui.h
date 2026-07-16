@@ -11,47 +11,9 @@ class ObjectManager;
 class TTFWord;
 class Map;
 class UI;
-class ToolTip;
-class FramedTUI;
 class Square;
 class Texture;
 class GameStateManager;
-
-class UIManager {
-    public:
-    UIManager();
-
-    //ui 컨테이너
-    std::unordered_map<std::string, UI*> uiMap;
-    std::unordered_map<std::string, FramedTUI*> ftuiMap;
-    std::unordered_map<std::string, Square*> mPanels;
-    
-    void InitTopBar(); //탑 바를 초기화하는 녀석
-    void InitUIs(); //게임 상태마다 초기화 할 ui들을 초기화
-
-    //파괴자
-    void DestroyUIs();
-
-    //이벤트 핸들링
-    void HandleUIEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mousey);
-    
-    //렌더링
-    void RenderUIs();
-    void RenderMapToolTip(Map* map);
-
-    // 맵 툴팁 관련
-    void LoadMapToolTip(Map* map, int tileId);
-    void UpdateMapToolTip(Map* map);
-    void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, Map* map, float mouseX, float mouseY);
-
-    bool mWasMouseOnMap {false};
-
-    //툴팁
-    ToolTip* mToolTip{nullptr};
-
-    //레이아웃 관련 변수
-    int mTopPanelH{60};
-};
 
 class UI {
     public:
@@ -59,7 +21,7 @@ class UI {
     UI(Square* frame, std::string text);
     void Destroy();
 
-    virtual void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
+    virtual void HandleEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY);
 
     bool mIsRender{true}; //렌더링 자체를 제어하는 플래그
     bool mIsUIUpdate{true}; //ui 업데이트 플래그 변수, 생성될 때 참이면 한번 업데이트 하고 거짓으로 바뀐다.
@@ -84,6 +46,8 @@ class UI {
 class TextUI : public UI {
     public:
     TextUI(float x, float y);
+
+    void ClearTexts();
 
     void ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font);
 
@@ -112,7 +76,7 @@ class FramedTUI : public UI {
     void RenderOnUpdate() override;
     void Render();
     //이벤트 핸들링
-    void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY) override;
+    void HandleEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY) override;
 
     TextUI* mTui {nullptr};
 
@@ -132,7 +96,7 @@ class Button : public UI {
     public:
     Button(Square* frame, std::string text, BtnType BtnType);
 
-    void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY) override;
+    void HandleEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY) override;
 
     BtnType mType;
 };
@@ -169,8 +133,82 @@ class IconUI : public UI {
     IconUI(int x, int y, int width, int height, std::string path);
 
     void RenderOnUpdate() override;
-    void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY) override;
+    void HandleEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY) override;
 
     private:
     int mX, mY, mW, mH;
+};
+
+class ScenarioManager;
+
+class DialogueUI {
+    public:
+    DialogueUI(float x, float y);
+
+    SDL_Texture* mTempTex {nullptr};
+    
+    //이벤트 핸들링    
+    void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
+    //업데이트 관련
+    void Update(ScenarioManager& scm);
+    bool mIsUpdate {false};
+    //렌더링
+    void RenderOnUpdate();
+    bool mIsRender {false};
+    bool mIsRenderUpdate {true};
+    //대화창 설정
+    void SetUI(Texture* pic, TTFWord name, std::string text);
+    void SetUI(std::string text);
+
+    float mX {-1}, mY {-1};
+
+    //ui컴포넌트
+    Square* mPanel {nullptr};
+
+    Texture* mSpeakerBg {nullptr};
+    Texture* mSpeakerImg {nullptr};
+    Texture* mSpkrBlackImg {nullptr}; //디폴트용 화자 텍스처
+    Texture* mSpeakerFrame {nullptr};
+
+    FramedTUI* mDialogueBody {nullptr};
+    Texture* mDialogueBodyFrame {nullptr};
+};
+
+class UIManager {
+    public:
+    UIManager();
+
+    //ui 컨테이너
+    std::map<std::string, UI*> uiMap;
+    std::unordered_map<std::string, FramedTUI*> ftuiMap;
+    std::unordered_map<std::string, Square*> mPanels;
+    
+    void InitTopBar(); //탑 바를 초기화하는 녀석
+    void InitUIs(); //게임 상태마다 초기화 할 ui들을 초기화
+    
+    //파괴자
+    void DestroyUIs();
+    
+    //이벤트 핸들링
+    void HandleUIEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mousey);
+    
+    //렌더링
+    void RenderUIs();
+    void RenderMapToolTip(Map* map);
+    
+    // 맵 툴팁 관련
+    ToolTip* mToolTip{nullptr};
+    
+    void LoadMapToolTip(Map* map, int tileId);
+    void UpdateMapToolTip(Map* map);
+    void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, Map* map, float mouseX, float mouseY);
+    
+    //대화창
+    DialogueUI* mDialogueUI {nullptr};
+
+
+    bool mWasMouseOnMap {false};
+    
+    //레이아웃 관련 변수
+    int mTopPanelH{60};
 };

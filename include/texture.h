@@ -18,6 +18,7 @@ class Texture {
     static constexpr float kOriginalSize = -1.f;
 
     Texture();
+    Texture(std::string path);
     ~Texture();
 
     void Destroy();

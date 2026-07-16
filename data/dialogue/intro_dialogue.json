@@ -1,0 +1,73 @@
+{
+    "type": "intro_dialogue",
+    "desc" : "타입은 꼭 포함해야 한다.",
+    "items": {
+        "init" : [
+            {
+                "type" : "narration",
+                "text" : "당신은 눈을 뜹니다."
+            },
+            {
+                "type" : "static_line",
+                "ent_type" : "npc",
+                "speaker" : "rat",
+                "text" : "ddddd"
+            },
+            {
+                "type" : "static_line",
+                "ent_type" : "pawn",
+                "speaker" : "nameless_girl",
+                "text" : "근처에 쥐가 숨어있었나 보네요. 제가 처리하겠습니다."
+            },
+            {
+                "type" : "choice",
+                "choices" : [
+                    {
+                        "text" : "음.. 나는 빡빡이다.",
+                        "next" : "branch1"
+                    },
+                    {
+                        "text" : "음.. 나는 바보다.",
+                        "next" : "branch2"
+                    }
+                ]
+            }
+        ],
+
+        "branch1" : [
+            {
+                "type" : "player_line",
+                "text" : "나는 빡빡이다."
+            },
+            {
+                "type" : "static_line",
+                "ent_type" : "pawn",
+                "speaker" : "nameless_girl",
+                "text" : "나도 빡빡이다."
+            },
+            {
+                "type" : "narration",
+                "text" : "흠쓰."
+            },
+            {
+                "type" : "end"
+            }
+        ],
+
+        "branch2" : [
+            {
+                "type" : "player_line",
+                "text" : "나는 바보다."
+            },
+            {
+                "type" : "static_line",
+                "ent_type" : "pawn",
+                "speaker" : "nameless_girl",
+                "text" : "인정합니다."
+            },
+            {
+                "type" : "end"
+            }            
+        ]
+    }
+}

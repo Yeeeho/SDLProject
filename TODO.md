@@ -58,7 +58,10 @@ Done:
     - 툴팁 동적 렌더링: done
     - 툴팁 깜박임 해결: done
     - 로그 ui 구현: in progress
-    - 대화 ui 구현: in progress
+
+- 대화 ui
+    - 비주얼 구현: done
+    - 기본 작동: in progress
 
 - 엔티티:
     - 엔티티 특성 클래스 : in progress

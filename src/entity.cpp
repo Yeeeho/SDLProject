@@ -266,6 +266,7 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     pawn->mType = pType;
 
     pawn->mName = pawnData["name"].get<std::string>();
+    pawn->mOriginalName = pawn->mName;
     //하드코딩
     pawn->mRace = "human";
 

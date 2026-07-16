@@ -145,7 +145,7 @@ class Entity {
     int mSubMapY {-1};
 
     //전투용 스탯
-    int mMaxHp {0}; //max~ 는 최대치. 종족값
+    int mMaxHp {0}; //max~ 는 최대치.
     int mCurHp {0}; //cur~ 는 현재 상태.
 
     int mMaxAp {0};
@@ -173,6 +173,9 @@ enum class PawnType {
 class Pawn : public Entity {
     public:
     Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id);
+
+    //엔티티의 원래 이름
+    std::string mOriginalName {""};
 
     PawnType mType;
 };

@@ -69,13 +69,12 @@ void IntroState::Exit(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
 
 void IntroState::Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
-
 }
 
 void IntroState::HandleEvent(SDL_Event& e,UIManager& uim, ObjectManager& objm, GameStateManager& gsm, float mouseX, float mouseY)
 {
     for (auto ui : uim.uiMap) {
-        ui.second->HandleEvent(e, gsm, mouseX, mouseY);
+        ui.second->HandleEvent(e, gsm, objm, mouseX, mouseY);
     }
 }
 
@@ -93,6 +92,8 @@ void IntroState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm
 void OverMapState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
 {
     SDL_Log("enter overmap");
+
+    //시나리오 로딩
 
     //렌더링 플래그 일시 true
     //맵 렌더링 플래그
@@ -113,7 +114,6 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& s
 
     //탑 바
     uim.InitTopBar();
-    uim.InitUIs();
 }
 
 void OverMapState::Exit(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
@@ -124,6 +124,8 @@ void OverMapState::Exit(UIManager& uim, ObjectManager& objm, ScenarioManager& sc
 
 void OverMapState::Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
+    gsm.mScm->Update(uim, objm);
+
     objm.mMap->mCam->Move();
     uim.UpdateMapToolTip(objm.mMap);
 }
@@ -132,7 +134,7 @@ void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm
 {
     objm.mMap->mCam->HandleEvent(e);
 
-    uim.HandleUIEvent(e, gsm, mouseX, mouseY);
+    uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
 
     uim.HandleMapToolTipEvent(e, gsm, objm.mMap, mouseX, mouseY);
 }
@@ -164,10 +166,7 @@ void SubMapState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& sc
     SDL_Log("enter submap");
     objm.mSubMap->mIsMapUpdate = true;
 
-    scm.LoadThings(objm);
-
     uim.InitTopBar();
-    uim.InitUIs();
 }
 
 void SubMapState::Exit(UIManager &uim, ObjectManager &objm, ScenarioManager& scm)
@@ -180,16 +179,20 @@ void SubMapState::Exit(UIManager &uim, ObjectManager &objm, ScenarioManager& scm
 
 void SubMapState::Update(UIManager &uim, ObjectManager &objm, GameStateManager &gsm)
 {
+    gsm.mScm->Update(uim, objm);
+
     objm.mSubMap->mCam->Move();
     uim.UpdateMapToolTip(objm.mSubMap);
 }
 
 void SubMapState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, GameStateManager &gsm, float mouseX, float mouseY)
 {
+    uim.mDialogueUI->HandleEvent(e, gsm, mouseX, mouseY);
+
     objm.mSubMap->mCam->HandleEvent(e);
     objm.mSubMap->HandleEvent(e, mouseX, mouseY);
 
-    uim.HandleUIEvent(e, gsm, mouseX, mouseY);
+    uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
     uim.HandleMapToolTipEvent(e, gsm, objm.mSubMap, mouseX, mouseY);
 }
 
@@ -206,8 +209,13 @@ void SubMapState::Render(RenderManager &rend, UIManager &uim, ObjectManager &obj
     objm.mEntm->RenderOnUpdate(objm.mSubMap);
 
     //ui들 렌더링
-    uim.RenderUIs();
+    SDL_SetRenderLogicalPresentation(System::sRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+    
     uim.RenderMapToolTip(objm.mSubMap);
+    uim.RenderUIs();
+    uim.mDialogueUI->mIsRender = true;
+    
+    uim.mDialogueUI->RenderOnUpdate();
 
     SDL_RenderPresent(System::sRenderer);
 }
@@ -215,6 +223,8 @@ void SubMapState::Render(RenderManager &rend, UIManager &uim, ObjectManager &obj
 void CityViewState::Enter(UIManager &uim, ObjectManager &objm, ScenarioManager& scm)
 {
     SDL_Log("enter city view");
+
+    //시나리오 로딩
 
     //도시 렌더링 플래그
     objm.mCity->mCityMap->mIsMapUpdate = true;
@@ -236,12 +246,14 @@ void CityViewState::Exit(UIManager &uim, ObjectManager &objm, ScenarioManager& s
 
 void CityViewState::Update(UIManager &uim, ObjectManager &objm, GameStateManager &gsm)
 {
+    gsm.mScm->Update(uim, objm);
+
     uim.UpdateMapToolTip(objm.mCity->mCityMap);
 }
 
 void CityViewState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, GameStateManager &gsm, float mouseX, float mouseY)
 {
-    uim.HandleUIEvent(e, gsm, mouseX, mouseY);
+    uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
 
     uim.HandleMapToolTipEvent(e, gsm, objm.mCity->mCityMap, mouseX, mouseY);
 }
