@@ -457,6 +457,7 @@ void ToolTip::RenderOnUpdate()
         return;
     }
     //업데이트 플래그가 참이면
+    SDL_Log("tooltip render update");
 
     //렌더러 타겟팅
     RenderManager rm;
@@ -643,6 +644,7 @@ void FramedTUI::RenderOnUpdate()
         SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, nullptr);
         return;
     }
+    SDL_Log("ftui render update");
 
     RenderManager rm;
     rm.SetRenderTarget(System::sRenderer, mTempTex);
@@ -658,9 +660,6 @@ void FramedTUI::RenderOnUpdate()
 //공사중
 void FramedTUI::Render()
 {
-    SDL_Log("rendering uiframe");
-    mUIFrame->RenderColored();
-    SDL_Log("rendered uiframe");
     //프레임에 맞춰서 줄바꿈
 
     int mTotalW = 0;
@@ -746,6 +745,7 @@ DialogueUI::DialogueUI(float x, float y)
 
     TextureManager tm;
     mTempTex = tm.CreateTempTexture();
+    mBasicTex = tm.CreateTempTexture();
 
     SDL_Color black = {0x00, 0x00, 0x00, 0xFF};
 
@@ -753,14 +753,17 @@ DialogueUI::DialogueUI(float x, float y)
     mPanel = new Square(mX, mY, 800, 200);
     mSpeakerBg = new Texture("images/black.png");
     mSpeakerImg = new Texture("images/blank.png");
-    mSpkrBlackImg = new Texture("images/black.png");
+    mSpkrBlankImg = new Texture("images/blank.png");
     mSpeakerFrame = new Texture("images/ui/dialogue_pic_frame.png");
    
+    mDialogueBodyBg = new Texture("images/black.png");
     mDialogueBody = new FramedTUI(mX + 200, mY + 20,  500, 160);
     mDialogueBody->SetFrameColor(black, black);
     mDialogueBody->mIsRender = true;
 
     mDialogueBodyFrame = new Texture("images/ui/dialogue_frame.png");
+
+    StoreBasicTex();
 }
 
 void DialogueUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
@@ -778,6 +781,7 @@ void DialogueUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, 
 
     SDL_Log("clicked dialogue panel");
     gsm.mScm->mCurrentSc->mIsDialogueUpdate = true;
+    gsm.mScm->mCurrentSc->mIsUpdate = true;
 }
 
 void DialogueUI::Update(ScenarioManager &scm)
@@ -787,29 +791,42 @@ void DialogueUI::Update(ScenarioManager &scm)
     mIsUpdate = false;
 }
 
+void DialogueUI::StoreBasicTex()
+{
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mBasicTex);
+
+    SDL_Color black = {0x00, 0x00, 0x00, 0xFF};
+    SDL_Color darkgrey = {0x10, 0x10, 0x10, 0xFF};
+    
+    mPanel->Render(darkgrey, darkgrey);
+    mSpeakerBg->Render(mX + 20, mY + 20, nullptr, 160.f, 160.f);
+    mSpeakerFrame->Render(mX + 20, mY + 20, nullptr, 160.f, 160.f);
+
+    mDialogueBodyBg->Render(mX + 200, mY + 20, nullptr, 500.f, 160.f);
+    mDialogueBodyFrame->Render(mX + 200, mY + 20, nullptr, 500.f, 160.f);
+
+    SDL_SetRenderTarget(System::sRenderer, nullptr);
+}
+
 void DialogueUI::RenderOnUpdate()
 {
     if (!mIsRender) return;
+    //업데이트 상태에 관계없이 기본 텍스처를 렌더링한다.
+    SDL_RenderTexture(System::sRenderer, mBasicTex, nullptr, nullptr);
     
     if (!mIsRenderUpdate) {
         SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, nullptr);
         return;
     }
+    SDL_Log("dialogue ui render update");
 
     RenderManager rm;
     rm.SetRenderTarget(System::sRenderer, mTempTex);
-
-    SDL_Color black = {0x00, 0x00, 0x00, 0xFF};
-    SDL_Color darkgrey = {0x10, 0x10, 0x10, 0xFF};
-
     //실제 로직
-    mPanel->Render(darkgrey, darkgrey);
-    mSpeakerBg->Render(mX + 20, mY + 20, nullptr, 160.f, 160.f);
     mSpeakerImg->Render(mX + 20, mY + 20, nullptr, 160.f, 160.f);
-    mSpeakerFrame->Render(mX + 20, mY + 20, nullptr, 160.f, 160.f);
 
     mDialogueBody->Render();
-    mDialogueBodyFrame->Render(mX + 200, mY + 20, nullptr, 500.f, 160.f);
 
     SDL_SetRenderTarget(System::sRenderer, nullptr);
     mIsRenderUpdate = false;
@@ -829,12 +846,19 @@ void DialogueUI::SetUI(Texture* pic, TTFWord name, std::string text)
     tui->ProcessAndAddText(text, tc, System::sFont);
 }
 
+void DialogueUI::SetUI(Texture *pic)
+{
+    if (mSpeakerImg == nullptr) return;
+    mSpeakerImg->Destroy();
+    mSpeakerImg = pic;
+}
+
 void DialogueUI::SetUI(std::string text)
 {
     TextUI* tui = mDialogueBody->mTui;
 
-    mSpeakerImg = mSpkrBlackImg;
-
+    SetUI(mSpkrBlankImg);
+    
     SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
     tui->ProcessAndAddText(text, tc, System::sFont);
 }

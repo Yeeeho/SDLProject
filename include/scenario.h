@@ -22,12 +22,14 @@ class Scenario {
 
     //업데이트 로직
     virtual void Update(UIManager& uim, ObjectManager& objm);
-    //공용 대화 업데이트 메서드
-    void UpdateDialogue(UIManager& uim, ObjectManager& objm);
+    bool mIsUpdate {true};
 
+    //공용 대화 업데이트 메서드
+    void UpdateDialogue(UIManager& uim, ObjectManager& objm, json d);
     bool mIsDialogueUpdate {true};
+    bool mIsDialogueEnd {true}; //하나의 대화 객체가 끝났을때, 기본값 건들지 말것
+
     int mDialogueProgress {0};
-    bool mDialogueEnd {false};
 };
 
 class DefScenario : public Scenario {
@@ -39,6 +41,7 @@ class DefScenario : public Scenario {
     void LoadDialogue(ObjectManager& objm) override;
 
     void Update(UIManager& uim, ObjectManager& objm) override;
+
 };
 
 class NGScenario : public Scenario {
@@ -50,6 +53,9 @@ class NGScenario : public Scenario {
     void LoadDialogue(ObjectManager& objm) override;
 
     void Update(UIManager& uim, ObjectManager& objm) override;
+    
+    private:
+    json GetNextDialogue(ObjectManager& objm);
 };
 
 class ScenarioManager {

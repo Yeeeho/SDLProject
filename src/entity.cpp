@@ -85,7 +85,7 @@ void TeamManager::RenderOnUpdate(Map* map)
         return;
     }
 
-    SDL_Log("updating teams on update flag");
+    SDL_Log("teammanager render update");
 
     RenderManager rm;
     rm.SetRenderTarget(System::sRenderer, mTempTex);
@@ -329,7 +329,7 @@ void EntityManager::RenderOnUpdate(Map* map)
         return;
     }
 
-    SDL_Log("render update");
+    SDL_Log("entity manager render update");
     RenderManager rm;
     rm.SetRenderTarget(System::sRenderer, mTempTex);
 

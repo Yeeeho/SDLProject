@@ -145,6 +145,7 @@ class DialogueUI {
     public:
     DialogueUI(float x, float y);
 
+    SDL_Texture* mBasicTex {nullptr};
     SDL_Texture* mTempTex {nullptr};
     
     //이벤트 핸들링    
@@ -153,11 +154,14 @@ class DialogueUI {
     void Update(ScenarioManager& scm);
     bool mIsUpdate {false};
     //렌더링
+    void StoreBasicTex(); //기본 텍스처 저장
     void RenderOnUpdate();
-    bool mIsRender {false};
+    bool mIsRender {false}; //렌더링 자체 플래그
     bool mIsRenderUpdate {true};
+
     //대화창 설정
     void SetUI(Texture* pic, TTFWord name, std::string text);
+    void SetUI(Texture* pic);
     void SetUI(std::string text);
 
     float mX {-1}, mY {-1};
@@ -167,9 +171,10 @@ class DialogueUI {
 
     Texture* mSpeakerBg {nullptr};
     Texture* mSpeakerImg {nullptr};
-    Texture* mSpkrBlackImg {nullptr}; //디폴트용 화자 텍스처
+    Texture* mSpkrBlankImg {nullptr}; //디폴트용 화자 텍스처
     Texture* mSpeakerFrame {nullptr};
 
+    Texture* mDialogueBodyBg {nullptr};
     FramedTUI* mDialogueBody {nullptr};
     Texture* mDialogueBodyFrame {nullptr};
 };

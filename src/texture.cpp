@@ -125,6 +125,8 @@ bool Texture::LoadFromFile(std::string path)
         else {
             mWidth = loadedSurface->w;
             mHeight = loadedSurface->h;
+
+            SDL_SetTextureBlendMode(mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
         }
 
         SDL_DestroySurface(loadedSurface);

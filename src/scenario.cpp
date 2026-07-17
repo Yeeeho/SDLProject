@@ -29,50 +29,13 @@ void Scenario::Update(UIManager& uim, ObjectManager &objm)
 {
 }
 
-void Scenario::UpdateDialogue(UIManager &uim, ObjectManager &objm)
-{
-
-}
-
-void NGScenario::LoadSubMap(ObjectManager& objm)
-{
-    SDL_Log("load entities for new game scenario at submap");
-    objm.mEntm->AllocEntityOnTable(objm, "rat", 1, 1, 0);
-    objm.mEntm->AllocPawnOnTable(objm, "nameless_girl", PawnType::Unique, 0);
-    SDL_Log("entities loaded");
-
-    objm.mEntm->SpawnEntityOnMap(objm, objm.mSubMap, objm.mEntm->mEntTable[0], 51);
-    objm.mEntm->SpawnEntityOnMap(objm, objm.mSubMap, objm.mEntm->mPawnTable[0], 34);
-    SDL_Log("entities spawned at submap");
-}
-
-void NGScenario::LoadOverMap(ObjectManager& objm)
-{
-}
-
-void NGScenario::LoadCityMap(ObjectManager& objm)
-{
-}
-
-void NGScenario::LoadDialogue(ObjectManager& objm)
-{
-    objm.mJsm->LoadJsonFile(objm.mJsm->mDialogue, "data/dialogue/intro_dialogue.json");
-}
-
-void NGScenario::Update(UIManager& uim, ObjectManager &objm)
+void Scenario::UpdateDialogue(UIManager &uim, ObjectManager& objm, json d)
 {
     if (!mIsDialogueUpdate) return;
-    SDL_Log("update by new game scenario");
-    
+
     uim.mDialogueUI->mDialogueBody->mTui->ClearTexts();
 
-    json dTable = objm.mJsm->mDialogue["items"];
-    
-    //진행도에 맞는 정보를 가져온다.
-    json d = dTable["init"][mDialogueProgress]; 
-
     std::string dType = d["type"].get<std::string>();
-    SDL_Log(dType.c_str());
 
     //색깔 캐싱
     SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
@@ -86,7 +49,7 @@ void NGScenario::Update(UIManager& uim, ObjectManager &objm)
     else if (dType == "player_line") {
         TTFWord name = TTFWord("당신", white, System::sFont);
         std::string text = d["text"].get<std::string>();
-        uim.mDialogueUI->SetUI(uim.mDialogueUI->mSpkrBlackImg, name, text);
+        uim.mDialogueUI->SetUI(uim.mDialogueUI->mSpkrBlankImg, name, text);
         mDialogueProgress += 1;
     }
     else if (dType == "static_line") {
@@ -121,11 +84,11 @@ void NGScenario::Update(UIManager& uim, ObjectManager &objm)
         mDialogueProgress += 1;
     }
     else if (dType == "choice") {
-        mDialogueEnd = true;
+        mIsDialogueEnd = true;
         mDialogueProgress = 0;
     }
     else if (dType == "end") {
-        mDialogueEnd = true;
+        mIsDialogueEnd = true;
         mDialogueProgress = 0;
     }
     else {
@@ -133,10 +96,59 @@ void NGScenario::Update(UIManager& uim, ObjectManager &objm)
         uim.mDialogueUI->SetUI(text);
     }
 
+    mIsDialogueUpdate = false; //플래그 초기화
+}
+
+void NGScenario::LoadSubMap(ObjectManager& objm)
+{
+    SDL_Log("load entities for new game scenario at submap");
+    objm.mEntm->AllocEntityOnTable(objm, "rat", 1, 1, 0);
+    objm.mEntm->AllocPawnOnTable(objm, "nameless_girl", PawnType::Unique, 0);
+    SDL_Log("entities loaded");
+
+    objm.mEntm->SpawnEntityOnMap(objm, objm.mSubMap, objm.mEntm->mEntTable[0], 51);
+    objm.mEntm->SpawnEntityOnMap(objm, objm.mSubMap, objm.mEntm->mPawnTable[0], 34);
+    SDL_Log("entities spawned at submap");
+}
+
+void NGScenario::LoadOverMap(ObjectManager& objm)
+{
+}
+
+void NGScenario::LoadCityMap(ObjectManager& objm)
+{
+}
+
+void NGScenario::LoadDialogue(ObjectManager& objm)
+{
+    objm.mJsm->LoadJsonFile(objm.mJsm->mDialogue, "data/dialogue/intro_dialogue.json");
+}
+
+void NGScenario::Update(UIManager& uim, ObjectManager &objm)
+{
+    if (!mIsUpdate) return;
+    SDL_Log("update by new game scenario"); 
+
+    json d = GetNextDialogue(objm);
+
+    UpdateDialogue(uim, objm, d);
+
     uim.mDialogueUI->mIsRender = true;
     uim.mDialogueUI->mIsRenderUpdate = true;
 
-    mIsDialogueUpdate = false; //플래그 초기화
+    mIsUpdate = false;
+}
+
+json NGScenario::GetNextDialogue(ObjectManager& objm)
+{
+    if (!mIsDialogueEnd) return;
+    
+    //초기에 가져오는거임
+    json dTable = objm.mJsm->mDialogue["items"];
+    //진행도에 맞는 정보를 가져온다.
+    json d = dTable["init"][mDialogueProgress];
+
+    mIsDialogueEnd = false;
 }
 
 void DefScenario::LoadSubMap(ObjectManager& objm)
