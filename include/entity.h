@@ -125,6 +125,10 @@ class EntityManager {
     Pawn* mPawnTable[static_cast<int>(EntitySetting::MaxPawn)];
 };
 
+enum class Demeanor {
+    Neutral, Hostile, Friendly
+};
+
 class Entity {
     public:
     Entity() = default;
@@ -132,13 +136,16 @@ class Entity {
 
     std::string mName {""};
     std::string mRace {""};
+    Demeanor mDemeanor {Demeanor::Neutral};
 
     int mId; //식별용 아이디
-    
+    bool mIsPawn {false};
+
     Texture* mTexture {nullptr}; //엔티티 텍스처
 
     //서브맵
     bool mIsOnMap {false};
+    bool mIsTakingTurn {false};
 
     int mTileId {-1};
     int mSubMapX {-1};

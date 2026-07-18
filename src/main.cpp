@@ -42,7 +42,7 @@ int main() {
 
     //초기 게임 상태를 현재 상태에 저장한다.
     gsm.mCurrentState = gsm.mIs;
-    gsm.mCurrentState->Enter(uim, objm, *gsm.mScm);
+    gsm.mCurrentState->Enter(uim, objm, gsm);
 
     //메인 루프
     while (quit == false) {

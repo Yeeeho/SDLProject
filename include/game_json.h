@@ -15,7 +15,4 @@ class JsonManager {
     json mEntDb;
     json mPawnDb;
     json mEquipmentDb;
-
-    //대화
-    json mDialogue;
 };

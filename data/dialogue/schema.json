@@ -1,11 +1,17 @@
 {
     "type" : "dialogue_schema",
-    "desc" : "대화 타입을 설명하는 스키마입니다.",
+    "desc" : "대화 타입들을 설명하는 스키마입니다.",
     "items" : [
         {
             "name" : "static_line",
             "members" : [
                 "ent_type", "speaker", "text"
+            ]
+        },
+        {
+            "name" : "narration",
+            "members" : [
+                "text"
             ]
         }
     ]

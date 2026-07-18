@@ -1,0 +1,44 @@
+{
+    "type" : "scenario_main",
+    "desc" : "메인 시나리오의 전반적인 진행을 데이터화 해놓았다",
+    "items" : [
+        {
+            "type" : "dialogue",
+            "desc" : "대화가 끝날 때까지 기다리게 설계하셈",
+            "path" : "data/dialogue/intro_dialogue.json",
+            "d_section" : "init"
+        },
+        {
+            "type" : "static_spawn",
+            "where" : "submap",
+            "items" : [
+                {
+                    "type" : "single_ent",
+                    "name" : "rat",
+                    "demeanor" : "hostile",
+                    "tile_id" : 51
+                }
+            ]
+        },
+        {
+            "type" : "continue_dialogue",
+            "d_section" : "rat_encounter"
+        },
+        {
+            "type" : "wait",
+            "cond" : [
+                {
+                    "type" : "dead",
+                    "target" : "all_enemies"
+                }
+            ],
+            "where" : "submap",
+            "restriction" : [
+                "cannot_escape"
+            ]
+        },
+        {
+            "type" : "under_construction"
+        }
+    ]
+}

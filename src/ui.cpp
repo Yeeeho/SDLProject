@@ -2,6 +2,7 @@
 #include "ui.h"
 
 #include "system.h"
+#include "turn.h"
 #include "scenario.h"
 #include "physics.h"
 #include "camera.h"
@@ -53,7 +54,7 @@ void UI::RenderOnUpdate()
     RenderManager rm;
     rm.SetRenderTarget(System::sRenderer, mTempTex);
 
-    mUIFrame->Render();
+    mUIFrame->RenderColored();
     Texture textTexture;
     SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
 
@@ -116,6 +117,7 @@ Button::Button(Square *uiFrame, std::string uiText, BtnType type)
 
 void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY)
 {
+    if (!mIsRender) return; //렌더링되고 있지 않으면 반환
     //버튼 안에 있는지 확인
     if (e.button.x < mUIFrame->GetX()) return;
     if (e.button.x > mUIFrame->GetX() + mUIFrame->GetW()) return;    
@@ -155,6 +157,10 @@ void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, ObjectManager& obj
         gsm.mScm->SetCurrentScenario(new NGScenario(), objm);
         gsm.mIsStateChange = true;
     }
+    else if (mType == BtnType::SubMapTurnOver) {
+        SDL_Log("submap turn over button pressed");
+        gsm.mTms->mSmtm.mIsTurnUpdate = true;
+    }
     else {
         SDL_Log("button action not specified");
     }
@@ -167,6 +173,12 @@ UIManager::UIManager()
 
     mToolTip = new ToolTip();
     mDialogueUI = new DialogueUI((float) panelX,(float) panelY);
+
+    mFocus = new Texture("images/ui/focus.png");
+    int x = System::sWindowWidth - 300;
+    int y = System::sWindowHeight - 200;
+    Square* sq = new Square(x, y, 100, 40);
+    mTurnOverBtn = new Button(sq, "턴 종료", BtnType::SubMapTurnOver);
 }
 
 void UIManager::InitTopBar()
@@ -199,6 +211,7 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager
     for (auto ftui : ftuiMap) {
         ftui.second->HandleEvent(e, gsm, objm, mouseX, mouseY);
     }
+    if (!mDialogueUI->mIsRender) mTurnOverBtn->HandleEvent(e, gsm, objm, mouseX, mouseY);
 }
 
 void UIManager::RenderUIs()
@@ -231,6 +244,11 @@ void UIManager::RenderMapToolTip(Map *map)
     mToolTip->mY = mToolTip->mRefY + mToolTip->mRefH * 0.5 - map->mCam->mSight.y;
 
     mToolTip->RenderOnUpdate();
+}
+
+void UIManager::RenderMapUIs()
+{
+    if (!mDialogueUI->mIsRender) mTurnOverBtn->RenderOnUpdate();
 }
 
 void UIManager::DestroyUIs()
@@ -768,6 +786,8 @@ DialogueUI::DialogueUI(float x, float y)
 
 void DialogueUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
 {
+    if (!mIsRender) return; //렌더링되지 않으면 이벤트 핸들링도 하지 않음
+
     Physics ps;
     bool mouseIn = ps.IsPointInSquare(mouseX, mouseY,
          mPanel->GetX(), mPanel->GetY(), (float) mPanel->GetW(), (float) mPanel->GetH()
@@ -781,7 +801,6 @@ void DialogueUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, 
 
     SDL_Log("clicked dialogue panel");
     gsm.mScm->mCurrentSc->mIsDialogueUpdate = true;
-    gsm.mScm->mCurrentSc->mIsUpdate = true;
 }
 
 void DialogueUI::Update(ScenarioManager &scm)

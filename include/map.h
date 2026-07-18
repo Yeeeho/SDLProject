@@ -6,6 +6,7 @@
 
 //전방 선언
 class Camera;
+class Entity;
 class MapTile;
 class Texture;
 class UI;
@@ -40,6 +41,9 @@ class Map {
     int mTileLen = 100; //타일 한 변 길이
 
     std::vector<MapTile*> mMapTiles; //맵타일들 담는 컨테이너
+    std::vector<Entity*> mNpcs; //맵에 있는 npc들 담는 컨테이너
+    std::vector<Entity*> mPawns; //맵에 있는 폰들을 담는 컨테이너
+
     SDL_Texture* mTempTex{nullptr}; //베이킹용 임시 텍스처
 };
 

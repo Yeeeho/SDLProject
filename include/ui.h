@@ -29,7 +29,6 @@ class UI {
     virtual void RenderOnUpdate(); //플래그에 따라 업데이트하는 메서드
 
     std::string mUIText = "null";
-
     Square* mUIFrame{nullptr}; //프레임
 
     //비주얼
@@ -88,7 +87,8 @@ class FramedTUI : public UI {
 enum class BtnType {
     Title, 
     NewGame, LoadGame,
-    OverMap, SubMap, City
+    OverMap, SubMap, City,
+    SubMapTurnOver, OverMapTurnOver, CityMapTurnOver
 };
 
 //일반적인 버튼
@@ -190,7 +190,7 @@ class UIManager {
     
     void InitTopBar(); //탑 바를 초기화하는 녀석
     void InitUIs(); //게임 상태마다 초기화 할 ui들을 초기화
-    
+
     //파괴자
     void DestroyUIs();
     
@@ -200,18 +200,21 @@ class UIManager {
     //렌더링
     void RenderUIs();
     void RenderMapToolTip(Map* map);
-    
+    void RenderMapUIs();
+
     // 맵 툴팁 관련
     ToolTip* mToolTip{nullptr};
     
     void LoadMapToolTip(Map* map, int tileId);
     void UpdateMapToolTip(Map* map);
     void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, Map* map, float mouseX, float mouseY);
-    
+    //맵 타일 포커스 텍스처
+    Texture* mFocus {nullptr};
+
     //대화창
     DialogueUI* mDialogueUI {nullptr};
-
-
+    //턴 종료 버튼
+    Button* mTurnOverBtn {nullptr};
     bool mWasMouseOnMap {false};
     
     //레이아웃 관련 변수

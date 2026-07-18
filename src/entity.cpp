@@ -260,13 +260,13 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
 
     Pawn* pawn = mPawnTable[id];
 
-    //텍스처 할당
-    pawn->mTexture->LoadFromFile(pawnData["img_path"].get<std::string>());
-
-    pawn->mType = pType;
-
     pawn->mName = pawnData["name"].get<std::string>();
     pawn->mOriginalName = pawn->mName;
+    pawn->mType = pType;
+    pawn->mIsPawn = true;
+    
+    //텍스처 할당
+    pawn->mTexture->LoadFromFile(pawnData["img_path"].get<std::string>());
     //하드코딩
     pawn->mRace = "human";
 
@@ -306,7 +306,10 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent)
 
 void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent, int tileId)
 {
+    std::string message = ent->mName + " spawning on map";
+    SDL_Log(message.c_str());
     ent->mIsOnMap = true;
+    mIsRenderUpdate = true;
 
     ent->mTileId = tileId;
 
@@ -317,9 +320,12 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent,
     ent->mSubMapX = map->mX + map->mTileLen * xy["x"];
     ent->mSubMapY = map->mY + map->mTileLen * xy["y"];
 
-    MapTile* tile = map->mMapTiles[tileId];
-
+    //타일에 데이터를 로드해준다.
+    MapTile* tile = map->mMapTiles[tileId]; 
     LoadDataInTile(tile, ent);
+    //맵 엔티티 컨테이너에 엔티티를 추가한다.
+    if (ent->mIsPawn) map->mPawns.push_back(ent);
+    else map->mNpcs.push_back(ent);
 }
 
 void EntityManager::RenderOnUpdate(Map* map)

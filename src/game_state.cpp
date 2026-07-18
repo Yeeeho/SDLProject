@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "game_state.h"
+#include "turn.h"
 #include "scenario.h"
 #include "game_object.h"
 #include "system.h"
@@ -22,6 +23,7 @@ GameStateManager::GameStateManager()
     mSms = new SubMapState();
 
     mScm = new ScenarioManager();
+    mTms = new TurnManagers();
 }
 
 void GameStateManager::SetCurrentState(UIManager& uim, ObjectManager& objm)
@@ -35,8 +37,8 @@ void GameStateManager::SetCurrentState(UIManager& uim, ObjectManager& objm)
     if (mNextState != nullptr) {
         //다음상태에 뭔가가 할당되어 있다.
 
-        mCurrentState->Exit(uim, objm, *mScm); //현재 상태 탈출 메서드
-        mNextState->Enter(uim, objm, *mScm); //다음 상태 진입 메서드
+        mCurrentState->Exit(uim, objm, *this); //현재 상태 탈출 메서드
+        mNextState->Enter(uim, objm, *this); //다음 상태 진입 메서드
 
         //다음 상태를 임시 객체에 할당해줌
         GameState* tempState = mNextState;
@@ -54,14 +56,14 @@ GameState::GameState()
 {
 }
 
-void IntroState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
+void IntroState::Enter(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
     SDL_Log("enter intro");
     uim.uiMap["debugBtn"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 25, 200, 50), "디버그", BtnType::OverMap);
     uim.uiMap["newGameBtn"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 150, 200, 50), "새 게임", BtnType::NewGame);
 }
 
-void IntroState::Exit(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
+void IntroState::Exit(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
     SDL_Log("exit intro");
     uim.DestroyUIs();
@@ -89,7 +91,7 @@ void IntroState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm
     SDL_RenderPresent(System::sRenderer);
 }
 
-void OverMapState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
+void OverMapState::Enter(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
     SDL_Log("enter overmap");
 
@@ -105,6 +107,8 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& s
     //사이드바
     uim.uiMap["titleButton"] = new Button(new Square(10, 10 + uim.mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
     uim.uiMap["cityViewButton"] = new Button(new Square(10, 70 + uim.mTopPanelH, 100, 50), "도시", BtnType::City);
+    //턴 종료 버튼 타입 변경
+    uim.mTurnOverBtn->mType = BtnType::OverMapTurnOver;
 
     uim.ftuiMap["babo"] = new FramedTUI(100, 100, 200, 400);
     FramedTUI* ftui = uim.ftuiMap["babo"];
@@ -116,7 +120,7 @@ void OverMapState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& s
     uim.InitTopBar();
 }
 
-void OverMapState::Exit(UIManager& uim, ObjectManager& objm, ScenarioManager& scm)
+void OverMapState::Exit(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
     SDL_Log("exit overmap");
     uim.DestroyUIs(); //ui파괴
@@ -124,7 +128,7 @@ void OverMapState::Exit(UIManager& uim, ObjectManager& objm, ScenarioManager& sc
 
 void OverMapState::Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
 {
-    gsm.mScm->Update(uim, objm);
+    gsm.mScm->Update(uim, objm, gsm);
 
     objm.mMap->mCam->Move();
     uim.UpdateMapToolTip(objm.mMap);
@@ -155,31 +159,38 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
     uim.RenderUIs();
     //툴팁 렌더링
     uim.mToolTip->RenderOnUpdate();
-
+    //턴종료 버튼
+    if (!uim.mDialogueUI->mIsRender) uim.mTurnOverBtn->RenderOnUpdate();
     rend.RenderFps();
 
     SDL_RenderPresent(System::sRenderer);
 }
 
-void SubMapState::Enter(UIManager& uim, ObjectManager& objm, ScenarioManager& scm) 
+void SubMapState::Enter(UIManager& uim, ObjectManager& objm, GameStateManager& gsm) 
 {
     SDL_Log("enter submap");
+    
+    gsm.mTms->mSmtm.EnterMap(objm.mSubMap);
     objm.mSubMap->mIsMapUpdate = true;
 
+    uim.mTurnOverBtn->mType = BtnType::SubMapTurnOver;
+
     uim.InitTopBar();
+
 }
 
-void SubMapState::Exit(UIManager &uim, ObjectManager &objm, ScenarioManager& scm)
+void SubMapState::Exit(UIManager &uim, ObjectManager &objm, GameStateManager& gsm)
 {
     SDL_Log("exit submap");
-    scm.ClearThings(objm);
+    gsm.mScm->ClearThings(objm);
 
     uim.DestroyUIs();
 }
 
 void SubMapState::Update(UIManager &uim, ObjectManager &objm, GameStateManager &gsm)
 {
-    gsm.mScm->Update(uim, objm);
+    gsm.mScm->Update(uim, objm, gsm);
+    gsm.mTms->mSmtm.Update();
 
     objm.mSubMap->mCam->Move();
     uim.UpdateMapToolTip(objm.mSubMap);
@@ -213,14 +224,14 @@ void SubMapState::Render(RenderManager &rend, UIManager &uim, ObjectManager &obj
     
     uim.RenderMapToolTip(objm.mSubMap);
     uim.RenderUIs();
-    uim.mDialogueUI->mIsRender = true;
     
     uim.mDialogueUI->RenderOnUpdate();
+    if (!uim.mDialogueUI->mIsRender) uim.mTurnOverBtn->RenderOnUpdate();
 
     SDL_RenderPresent(System::sRenderer);
 }
 
-void CityViewState::Enter(UIManager &uim, ObjectManager &objm, ScenarioManager& scm)
+void CityViewState::Enter(UIManager &uim, ObjectManager &objm, GameStateManager& gsm)
 {
     SDL_Log("enter city view");
 
@@ -236,9 +247,11 @@ void CityViewState::Enter(UIManager &uim, ObjectManager &objm, ScenarioManager& 
     //탑 바
     uim.InitTopBar();
     uim.InitUIs();
+
+    uim.mTurnOverBtn->mType = BtnType::CityMapTurnOver;
 }
 
-void CityViewState::Exit(UIManager &uim, ObjectManager &objm, ScenarioManager& scm)
+void CityViewState::Exit(UIManager &uim, ObjectManager &objm, GameStateManager& gsm)
 {
     SDL_Log("exit city view");
     uim.DestroyUIs(); //ui파괴
@@ -246,7 +259,7 @@ void CityViewState::Exit(UIManager &uim, ObjectManager &objm, ScenarioManager& s
 
 void CityViewState::Update(UIManager &uim, ObjectManager &objm, GameStateManager &gsm)
 {
-    gsm.mScm->Update(uim, objm);
+    gsm.mScm->Update(uim, objm, gsm);
 
     uim.UpdateMapToolTip(objm.mCity->mCityMap);
 }
@@ -270,9 +283,10 @@ void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &o
     objm.mCity->mCityMap->RenderOnUpdate();
     //툴팁 렌더링
     uim.mToolTip->RenderOnUpdate();
+    //턴 종료 버튼
+    if (!uim.mDialogueUI->mIsRender) uim.mTurnOverBtn->RenderOnUpdate();
 
     rend.RenderFps();
-
     SDL_RenderPresent(System::sRenderer);
 }
 

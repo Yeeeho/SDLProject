@@ -20,8 +20,7 @@
                 "text" : "도시의 존재는 옆에 있는 소녀가 알려줬습니다. 그녀는 노예 캠프를 탈출할 때 당신을 따라온 동료입니다. 가끔 자신이 당신을 인도하라는 계시를 받았다고 이야기하기는 하지만, 그것만 빼면 딱히 방해는 되지 않습니다."
             },
             {
-                "type" : "end",
-                "next" : "rat_encounter"
+                "type" : "end"
             }
             
         ],
@@ -40,26 +39,15 @@
             {
                 "type" : "static_line",
                 "ent_type" : "pawn",
-                "speaker" : "rat",
+                "speaker" : "nameless_girl",
                 "text" : "쥐가 숨어있었나 보네요. 당신은 우리를 이끌어야 할 몸. 제가 처리하도록 하겠습니다."
             },
             {
-                "type" : "choice",
-                "text" : "대답을 선택하십시오",
-                "choices" : [
-                    {
-                        "text" : "이미 신세도 졌고, 전투를 소녀에게 맡길 수는 없다.",
-                        "next" : "rat_encounter_epilogue"
-                    },
-                    {
-                        "text" : "본인이 싸우겠다는데 굳이 말릴 필요는 없을 것 같다.",
-                        "next" : "rat_encounter_epilogue"
-                    },
-                    {
-                        "text" : "어느 쪽이 이기든, 오늘은 고기를 먹을 수 있겠군...",
-                        "next" : "rat_encounter_epilogue"
-                    }
-                ]
+                "type" : "narration",
+                "text" : "싸울 시간입니다. 소녀에게 지시를 내리십시오!"
+            },
+            {
+                "type" : "end"
             }
         ]
 
