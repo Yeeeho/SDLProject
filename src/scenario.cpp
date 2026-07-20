@@ -83,7 +83,7 @@ void Scenario::UpdateScenario(UIManager& uim, ObjectManager &objm, GameStateMana
             if (item["type"].get<std::string>() == "single_ent") {
                 SDL_Log("scenario: spawning single entity");
                 std::string name = item["name"].get<std::string>();
-                std::string demeanor = item["demeanor"].get<std::string>(); //아직 구현안됨
+                std::string demeanor = item["demeanor"].get<std::string>();
                 
                 int tileId = item["tile_id"].get<int>();
             

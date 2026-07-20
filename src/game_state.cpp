@@ -193,6 +193,8 @@ void SubMapState::Update(UIManager &uim, ObjectManager &objm, GameStateManager &
     gsm.mTms->mSmtm.Update();
 
     objm.mSubMap->mCam->Move();
+
+    objm.mEntm->UpdateEntityPos(objm.mSubMap, objm.mEntm->mEntTable[0]);
     uim.UpdateMapToolTip(objm.mSubMap);
 }
 
@@ -202,6 +204,8 @@ void SubMapState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm,
 
     objm.mSubMap->mCam->HandleEvent(e);
     objm.mSubMap->HandleEvent(e, mouseX, mouseY);
+
+    objm.mEntm->HandleEvent(e, uim, objm, objm.mSubMap, mouseX, mouseY);
 
     uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
     uim.HandleMapToolTipEvent(e, gsm, objm.mSubMap, mouseX, mouseY);
@@ -224,7 +228,8 @@ void SubMapState::Render(RenderManager &rend, UIManager &uim, ObjectManager &obj
     
     uim.RenderMapToolTip(objm.mSubMap);
     uim.RenderUIs();
-    
+    uim.mFocusIcon->RenderByCam(objm.mSubMap->mCam);
+
     uim.mDialogueUI->RenderOnUpdate();
     if (!uim.mDialogueUI->mIsRender) uim.mTurnOverBtn->RenderOnUpdate();
 

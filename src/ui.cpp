@@ -174,7 +174,7 @@ UIManager::UIManager()
     mToolTip = new ToolTip();
     mDialogueUI = new DialogueUI((float) panelX,(float) panelY);
 
-    mFocus = new Texture("images/ui/focus.png");
+    mFocusIcon = new IconUI(0, 0, 100, 100, "images/ui/focus.png");
     int x = System::sWindowWidth - 300;
     int y = System::sWindowHeight - 200;
     Square* sq = new Square(x, y, 100, 40);
@@ -187,15 +187,11 @@ void UIManager::InitTopBar()
     mPanels["topPanel"] = new Square(0, 0, System::sWindowWidth, mTopPanelH);
 
     //ui 객체들 생성
-    uiMap["turnIcon"] = new IconUI(10, 0, 60, 60, "images/icons/turn.png");
-
     TextUI* turnTui = new TextUI(70, 0);
     SDL_Color tc = {0x00, 0xD0, 0x00, 0xFF};
     turnTui->mTexts.push_back(TTFWord("0", tc, System::sFont40));
 
     uiMap["turnText"] = turnTui;
-
-    uiMap["supplyIcon"] = new IconUI(130, 0, 60, 60, "images/icons/supply.png");
     uiMap["supplyText"] = new TextUI(190, 0);
 }
 
@@ -234,7 +230,6 @@ void UIManager::RenderUIs()
     for (auto ui : uiMap) {
         ui.second->RenderOnUpdate();
     }
-
 }
 
 void UIManager::RenderMapToolTip(Map *map)
@@ -730,17 +725,23 @@ void FramedTUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager& 
 IconUI::IconUI(int x, int y, int width, int height, std::string path)
 {
     mX = x; mY = y; mW = width; mH = height;
-    mMyTexture = new Texture();
-    if (mMyTexture->LoadFromFile(path) == false) {
-        SDL_Log("could not load icon");
-    }
+    mTex = new Texture(path);
     
-    SDL_SetTextureBlendMode(mMyTexture->mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    SDL_SetTextureBlendMode(mTex->mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
 }
 
-void IconUI::RenderOnUpdate()
+void IconUI::Render()
 {
-    mMyTexture->Render(mX, mY, nullptr, mW, mH);
+    if (!mIsRender) return;
+
+    mTex->Render(mX, mY, nullptr, mW, mH);
+}
+
+void IconUI::RenderByCam(Camera *cam)
+{
+    if (!mIsRender) return;
+
+    mTex->Render(mX - cam->mSight.x, mY - cam->mSight.y, nullptr, mW, mH);
 }
 
 void IconUI::HandleEvent(SDL_Event &e, GameStateManager &gs, ObjectManager& objm, float mouseX, float mouseY)
@@ -755,6 +756,11 @@ void IconUI::HandleEvent(SDL_Event &e, GameStateManager &gs, ObjectManager& objm
 
     //클릭했는지 확인
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+}
+
+void IconUI::SetDimension(int x, int y, int w, int h)
+{
+    mX = x; mY = y; mW = w; mH = h;
 }
 
 DialogueUI::DialogueUI(float x, float y)

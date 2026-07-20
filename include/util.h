@@ -5,4 +5,6 @@
 class Util {
     public:
     static Uint32 CallBack(void* param, SDL_TimerID timerID, Uint32 interval);
+    
+    int ClampLine(int min, int max, int x, int w);
 };

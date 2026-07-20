@@ -7,6 +7,7 @@
 class Entity;
 class Map;
 class Pawn;
+class UIManager;
 class ObjectManager;
 class Texture;
 
@@ -110,17 +111,29 @@ class EntityManager {
     void DeallocEntityOnTable(ObjectManager& objm, int id);
     void DeallocPawnOnTable(ObjectManager& objm, int id);
 
-    //서브맵
+    //맵
     void LoadDataInTile(MapTile* tile, Entity* ent); //타일에 데이터 로드
     void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent);
     void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent, int tileId);
+    //맵 이동
+    void SetEntitySpeed(Entity* ent, int xSpeed, int ySpeed);
+    void MoveEntity(Map* map, Entity* ent);
 
+    void UpdateEntityPos(Map* map, Entity* ent);
+    bool mIsEntPosUpdate {false};
+
+    //업데이트
+    void Update(ObjectManager& objm);
+    //이벤트 핸들링
+    void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, Map* map, float mouseX, float mouseY);
     //렌더링
     void RenderOnUpdate(Map* map);
 
+    Uint64 mTick {0};
+    Uint64 mMaxMs {500};
     bool mIsRenderUpdate {true};
     SDL_Texture* mTempTex {nullptr};
-
+    
     Entity* mEntTable[static_cast<int>(EntitySetting::MaxEnt)];
     Pawn* mPawnTable[static_cast<int>(EntitySetting::MaxPawn)];
 };
@@ -134,6 +147,8 @@ class Entity {
     Entity() = default;
     Entity(std::string name, int id);
 
+    void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, Map* map, float x, float y);
+
     std::string mName {""};
     std::string mRace {""};
     Demeanor mDemeanor {Demeanor::Neutral};
@@ -143,13 +158,15 @@ class Entity {
 
     Texture* mTexture {nullptr}; //엔티티 텍스처
 
-    //서브맵
-    bool mIsOnMap {false};
-    bool mIsTakingTurn {false};
+    //맵
+    bool mIsOnMap {false}; //맵에 있나?
+    bool mIsTakingTurn {false}; //니 턴인가?
 
-    int mTileId {-1};
-    int mSubMapX {-1};
-    int mSubMapY {-1};
+    int mTileId {-1}; //지금 서있는 타일 id
+    int mMapX {-1}; //좌표
+    int mMapY {-1};
+    int mXspeed {0};
+    int mYspeed {0};
 
     //전투용 스탯
     int mMaxHp {0}; //max~ 는 최대치.

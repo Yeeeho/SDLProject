@@ -46,9 +46,3 @@ class Texture {
     int mHeight;
     private:
 };
-
-class TextTexture : public Texture {
-    public:
-
-    std::vector<float> mTextLengthVector;
-};

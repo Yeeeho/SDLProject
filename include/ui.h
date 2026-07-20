@@ -7,11 +7,12 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 //전방선언 리스트
+class Square;
 class ObjectManager;
 class TTFWord;
 class Map;
 class UI;
-class Square;
+class Camera;
 class Texture;
 class GameStateManager;
 
@@ -128,12 +129,19 @@ class ToolTip : public UI {
 };
 
 //이미지를 로딩해서 쓰는 ui
-class IconUI : public UI {
+class IconUI {
     public:
     IconUI(int x, int y, int width, int height, std::string path);
 
-    void RenderOnUpdate() override;
-    void HandleEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY) override;
+    void Render();
+    void RenderByCam(Camera* cam);
+    void HandleEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY);
+
+    void SetDimension(int x, int y, int w, int h);
+
+    Texture* mTex {nullptr};
+
+    bool mIsRender {false};
 
     private:
     int mX, mY, mW, mH;
@@ -208,8 +216,8 @@ class UIManager {
     void LoadMapToolTip(Map* map, int tileId);
     void UpdateMapToolTip(Map* map);
     void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, Map* map, float mouseX, float mouseY);
-    //맵 타일 포커스 텍스처
-    Texture* mFocus {nullptr};
+    //맵 타일 포커스 아이콘
+    IconUI* mFocusIcon {nullptr};
 
     //대화창
     DialogueUI* mDialogueUI {nullptr};

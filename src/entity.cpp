@@ -1,8 +1,10 @@
 #include "pch.h"
 
 #include "entity.h"
+#include "physics.h"
 #include "render.h"
 #include "system.h"
+#include "ui.h"
 #include "game_object.h"
 #include "map.h"
 #include "camera.h"
@@ -10,6 +12,7 @@
 #include "game_json.h"
 #include "texture.h"
 #include "item.h"
+#include "util.h"
 
 using json = nlohmann::json;
 
@@ -222,13 +225,15 @@ void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, in
 
     Entity* ent = mEntTable[id];
 
-    ent->mSubMapX = subMapX;
-    ent->mSubMapY = subMapY;
+    ent->mMapX = subMapX;
+    ent->mMapY = subMapY;
 
-    ent->mName = entData["name"].get<std::string>();
-    ent->mRace = entData["race"].get<std::string>();
     //텍스처 할당
     ent->mTexture->LoadFromFile(entData["img_path"].get<std::string>());
+
+    //데이터 읽고 가져오기
+    ent->mName = entData["name"].get<std::string>();
+    ent->mRace = entData["race"].get<std::string>();
     
     if (entData.contains("hp")) ent->mMaxHp = entData["hp"].get<int>();
     ent->mCurHp = ent->mMaxHp;
@@ -263,6 +268,8 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     pawn->mName = pawnData["name"].get<std::string>();
     pawn->mOriginalName = pawn->mName;
     pawn->mType = pType;
+    pawn->mDemeanor = Demeanor::Friendly;
+
     pawn->mIsPawn = true;
     
     //텍스처 할당
@@ -306,8 +313,6 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent)
 
 void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent, int tileId)
 {
-    std::string message = ent->mName + " spawning on map";
-    SDL_Log(message.c_str());
     ent->mIsOnMap = true;
     mIsRenderUpdate = true;
 
@@ -317,8 +322,10 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent,
     MapManager mm;
     xy = mm.PosXYByTileId(tileId, map);
 
-    ent->mSubMapX = map->mX + map->mTileLen * xy["x"];
-    ent->mSubMapY = map->mY + map->mTileLen * xy["y"];
+    ent->mMapX = map->mX + map->mTileLen * xy["x"];
+    ent->mMapY = map->mY + map->mTileLen * xy["y"];
+    std::string message = "entity spawned at: " + std::to_string(ent->mMapX) + ", " + std::to_string(ent->mMapY);
+    SDL_Log(message.c_str());
 
     //타일에 데이터를 로드해준다.
     MapTile* tile = map->mMapTiles[tileId]; 
@@ -328,7 +335,63 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent,
     else map->mNpcs.push_back(ent);
 }
 
-void EntityManager::RenderOnUpdate(Map* map)
+void EntityManager::SetEntitySpeed(Entity *ent, int xSpeed, int ySpeed)
+{
+    ent->mXspeed = xSpeed;
+    ent->mYspeed = ySpeed;
+}
+
+void EntityManager::MoveEntity(Map *map, Entity *ent)
+{
+    Util util;
+    ent->mMapX += ent->mXspeed;
+    ent->mXspeed = 0;
+
+    ent->mMapY += ent->mYspeed;
+    ent->mYspeed = 0;
+
+    std::string message = "entity moved to: " + std::to_string(ent->mMapX) + ", " +std::to_string(ent->mMapY);
+    SDL_Log(message.c_str());
+
+    mIsRenderUpdate = true;
+}
+
+void EntityManager::UpdateEntityPos(Map* map, Entity* ent)
+{
+    if (!mIsEntPosUpdate) return;
+    Timer timer;
+    
+    if (timer.StoreProgramTickMs() - mTick > mMaxMs) {
+        MoveEntity(map, ent);
+    }
+    mTick = timer.StoreProgramTickMs();
+
+    mIsEntPosUpdate = false;
+}
+
+void EntityManager::Update(ObjectManager &objm)
+{
+}
+
+void EntityManager::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, Map* map, float mouseX, float mouseY)
+{
+    //디버깅
+    if (e.type == SDL_EVENT_KEY_DOWN) {
+        if (e.key.key == SDLK_DOWN) {
+            SDL_Log("babo");
+            SetEntitySpeed(mEntTable[0], 0, map->mTileLen);
+            mIsEntPosUpdate = true;
+        }
+    }
+    for (Entity* p : map->mPawns) {
+        p->HandleEvent(e, uim, objm, map, mouseX, mouseY);
+    }
+    for (Entity* npc : map->mNpcs) {
+        npc->HandleEvent(e, uim, objm, map, mouseX, mouseY);
+    }
+}
+
+void EntityManager::RenderOnUpdate(Map *map)
 {
     if (mIsRenderUpdate == false) {
         SDL_RenderTexture(System::sRenderer, mTempTex, &map->mCam->mSight, nullptr);
@@ -341,14 +404,14 @@ void EntityManager::RenderOnUpdate(Map* map)
 
     for (Entity* ent : mEntTable) {
         if (!ent->mIsOnMap) continue;
-        ent->mTexture->Render(ent->mSubMapX, ent->mSubMapY, nullptr,
+        ent->mTexture->Render(ent->mMapX, ent->mMapY, nullptr,
            (float) map->mTileLen, (float) map->mTileLen
         );
  
     }
     for (Pawn* pawn : mPawnTable) {
         if (!pawn->mIsOnMap) continue;
-        pawn->mTexture->Render(pawn->mSubMapX, pawn->mSubMapY, nullptr,
+        pawn->mTexture->Render(pawn->mMapX, pawn->mMapY, nullptr,
            (float) map->mTileLen, (float) map->mTileLen
         );
     }
@@ -363,6 +426,26 @@ Entity::Entity(std::string name, int id)
     mId = id;
 
     mTexture = new Texture();
+}
+
+void Entity::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, Map* map,  float x, float y)
+{
+    Physics ph;
+    //카메라 오프셋 계산
+    x += map->mCam->mSight.x;
+    y += map->mCam->mSight.y;
+    MapTile* tile = map->mMapTiles[mTileId]; //타일 기준으로 이벤트 핸들링
+    bool mouseIn = ph.IsPointInSquare(x, y, tile->mX, tile->mY, tile->mW, tile->mH);
+
+    if (!mouseIn) return;
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+    SDL_Log("clicked entity");
+    uim.mFocusIcon->SetDimension(mMapX, mMapY, map->mTileLen, map->mTileLen);
+    //엔티티 태도에 따라 포커스 텍스처를 변경.
+    if (mDemeanor == Demeanor::Neutral) uim.mFocusIcon->mTex->LoadFromFile("images/ui/focus.png");
+    else if (mDemeanor == Demeanor::Friendly) uim.mFocusIcon->mTex->LoadFromFile("images/ui/focus_friendly.png");
+    else if (mDemeanor == Demeanor::Hostile) uim.mFocusIcon->mTex->LoadFromFile("images/ui/focus_hostile.png");
+    uim.mFocusIcon->mIsRender = true;
 }
 
 //부하 생성자

@@ -167,6 +167,7 @@ int MapManager::WhatTileOnPoint(float x, float y, Map *map)
     int id = xPos + (map->mXTiles * yPos);
     return id;
 }
+
 std::unordered_map<std::string, int> MapManager::PosXYByTileId(int id, Map *map)
 {
     int posY = id / map->mXTiles;

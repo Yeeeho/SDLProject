@@ -72,5 +72,6 @@ class MapTile {
 class MapManager {
     public:
     int WhatTileOnPoint(float x, float y, Map* map);
+
     std::unordered_map<std::string, int> PosXYByTileId(int id, Map* map);
 };
