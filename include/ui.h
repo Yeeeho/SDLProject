@@ -8,6 +8,7 @@
 
 //전방선언 리스트
 class Square;
+struct Point;
 class ObjectManager;
 class TTFWord;
 class Map;
@@ -186,6 +187,26 @@ class DialogueUI {
     FramedTUI* mDialogueBody {nullptr};
     Texture* mDialogueBodyFrame {nullptr};
 };
+class MapTile;
+//타일 강조 ui
+class TileHLUI {
+    public:
+    TileHLUI();
+    ~TileHLUI();
+
+    void HandleEvent(SDL_Event& e, Map* map, float mx, float my);
+
+    void Update();
+
+    void RenderBetweenTiles(Map* map);
+    bool mIsRenderBetweenTiles {false};
+
+    Texture* mHighlight {nullptr};
+
+    private:
+    MapTile* mT1 {nullptr};
+    MapTile* mT2 {nullptr};
+};
 
 class UIManager {
     public:
@@ -204,20 +225,23 @@ class UIManager {
     
     //이벤트 핸들링
     void HandleUIEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mousey);
-    
+    void HandleMapUIEvent(SDL_Event& e, GameStateManager& gsm, Map* map, float mx, float my);
+
     //렌더링
     void RenderUIs();
-    void RenderMapToolTip(Map* map);
-    void RenderMapUIs();
-
+    void RenderMapUIs(Map* map); //맵상에 있을 ui들 렌더링
+    
     // 맵 툴팁 관련
-    ToolTip* mToolTip{nullptr};
+    ToolTip* mToolTip{nullptr}; //툴팁
     
     void LoadMapToolTip(Map* map, int tileId);
     void UpdateMapToolTip(Map* map);
     void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, Map* map, float mouseX, float mouseY);
-    //맵 타일 포커스 아이콘
-    IconUI* mFocusIcon {nullptr};
+    void RenderMapToolTip(Map* map);
+    
+    //맵 관련 ui 객체
+    IconUI* mFocusIcon {nullptr}; //맵 타일 포커스 아이콘
+    TileHLUI* mTileHLUI {nullptr}; //맵 타일 강조 ui
 
     //대화창
     DialogueUI* mDialogueUI {nullptr};

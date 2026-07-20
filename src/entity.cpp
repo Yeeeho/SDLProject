@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "entity.h"
-#include "physics.h"
+#include "math.h"
 #include "render.h"
 #include "system.h"
 #include "ui.h"
@@ -430,7 +430,7 @@ Entity::Entity(std::string name, int id)
 
 void Entity::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, Map* map,  float x, float y)
 {
-    Physics ph;
+    Math ph;
     //카메라 오프셋 계산
     x += map->mCam->mSight.x;
     y += map->mCam->mSight.y;

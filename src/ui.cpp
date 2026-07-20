@@ -4,7 +4,7 @@
 #include "system.h"
 #include "turn.h"
 #include "scenario.h"
-#include "physics.h"
+#include "math.h"
 #include "camera.h"
 #include "render.h"
 #include "util.h"
@@ -14,6 +14,7 @@
 #include "text.h"
 #include "texture.h"
 #include "square.h"
+#include "shape/point.h"
 
 //무조건 이걸로만 생성해라..
 UI::UI(Square* uiFrame, std::string uiText)
@@ -179,6 +180,8 @@ UIManager::UIManager()
     int y = System::sWindowHeight - 200;
     Square* sq = new Square(x, y, 100, 40);
     mTurnOverBtn = new Button(sq, "턴 종료", BtnType::SubMapTurnOver);
+
+    mTileHLUI = new TileHLUI();
 }
 
 void UIManager::InitTopBar()
@@ -210,6 +213,12 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager
     if (!mDialogueUI->mIsRender) mTurnOverBtn->HandleEvent(e, gsm, objm, mouseX, mouseY);
 }
 
+void UIManager::HandleMapUIEvent(SDL_Event &e, GameStateManager &gsm, Map *map, float mx, float my)
+{
+    HandleMapToolTipEvent(e, gsm, map, mx, my);
+    mTileHLUI->HandleEvent(e, map, mx, my);
+}
+
 void UIManager::RenderUIs()
 {
     SDL_SetRenderLogicalPresentation(System::sRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
@@ -237,12 +246,14 @@ void UIManager::RenderMapToolTip(Map *map)
     //카메라 오프셋
     mToolTip->mX = mToolTip->mRefX + mToolTip->mRefW * 0.5 - map->mCam->mSight.x;
     mToolTip->mY = mToolTip->mRefY + mToolTip->mRefH * 0.5 - map->mCam->mSight.y;
-
     mToolTip->RenderOnUpdate();
 }
 
-void UIManager::RenderMapUIs()
+void UIManager::RenderMapUIs(Map* map)
 {
+    mTileHLUI->RenderBetweenTiles(map);
+
+    RenderMapToolTip(map);
     if (!mDialogueUI->mIsRender) mTurnOverBtn->RenderOnUpdate();
 }
 
@@ -322,7 +333,7 @@ void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, Map* 
     mouseY += map->mCam->mSight.y;
 
     //마우스가 맵 안에 있는지 확인
-    Physics phs;
+    Math phs;
     bool mouseIn = phs.IsPointInSquare(mouseX, mouseY, 
         static_cast<float>(map->mX), static_cast<float>(map->mY),
         static_cast<float>(map->mW), static_cast<float>(map->mH)
@@ -794,7 +805,7 @@ void DialogueUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, 
 {
     if (!mIsRender) return; //렌더링되지 않으면 이벤트 핸들링도 하지 않음
 
-    Physics ps;
+    Math ps;
     bool mouseIn = ps.IsPointInSquare(mouseX, mouseY,
          mPanel->GetX(), mPanel->GetY(), (float) mPanel->GetW(), (float) mPanel->GetH()
     );
@@ -886,4 +897,57 @@ void DialogueUI::SetUI(std::string text)
     
     SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
     tui->ProcessAndAddText(text, tc, System::sFont);
+}
+
+TileHLUI::TileHLUI()
+{
+    mHighlight = new Texture("images/ui/highlight.png");
+    SDL_SetTextureBlendMode(mHighlight->mTexture, SDL_BLENDMODE_BLEND_PREMULTIPLIED);
+    TextureManager tm;
+}
+
+TileHLUI::~TileHLUI()
+{
+    mHighlight->Destroy();
+}
+
+void TileHLUI::HandleEvent(SDL_Event &e, Map* map, float mx, float my)
+{
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+    
+    //맵 이동 보정
+    mx += map->mCam->mSight.x;
+    my += map->mCam->mSight.y;
+
+    MapManager mm;
+    int id = mm.WhatTileOnPoint(mx, my, map);
+    MapTile* tile = map->mMapTiles[id];
+    if (!mT1) mT1 = tile;
+    else {
+        mT2 = tile;
+        mIsRenderBetweenTiles = true;
+    }
+}
+
+void TileHLUI::Update()
+{
+}
+
+void TileHLUI::RenderBetweenTiles(Map *map)
+{
+    if (!mIsRenderBetweenTiles) return;
+
+    MapManager mm;
+    std::vector<int> ids;
+    ids = mm.GetTilesIdBetween(map, mT1, mT2);
+    
+    for (int id : ids) {
+        MapTile* tile = map->mMapTiles[id];
+        //카메라 오프셋
+        mHighlight->Render(
+            (float) tile->mX - map->mCam->mSight.x,
+            (float) tile->mY - map->mCam->mSight.y, nullptr,
+            (float) map->mTileLen, (float) map->mTileLen
+        );
+    }
 }

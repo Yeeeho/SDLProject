@@ -128,10 +128,10 @@ class EntityManager {
     void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, Map* map, float mouseX, float mouseY);
     //렌더링
     void RenderOnUpdate(Map* map);
+    bool mIsRenderUpdate {true};
 
     Uint64 mTick {0};
     Uint64 mMaxMs {500};
-    bool mIsRenderUpdate {true};
     SDL_Texture* mTempTex {nullptr};
     
     Entity* mEntTable[static_cast<int>(EntitySetting::MaxEnt)];

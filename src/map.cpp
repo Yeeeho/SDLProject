@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "map.h"
-#include "physics.h"
+#include "math.h"
 #include "camera.h"
 #include "text.h"
 #include "texture.h"
@@ -167,6 +167,43 @@ int MapManager::WhatTileOnPoint(float x, float y, Map *map)
     int id = xPos + (map->mXTiles * yPos);
     return id;
 }
+
+std::vector<int> MapManager::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile *tile2)
+{
+    std::vector<int> ret;
+
+    int tileLen = map->mTileLen;
+    int x1 = (tile1->mX - map->mX) / tileLen;
+    int y1 = (tile1->mY - map->mY) / tileLen;
+    int x2 = (tile2->mX - map->mX) / tileLen;
+    int y2 = (tile2->mY - map->mY) / tileLen;
+
+    //여기서 브레젠험 알고리즘을 사용한다.
+    int dx = std::abs(x2 - x1);
+    int dy = -std::abs(y2 - y1);
+    int sx = x1 < x2 ? 1 : -1; 
+    int sy = y1 < y2 ? 1 : -1;
+
+    int err = dx + dy; int e2; //오차.
+
+    while (true) {
+        int id = WhatTileOnPoint(x1 * tileLen + map->mX, y1 * tileLen + map->mY, map);
+        ret.push_back(id);
+
+        e2 = 2*err;
+        if (e2 >= dy) {
+            if (x1 == x2) break;
+            err += dy;
+            x1 += sx;
+        }
+        if (e2 <= dx) {
+            if (y1 == y2) break;
+            err += dx;
+            y1 += sy;
+        }
+    }
+    return ret;
+}   
 
 std::unordered_map<std::string, int> MapManager::PosXYByTileId(int id, Map *map)
 {

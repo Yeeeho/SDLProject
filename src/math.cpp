@@ -1,9 +1,9 @@
 #include "pch.h"
 
-#include "physics.h"
+#include "math.h"
 
 //제곧내
-bool Physics::IsPointInSquare(float mouseX, float mouseY, float mX, float mY, float mW, float mH)
+bool Math::IsPointInSquare(float mouseX, float mouseY, float mX, float mY, float mW, float mH)
 {
     bool pointIn = false;
 

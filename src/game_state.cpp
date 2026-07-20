@@ -139,8 +139,7 @@ void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm
     objm.mMap->mCam->HandleEvent(e);
 
     uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
-
-    uim.HandleMapToolTipEvent(e, gsm, objm.mMap, mouseX, mouseY);
+    uim.HandleMapUIEvent(e, gsm, objm.mMap, mouseX, mouseY);
 }
 
 void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm)
@@ -156,9 +155,10 @@ void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& ob
     objm.mTeamm->RenderOnUpdate(objm.mMap);
 
     //ui들 렌더링
+    uim.mToolTip->RenderOnUpdate();    //툴팁 렌더링
+    uim.RenderMapUIs(objm.mMap);
+
     uim.RenderUIs();
-    //툴팁 렌더링
-    uim.mToolTip->RenderOnUpdate();
     //턴종료 버튼
     if (!uim.mDialogueUI->mIsRender) uim.mTurnOverBtn->RenderOnUpdate();
     rend.RenderFps();
@@ -208,7 +208,7 @@ void SubMapState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm,
     objm.mEntm->HandleEvent(e, uim, objm, objm.mSubMap, mouseX, mouseY);
 
     uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
-    uim.HandleMapToolTipEvent(e, gsm, objm.mSubMap, mouseX, mouseY);
+    uim.HandleMapUIEvent(e, gsm, objm.mSubMap, mouseX, mouseY);
 }
 
 void SubMapState::Render(RenderManager &rend, UIManager &uim, ObjectManager &objm)
@@ -226,9 +226,9 @@ void SubMapState::Render(RenderManager &rend, UIManager &uim, ObjectManager &obj
     //ui들 렌더링
     SDL_SetRenderLogicalPresentation(System::sRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
     
-    uim.RenderMapToolTip(objm.mSubMap);
-    uim.RenderUIs();
     uim.mFocusIcon->RenderByCam(objm.mSubMap->mCam);
+    uim.RenderMapUIs(objm.mSubMap);
+    uim.RenderUIs();
 
     uim.mDialogueUI->RenderOnUpdate();
     if (!uim.mDialogueUI->mIsRender) uim.mTurnOverBtn->RenderOnUpdate();
@@ -273,7 +273,7 @@ void CityViewState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &obj
 {
     uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
 
-    uim.HandleMapToolTipEvent(e, gsm, objm.mCity->mCityMap, mouseX, mouseY);
+    uim.HandleMapUIEvent(e, gsm, objm.mCity->mCityMap, mouseX, mouseY);
 }
 
 void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &objm)
@@ -281,13 +281,13 @@ void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &o
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
     SDL_RenderClear(System::sRenderer);
 
-    //ui렌더링
-    uim.RenderUIs();
-
+    
     //도시 맵 렌더링
     objm.mCity->mCityMap->RenderOnUpdate();
     //툴팁 렌더링
     uim.mToolTip->RenderOnUpdate();
+    uim.RenderUIs();    //ui렌더링
+    uim.RenderMapUIs(objm.mCity->mCityMap);
     //턴 종료 버튼
     if (!uim.mDialogueUI->mIsRender) uim.mTurnOverBtn->RenderOnUpdate();
 

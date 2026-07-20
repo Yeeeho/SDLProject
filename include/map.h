@@ -61,7 +61,7 @@ class MapTile {
 
     int mId = 0; //식별용 타일 아이디
 
-    int mX, mY; //위치와 크기
+    int mX {0}, mY {0}; //위치와 크기
     int mW, mH; 
 
     std::vector<TTFWord*> mInfos;
@@ -71,7 +71,10 @@ class MapTile {
 
 class MapManager {
     public:
-    int WhatTileOnPoint(float x, float y, Map* map);
+    int WhatTileOnPoint(float x, float y, Map* map); //이 점은 맵의 어느 타일에 있는가?
+
+    //브레젠험 
+    std::vector<int> GetTilesIdBetween(Map* map, MapTile* tile1, MapTile* tile2); //타일 두개를 이었을때 그 사이에 무슨 타일들이 있는지 구함.
 
     std::unordered_map<std::string, int> PosXYByTileId(int id, Map* map);
 };
