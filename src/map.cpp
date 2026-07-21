@@ -1,6 +1,10 @@
 #include "pch.h"
 
 #include "map.h"
+#include "move.h"
+#include "game_object.h"
+#include "ui.h"
+#include "entity.h"
 #include "math.h"
 #include "camera.h"
 #include "text.h"
@@ -46,9 +50,58 @@ void Map::Destroy()
 }
 
 //최적화/기능 추가 여지가 남아있음.
-void Map::HandleEvent(SDL_Event &e, float mouseX, float mouseY)
+void Map::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, float mouseX, float mouseY)
 {
+    if(uim.mDialogueUI->mIsRender) return; //대화창이 렌더링중이면 반환한다.  
+    //마우스오버
 
+    MapManager mm;
+    mouseX += mCam->mSight.x; //카메라 보정
+    mouseY += mCam->mSight.y;
+
+    Math mth;
+    bool isInMap = mth.IsPointInSquare(mouseX, mouseY, mX, mY, mW, mH); 
+    if (!isInMap) { //맵 밖에 있는 경우
+        uim.mTileHLUI->mIsRenderBetweenTiles = false; //타일 ui 렌더링 플래그 거짓
+        return;
+    }
+
+    int tid = mm.WhatTileOnPoint(mouseX, mouseY, this);
+    MapTile* tile = mMapTiles[tid];
+
+    Entity* target {nullptr};
+    //턴을 잡은 아군이 있을 경우
+    for (Entity* ent : mPawns) {
+        if (ent->mIsTakingTurn) {
+            target = ent;
+        }
+    }    
+    if (!target) return;
+
+    //타겟이 포커스 상태고 아군일때 이동 타일 범위 렌더링
+    if (target != mFocusedEnt || !target->mIsPawn) {
+        //둘중 하나라도 만족하지 않으면 렌더링 안함
+        uim.mTileHLUI->mIsRenderBetweenTiles = false;
+        return;
+    }
+    else {
+        uim.mTileHLUI->mIsRenderBetweenTiles = true;
+    }
+
+    //타일 범위 구하는 로직,
+    MapTile* tile1 = mMapTiles[target->mTileId];
+    MapTile* tile2 = tile;
+    //TODO:이동 능력에 따라서 조절되어야 함.
+    std::vector<int> tids = mm.GetTilesIdBetween(this, tile1, tile2);
+
+    //타일 ui 관련 세팅
+    uim.mTileHLUI->SetTileIds(tids);
+    
+    //클릭시 행동
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return; //클릭만 감지
+    //엔티티 이동
+    MoveManager mvm = MoveManager(&uim, &objm);
+    mvm.MoveEntityTo(this, target, target->mTileId, tid);
 }
 
 void Map::GenerateMapTiles()

@@ -201,10 +201,6 @@ EntityManager::EntityManager(ObjectManager& objm)
     }
 
     TextureManager tm;
-    mTempTex = tm.CreateTempTexture(System::sRenderer,
-        System::sWindowWidth + 4000, System::sWindowHeight + 4000
-    );
-    SDL_SetTextureScaleMode(mTempTex, SDL_SCALEMODE_NEAREST);
 }
 
 void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, int subMapX, int subMapY, int id)
@@ -296,14 +292,32 @@ void EntityManager::DeallocPawnOnTable(ObjectManager &objm, int id)
 void EntityManager::LoadDataInTile(MapTile *tile, Entity *ent)
 {
     SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+    SDL_Color yellow = {0xB0, 0xB0, 0x40, 0xFF};
+    SDL_Color white = {0xF0, 0xF0, 0xF0, 0xFF};
+    SDL_Color red = {0xB0, 0x40, 0x40, 0xFF};
+    SDL_Color blue = {0x40, 0x40, 0xB0, 0xFF};
+    if (ent->mDemeanor == Demeanor::Hostile) tc = {0xB0, 0x00, 0x00, 0xFF};
+    if (ent->mDemeanor == Demeanor::Neutral) tc = yellow;
+
     TTFWord* name = new TTFWord(ent->mName, tc, System::sFont);
 
     tile->mInfos.push_back(name);
     tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
 
-    tc = {0xB0, 0xB0, 0xB0, 0xFF};
-    tile->mInfos.push_back(new TTFWord("클릭하여 자세한 정보를 보기(미구현)", tc, System::sFont));
+    tile->mInfos.push_back(new TTFWord("HP:", red, System::sFont));
+    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::Space));
+    tile->mInfos.push_back(new TTFWord(std::to_string(ent->mCurHp), white, System::sFont));
+    std::string maxHp = "/" + std::to_string(ent->mMaxHp);
+    tile->mInfos.push_back(new TTFWord(maxHp, white, System::sFont));
     tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
+
+    tile->mInfos.push_back(new TTFWord("AP:", blue, System::sFont));
+    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::Space));
+    tile->mInfos.push_back(new TTFWord(std::to_string(ent->mCurAp), white, System::sFont));
+    std::string maxAp = "/" + std::to_string(ent->mMaxAp);
+    tile->mInfos.push_back(new TTFWord(maxAp, white, System::sFont));
+    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
+
 }
 
 void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent)
@@ -314,7 +328,6 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent)
 void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent, int tileId)
 {
     ent->mIsOnMap = true;
-    mIsRenderUpdate = true;
 
     ent->mTileId = tileId;
 
@@ -335,54 +348,12 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent,
     else map->mNpcs.push_back(ent);
 }
 
-void EntityManager::SetEntitySpeed(Entity *ent, int xSpeed, int ySpeed)
-{
-    ent->mXspeed = xSpeed;
-    ent->mYspeed = ySpeed;
-}
-
-void EntityManager::MoveEntity(Map *map, Entity *ent)
-{
-    Util util;
-    ent->mMapX += ent->mXspeed;
-    ent->mXspeed = 0;
-
-    ent->mMapY += ent->mYspeed;
-    ent->mYspeed = 0;
-
-    std::string message = "entity moved to: " + std::to_string(ent->mMapX) + ", " +std::to_string(ent->mMapY);
-    SDL_Log(message.c_str());
-
-    mIsRenderUpdate = true;
-}
-
-void EntityManager::UpdateEntityPos(Map* map, Entity* ent)
-{
-    if (!mIsEntPosUpdate) return;
-    Timer timer;
-    
-    if (timer.StoreProgramTickMs() - mTick > mMaxMs) {
-        MoveEntity(map, ent);
-    }
-    mTick = timer.StoreProgramTickMs();
-
-    mIsEntPosUpdate = false;
-}
-
 void EntityManager::Update(ObjectManager &objm)
 {
 }
 
 void EntityManager::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, Map* map, float mouseX, float mouseY)
 {
-    //디버깅
-    if (e.type == SDL_EVENT_KEY_DOWN) {
-        if (e.key.key == SDLK_DOWN) {
-            SDL_Log("babo");
-            SetEntitySpeed(mEntTable[0], 0, map->mTileLen);
-            mIsEntPosUpdate = true;
-        }
-    }
     for (Entity* p : map->mPawns) {
         p->HandleEvent(e, uim, objm, map, mouseX, mouseY);
     }
@@ -391,34 +362,21 @@ void EntityManager::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& obj
     }
 }
 
-void EntityManager::RenderOnUpdate(Map *map)
+void EntityManager::RenderEntities(Map *map)
 {
-    if (mIsRenderUpdate == false) {
-        SDL_RenderTexture(System::sRenderer, mTempTex, &map->mCam->mSight, nullptr);
-        return;
-    }
-
-    SDL_Log("entity manager render update");
-    RenderManager rm;
-    rm.SetRenderTarget(System::sRenderer, mTempTex);
-
     for (Entity* ent : mEntTable) {
         if (!ent->mIsOnMap) continue;
-        ent->mTexture->Render(ent->mMapX, ent->mMapY, nullptr,
-           (float) map->mTileLen, (float) map->mTileLen
+        ent->mTexture->Render(ent->mMapX - map->mCam->mSight.x, ent->mMapY - map->mCam->mSight.y,
+            nullptr, (float) map->mTileLen, (float) map->mTileLen
         );
  
     }
     for (Pawn* pawn : mPawnTable) {
         if (!pawn->mIsOnMap) continue;
-        pawn->mTexture->Render(pawn->mMapX, pawn->mMapY, nullptr,
-           (float) map->mTileLen, (float) map->mTileLen
+        pawn->mTexture->Render(pawn->mMapX - map->mCam->mSight.x, pawn->mMapY - map->mCam->mSight.y,
+            nullptr, (float) map->mTileLen, (float) map->mTileLen
         );
     }
-
-    //렌더러 타겟 해제
-    SDL_SetRenderTarget(System::sRenderer, nullptr);
-    mIsRenderUpdate = false;
 }
 
 Entity::Entity(std::string name, int id)
@@ -430,22 +388,40 @@ Entity::Entity(std::string name, int id)
 
 void Entity::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, Map* map,  float x, float y)
 {
-    Math ph;
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+    
     //카메라 오프셋 계산
     x += map->mCam->mSight.x;
     y += map->mCam->mSight.y;
-    MapTile* tile = map->mMapTiles[mTileId]; //타일 기준으로 이벤트 핸들링
-    bool mouseIn = ph.IsPointInSquare(x, y, tile->mX, tile->mY, tile->mW, tile->mH);
 
+    MapTile* tile = map->mMapTiles[mTileId]; //타일 기준으로 이벤트 핸들링
+    Math ph;
+    bool mouseIn = ph.IsPointInSquare(x, y, tile->mX, tile->mY, tile->mW, tile->mH);
     if (!mouseIn) return;
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
-    SDL_Log("clicked entity");
-    uim.mFocusIcon->SetDimension(mMapX, mMapY, map->mTileLen, map->mTileLen);
+    
     //엔티티 태도에 따라 포커스 텍스처를 변경.
+    uim.mFocusIcon->SetDimension(mMapX, mMapY, map->mTileLen, map->mTileLen);
     if (mDemeanor == Demeanor::Neutral) uim.mFocusIcon->mTex->LoadFromFile("images/ui/focus.png");
     else if (mDemeanor == Demeanor::Friendly) uim.mFocusIcon->mTex->LoadFromFile("images/ui/focus_friendly.png");
     else if (mDemeanor == Demeanor::Hostile) uim.mFocusIcon->mTex->LoadFromFile("images/ui/focus_hostile.png");
     uim.mFocusIcon->mIsRender = true;
+
+    //포커스 엔티티 캐싱
+    map->mFocusedEnt = this;
+    //아군이 아닐 경우 타일 범위 렌더링 끔
+    if (!this->mIsPawn) uim.mTileHLUI->mIsRenderBetweenTiles = false;
+
+    //이전 엔티티와 같은 경우
+    if (this == map->mPrevFocusedEnt)  {
+        //포커스된 엔티티를 한번 더 클릭했을 경우 
+        SDL_Log("one more click on focused entity");
+        map->mPrevFocusedEnt = this;
+        if (!mIsPawn) return; //아군이 아니면 반환함. 
+
+        //스킬 ui등을 표시.
+    }
+
+    //내가 아군이고 턴을 가지고 있을때
 }
 
 //부하 생성자
@@ -456,11 +432,17 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
 
     mTexture = new Texture();
 
+    //지금은 하드코딩 했는데 나중에는 인간 디폴트 데이터를 불러오게 할 수도 있다.
     mMaxHp = 100;
+    mCurHp = mMaxHp;
     mMaxAp = 100;
+    mCurAp = mMaxAp;
     mMaxSpd = 100;
+    mCurSpd = mMaxSpd;
     mMaxAtk = 10;
+    mCurAtk = mMaxAtk;
     mMaxArmor = 10;
+    mCurArmor = mMaxArmor;
 
     mEqs[EqType::Head] = new Equipment(objm, "naked");
     mEqs[EqType::Torso] = new Equipment(objm, "naked");
@@ -469,9 +451,4 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
     mEqs[EqType::Foot] = new Equipment(objm, "naked");
     mEqs[EqType::Weapon] = new Equipment(objm, "naked");
     mEqs[EqType::Offhand] = new Equipment(objm, "naked");
-
-    //유니크 부하를 생성한다.
-    if (pType == PawnType::Unique) {
-        //아직 미구현
-    }
 }

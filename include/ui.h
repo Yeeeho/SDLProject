@@ -109,6 +109,8 @@ class ToolTip : public UI {
     ToolTip();
     void Destroy();
 
+    void ClearContent();
+
     void SetToolTipFrame();
 
     void SetRefInfo(int x, int y, int w, int h); //참조 좌표 설정
@@ -194,7 +196,7 @@ class TileHLUI {
     TileHLUI();
     ~TileHLUI();
 
-    void HandleEvent(SDL_Event& e, Map* map, float mx, float my);
+    void SetTileIds(std::vector<int> ids);
 
     void Update();
 
@@ -204,8 +206,7 @@ class TileHLUI {
     Texture* mHighlight {nullptr};
 
     private:
-    MapTile* mT1 {nullptr};
-    MapTile* mT2 {nullptr};
+    std::vector<int> mTIds;
 };
 
 class UIManager {

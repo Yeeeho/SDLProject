@@ -25,7 +25,7 @@
             "img_path" : "images/entity/npc/rat.png",
 
             "hp" : 20,
-            "ap" : 10,
+            "ap" : 100,
             "spd" : 100,
             "atk" : 10,
             "armor" : 5

@@ -5,6 +5,9 @@
 #include <unordered_map>
 
 //전방 선언
+class GameStateManager;
+class UIManager;
+class ObjectManager;
 class Camera;
 class Entity;
 class MapTile;
@@ -21,7 +24,7 @@ class Map {
     void Destroy();
 
     //이벤트 핸들링
-    void HandleEvent(SDL_Event& e, float mouseX, float mouseY);
+    void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, float mouseX, float mouseY);
 
     //업데이트 관련
     bool mIsMapUpdate {true};
@@ -32,7 +35,7 @@ class Map {
     //맵 카메라
     Camera* mCam {nullptr};
 
-    //일반적인 정보
+    //위치와 크기
     int mX {0}, mY {0}; //맵 위치
     int mInitX {0}, mInitY {0}; //맵 시작 위치
 
@@ -41,8 +44,14 @@ class Map {
     int mTileLen = 100; //타일 한 변 길이
 
     std::vector<MapTile*> mMapTiles; //맵타일들 담는 컨테이너
+
+    //엔티티
     std::vector<Entity*> mNpcs; //맵에 있는 npc들 담는 컨테이너
     std::vector<Entity*> mPawns; //맵에 있는 폰들을 담는 컨테이너
+    Entity* mPrevFocusedEnt {nullptr};
+    Entity* mFocusedEnt {nullptr};
+
+    //지형지물(추가 예정)
 
     SDL_Texture* mTempTex{nullptr}; //베이킹용 임시 텍스처
 };

@@ -7,8 +7,15 @@ class TurnManager {
     TurnManager() = default;
     virtual ~TurnManager();
 
+    //업데이트
     virtual void Update();
-    virtual void TakeTurn(Entity* ent);
+
+    //턴 제어 관련
+    virtual void IncTurn();
+    virtual int GetTurn();
+    virtual void SetTurn(int turn); //디버깅용
+
+    virtual void TakeTurn(Entity* ent); //지금 턴인 엔티티 타겟
 
     void UpdateEntityQueue();
     bool mIsQueueUpdate {true};
@@ -20,6 +27,10 @@ class TurnManager {
     int mPawnIdx {0};
     int mPawnMaxNum {0};
 
+    int mCurrentTurn {0};
+
+    Entity* mCurrentTarget {nullptr};
+    Entity* mPrevTarget {nullptr}; //이전 객체 캐싱
     Map* mCurrentMap {nullptr};
 };
 
@@ -27,30 +38,20 @@ class OverMapTurnManager : public TurnManager {
     public:
     OverMapTurnManager();
     
-    void IncOverMapTurn();
-    int GetOverMapTurn();
-    void SetOverMapTurn(int turn); //디버깅용
+    void IncTurn() override;
 
     void Update() override;
     void TakeTurn(Entity* ent) override;
 
-    private:
-    int mOverMapTurn {0};
-    int mOverMapTurnCap {4};
+    int mTurnCap {0};
 };
 
 class SubMapTurnManager : public TurnManager {
     public:
     void EnterMap(Map* map); //맵에 처음 들어가면 실행된다.
 
-    void IncSubMapTurn();
-    int GetSubMapTurn();
-    void SetSubMapTurn(int turn);
-
     void Update() override;
     void TakeTurn(Entity* ent) override;
-
-    int mSubMapTurn {0}; 
 };
 
 class CityMapTurnManager : public TurnManager {

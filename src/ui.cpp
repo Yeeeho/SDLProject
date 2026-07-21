@@ -216,7 +216,6 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager
 void UIManager::HandleMapUIEvent(SDL_Event &e, GameStateManager &gsm, Map *map, float mx, float my)
 {
     HandleMapToolTipEvent(e, gsm, map, mx, my);
-    mTileHLUI->HandleEvent(e, map, mx, my);
 }
 
 void UIManager::RenderUIs()
@@ -382,6 +381,11 @@ void ToolTip::Destroy()
     Destroy(); //부모 클래스 파괴 메서드, 본인도 파괴함
 }
 
+void ToolTip::ClearContent()
+{
+    mTui->mTexts.clear();
+}
+
 void ToolTip::SetToolTipFrame()
 {
     float currentW = 0.f, currentH = 0.f;
@@ -415,7 +419,7 @@ void ToolTip::SetToolTipFrame()
         }
     }
     if (maxW <= currentW) maxW = currentW; //최대값 캐싱
-    maxW += mPadding; //패딩 추가
+    maxW += mPadding * 2; //패딩 추가
     currentW = 0; //초기화
 
     SDL_Log(std::to_string(maxW).c_str());
@@ -911,37 +915,22 @@ TileHLUI::~TileHLUI()
     mHighlight->Destroy();
 }
 
-void TileHLUI::HandleEvent(SDL_Event &e, Map* map, float mx, float my)
+void TileHLUI::SetTileIds(std::vector<int> ids)
 {
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
-    
-    //맵 이동 보정
-    mx += map->mCam->mSight.x;
-    my += map->mCam->mSight.y;
-
-    MapManager mm;
-    int id = mm.WhatTileOnPoint(mx, my, map);
-    MapTile* tile = map->mMapTiles[id];
-    if (!mT1) mT1 = tile;
-    else {
-        mT2 = tile;
-        mIsRenderBetweenTiles = true;
-    }
+    mTIds = ids;
 }
 
 void TileHLUI::Update()
 {
 }
 
-void TileHLUI::RenderBetweenTiles(Map *map)
+void TileHLUI::RenderBetweenTiles(Map* map)
 {
     if (!mIsRenderBetweenTiles) return;
 
     MapManager mm;
-    std::vector<int> ids;
-    ids = mm.GetTilesIdBetween(map, mT1, mT2);
     
-    for (int id : ids) {
+    for (int id : mTIds) {
         MapTile* tile = map->mMapTiles[id];
         //카메라 오프셋
         mHighlight->Render(

@@ -194,7 +194,6 @@ void SubMapState::Update(UIManager &uim, ObjectManager &objm, GameStateManager &
 
     objm.mSubMap->mCam->Move();
 
-    objm.mEntm->UpdateEntityPos(objm.mSubMap, objm.mEntm->mEntTable[0]);
     uim.UpdateMapToolTip(objm.mSubMap);
 }
 
@@ -203,7 +202,7 @@ void SubMapState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm,
     uim.mDialogueUI->HandleEvent(e, gsm, mouseX, mouseY);
 
     objm.mSubMap->mCam->HandleEvent(e);
-    objm.mSubMap->HandleEvent(e, mouseX, mouseY);
+    objm.mSubMap->HandleEvent(e, uim, objm, mouseX, mouseY);
 
     objm.mEntm->HandleEvent(e, uim, objm, objm.mSubMap, mouseX, mouseY);
 
@@ -216,16 +215,14 @@ void SubMapState::Render(RenderManager &rend, UIManager &uim, ObjectManager &obj
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
     SDL_RenderClear(System::sRenderer);
     
-    SDL_SetRenderLogicalPresentation(System::sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    SDL_SetRenderLogicalPresentation(System::sRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
     
     //맵 렌더링
     objm.mSubMap->RenderOnUpdate();
     //엔티티 렌더링
-    objm.mEntm->RenderOnUpdate(objm.mSubMap);
-
-    //ui들 렌더링
-    SDL_SetRenderLogicalPresentation(System::sRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+    objm.mEntm->RenderEntities(objm.mSubMap);
     
+    //ui들 렌더링
     uim.mFocusIcon->RenderByCam(objm.mSubMap->mCam);
     uim.RenderMapUIs(objm.mSubMap);
     uim.RenderUIs();

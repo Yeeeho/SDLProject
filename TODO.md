@@ -26,6 +26,7 @@ Done:
     - 히트 스프라이트 구현: in progress
 - 그래픽 최적화:
     - 맵 타일이 각자 텍스처 객체를 갖는걸 수정: not yet
+    - 정확히 말하면 플라이웨이트 디자인 패턴을 씀.
 
 - 데이터
     - 시나리오 데이터 로드: in progress
@@ -50,8 +51,12 @@ Done:
     - 서브맵 지형 구현: in progress
     - 오버맵으로 이동 기능 구현: in progress
 
+- 맵 이동:
+    - 엔티티 이동시 연관 데이터도 움직이게 바꿈: in progress
+
 - 전투 시스템:
     - 서브맵 턴 구현: done
+    - 엔티티 포커스 구현: in progress
     - 근접전 시스템 구현: in progress
     - 원거리전 시스템 구현: in progress
     - 엄폐 시스템 구현: in progress
@@ -59,7 +64,7 @@ Done:
 
 - 전투 ui:
     - 엔티티 정보 확인 팝업 구현: in progress
-    - 공격 범위 표시 구현: in progress
+    - 공격(이동) 범위 표시 구현: done
     - 체력바, ap바 등 간략화된 엔티티 정보 ui 구현: in progress
 
 - 도시 기본 ui
