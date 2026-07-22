@@ -201,10 +201,10 @@ void SubMapState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm,
 {
     uim.mDialogueUI->HandleEvent(e, gsm, mouseX, mouseY);
 
+    objm.mEntm->HandleEvent(e, uim, objm, objm.mSubMap, mouseX, mouseY);
+
     objm.mSubMap->mCam->HandleEvent(e);
     objm.mSubMap->HandleEvent(e, uim, objm, mouseX, mouseY);
-
-    objm.mEntm->HandleEvent(e, uim, objm, objm.mSubMap, mouseX, mouseY);
 
     uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
     uim.HandleMapUIEvent(e, gsm, objm.mSubMap, mouseX, mouseY);
@@ -278,7 +278,6 @@ void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &o
     SDL_SetRenderDrawColor(System::sRenderer, 0x00, 0x00, 0x00, 0x00);
     SDL_RenderClear(System::sRenderer);
 
-    
     //도시 맵 렌더링
     objm.mCity->mCityMap->RenderOnUpdate();
     //툴팁 렌더링

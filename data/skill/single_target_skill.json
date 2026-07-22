@@ -1,0 +1,30 @@
+{
+    "type" : "single_target_skill",
+    "desc" : "단일 대상 스킬 데이터들을 정의해놓았다",
+    "items" : {
+        "basic_attack" : {
+            "name" : "기본 공격",
+
+            "dmg" : {
+                "mod" : {
+                    "weapon_dmg_mod" : 1
+                }
+            },
+            "st_use" : {
+                "mod" : {
+                    "weapon_st_use_mod" : 1 
+                }
+            },
+            "ap_use" : {
+                "mod" : {
+                    "weapon_ap_use_mod" : 1
+                }
+            },
+            
+            "range" : 1,
+            "cond" : [
+                "need_ent_target"
+            ]
+        }
+    }
+}

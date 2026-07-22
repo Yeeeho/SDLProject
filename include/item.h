@@ -16,7 +16,7 @@ class Item {
 
     //아이템 속성
     std::string mName = ""; //이름
-    int mValue = 0; //가치
+    int mValue = 0; //가치, 실제 계산 방식은 여러 변수들에 의해 동적으로 변한다.
 };
 
 enum class EqType {
@@ -29,6 +29,18 @@ class Equipment : public Item {
     Equipment(const ObjectManager& objm, std::string name);
 
     //장비 속성
-    int mDamage = 0;
-    int mArmor = 0;
+    //기본 공격력 등은 데이터베이스를 참고하도록 한다.
+    //아래에 정의된 변수들은 현재 상태에 관한 것이다.
+    int mDamage {0};
+    int mArmor {0};
+    //깡스탯 증가
+    int mStrFlat {0};
+    int mEndFlat {0};
+    int mDexFlat {0};
+    int mAgiFlat {0};
+    int mWilFlat {0};
+    int mIntFlat {0};
+    int mSpdFlat {0};
+
+    
 };

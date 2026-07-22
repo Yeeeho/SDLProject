@@ -68,12 +68,14 @@ class MapTile {
     void ChangeTexture(std::string path);
     void DestroyInfos(); //참조 데이터 컨테이너를 비우는 함수. 
 
+    std::vector<TTFWord*> mInfos;
+
     int mId = 0; //식별용 타일 아이디
 
     int mX {0}, mY {0}; //위치와 크기
     int mW, mH; 
 
-    std::vector<TTFWord*> mInfos;
+    bool mIsEntOn : 1; //엔티티가 있는가?
 
     Texture* mTileTex{nullptr}; //타일 텍스처, 항상 렌더링됨.
 };

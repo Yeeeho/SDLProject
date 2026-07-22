@@ -228,23 +228,21 @@ void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, in
     ent->mTexture->LoadFromFile(entData["img_path"].get<std::string>());
 
     //데이터 읽고 가져오기
-    ent->mName = entData["name"].get<std::string>();
-    ent->mRace = entData["race"].get<std::string>();
+    ent->mName = entData["name"].get<std::string>(); //문자열은 24바이트를 처먹기 때문에 고쳐야 할지도
     
-    if (entData.contains("hp")) ent->mMaxHp = entData["hp"].get<int>();
-    ent->mCurHp = ent->mMaxHp;
+    ent->mStr = entData["str"].get<int>();
+    ent->mEnd = entData["end"].get<int>();
+    ent->mDex = entData["dex"].get<int>();
+    ent->mAgi = entData["agi"].get<int>();
+    ent->mWil = entData["wil"].get<int>();
+    ent->mSpd = entData["spd"].get<int>();
 
-    if (entData.contains("ap")) ent->mMaxAp = entData["ap"].get<int>();
-    ent->mCurAp = ent->mMaxAp;
+    //최대체력, 최대행동력은 스탯에 따라 결정
+    StatHelper sh;
+    ent->mCurHp = sh.GetMaxHp(ent);
+    ent->mCurAp = sh.GetMaxAp(ent);
 
-    if (entData.contains("spd")) ent->mMaxSpd = entData["spd"].get<int>();
-    ent->mCurSpd = ent->mMaxSpd;
-
-    if (entData.contains("atk")) ent->mMaxAtk = entData["atk"].get<int>();
-    ent->mCurAtk = ent->mMaxAtk;
-
-    if (entData.contains("armor")) ent->mMaxArmor = entData["armor"].get<int>();
-    ent->mCurArmor = ent->mMaxArmor; 
+    //선천적으로 방어력을 가진 경우 패시브 플래그에서 가져오는 걸루..
 
     std::string message = "entity id: " + std::to_string(id) + " name: " + name + " is allocated";
     SDL_Log(message.c_str());
@@ -262,16 +260,18 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     Pawn* pawn = mPawnTable[id];
 
     pawn->mName = pawnData["name"].get<std::string>();
-    pawn->mOriginalName = pawn->mName;
+    pawn->mCustomName = pawn->mName;
     pawn->mType = pType;
     pawn->mDemeanor = Demeanor::Friendly;
+
+    StatHelper sh;
+    pawn->mCurHp = sh.GetMaxHp(pawn); 
+    pawn->mCurAp = sh.GetMaxAp(pawn); 
 
     pawn->mIsPawn = true;
     
     //텍스처 할당
     pawn->mTexture->LoadFromFile(pawnData["img_path"].get<std::string>());
-    //하드코딩
-    pawn->mRace = "human";
 
     std::string message = "pawn id: " + std::to_string(id) + " name: " + name + " is allocated";
     SDL_Log(message.c_str());
@@ -291,6 +291,8 @@ void EntityManager::DeallocPawnOnTable(ObjectManager &objm, int id)
 
 void EntityManager::LoadDataInTile(MapTile *tile, Entity *ent)
 {
+    tile->mIsEntOn = true;
+
     SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
     SDL_Color yellow = {0xB0, 0xB0, 0x40, 0xFF};
     SDL_Color white = {0xF0, 0xF0, 0xF0, 0xFF};
@@ -301,23 +303,24 @@ void EntityManager::LoadDataInTile(MapTile *tile, Entity *ent)
 
     TTFWord* name = new TTFWord(ent->mName, tc, System::sFont);
 
+    StatHelper sh;
+
     tile->mInfos.push_back(name);
     tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
 
     tile->mInfos.push_back(new TTFWord("HP:", red, System::sFont));
     tile->mInfos.push_back(new TTFWord(System::sFont, TextType::Space));
     tile->mInfos.push_back(new TTFWord(std::to_string(ent->mCurHp), white, System::sFont));
-    std::string maxHp = "/" + std::to_string(ent->mMaxHp);
+    std::string maxHp = "/" + std::to_string(sh.GetMaxHp(ent));
     tile->mInfos.push_back(new TTFWord(maxHp, white, System::sFont));
     tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
 
     tile->mInfos.push_back(new TTFWord("AP:", blue, System::sFont));
     tile->mInfos.push_back(new TTFWord(System::sFont, TextType::Space));
     tile->mInfos.push_back(new TTFWord(std::to_string(ent->mCurAp), white, System::sFont));
-    std::string maxAp = "/" + std::to_string(ent->mMaxAp);
+    std::string maxAp = "/" + std::to_string(sh.GetMaxAp(ent));
     tile->mInfos.push_back(new TTFWord(maxAp, white, System::sFont));
     tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
-
 }
 
 void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent)
@@ -354,6 +357,16 @@ void EntityManager::Update(ObjectManager &objm)
 
 void EntityManager::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, Map* map, float mouseX, float mouseY)
 {
+    //오른쪽 마우스 버튼 클릭시 포커스 해제
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_RIGHT) {
+        map->mFocusedEnt = nullptr; map->mPrevFocusedEnt = nullptr;
+        uim.mFocusIcon->mIsRender = false;
+        return;
+    } 
+    //카메라 오프셋 계산
+    mouseX += map->mCam->mSight.x;
+    mouseY += map->mCam->mSight.y;
+
     for (Entity* p : map->mPawns) {
         p->HandleEvent(e, uim, objm, map, mouseX, mouseY);
     }
@@ -388,11 +401,9 @@ Entity::Entity(std::string name, int id)
 
 void Entity::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, Map* map,  float x, float y)
 {
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
-    
-    //카메라 오프셋 계산
-    x += map->mCam->mSight.x;
-    y += map->mCam->mSight.y;
+    //엔티티 이벤트 핸들러는 포커스 상태만 제어함
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return; //마우스 왼쪽 클릭
+    if (e.button.button != SDL_BUTTON_LEFT) return;
 
     MapTile* tile = map->mMapTiles[mTileId]; //타일 기준으로 이벤트 핸들링
     Math ph;
@@ -421,7 +432,9 @@ void Entity::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, Map*
         //스킬 ui등을 표시.
     }
 
+    map->mPrevFocusedEnt = this;
     //내가 아군이고 턴을 가지고 있을때
+    
 }
 
 //부하 생성자
@@ -431,18 +444,15 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
     mName = name;
 
     mTexture = new Texture();
-
+    
     //지금은 하드코딩 했는데 나중에는 인간 디폴트 데이터를 불러오게 할 수도 있다.
-    mMaxHp = 100;
-    mCurHp = mMaxHp;
-    mMaxAp = 100;
-    mCurAp = mMaxAp;
-    mMaxSpd = 100;
-    mCurSpd = mMaxSpd;
-    mMaxAtk = 10;
-    mCurAtk = mMaxAtk;
-    mMaxArmor = 10;
-    mCurArmor = mMaxArmor;
+    mStr = 10;
+    mEnd = 10;
+    mDex = 10;
+    mAgi = 10;
+    mWil = 10;
+    mInt = 10;
+    mSpd = 10;
 
     mEqs[EqType::Head] = new Equipment(objm, "naked");
     mEqs[EqType::Torso] = new Equipment(objm, "naked");
@@ -451,4 +461,42 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
     mEqs[EqType::Foot] = new Equipment(objm, "naked");
     mEqs[EqType::Weapon] = new Equipment(objm, "naked");
     mEqs[EqType::Offhand] = new Equipment(objm, "naked");
+}
+
+int StatHelper::GetMaxHp(Entity *ent)
+{
+    int ret = ent->mEnd * 10 + ent->mWil * 5;
+    return ret;
+}
+
+int StatHelper::GetMaxAp(Entity *ent)
+{
+    int ret = ent->mSpd * 10;
+    return ret;
+}
+
+int StatHelper::GetMediumWeightLimit(Entity *ent)
+{
+    return ent->mStr * 5;
+}
+
+int StatHelper::GetMaxWeightLimit(Entity *ent)
+{
+    return ent->mStr * 10;
+}
+
+int StatHelper::GetApPerTileMove(Entity *ent)
+{
+    //페널티가 없는 무게의 하한일 경우
+    if (ent->mWeight < (float) GetMediumWeightLimit(ent)) {
+        return 50;
+    }
+    //최대 무게의 하한일 경우
+    else if (ent->mWeight < (float) GetMaxWeightLimit(ent)) {
+        return 100;
+    }
+    //중량 초과
+    else {
+        return 9999;
+    }
 }

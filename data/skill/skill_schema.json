@@ -1,0 +1,7 @@
+{
+    "type" :"skill_schema",
+    "desc" : "스킬 타입들이 뭐가 있는지를 대충 설명하는 스키마",
+    "items" : [
+        "single_target", "multi_target", "area", "combined"
+    ]
+}

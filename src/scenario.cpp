@@ -39,6 +39,7 @@ void Scenario::UpdateScenario(UIManager& uim, ObjectManager &objm, GameStateMana
 
     SDL_Log("update scenario");
 
+    JsonHelper jh;
     json section = mData["items"][mScProgress];
 
     std::string sType = section["type"].get<std::string>();
@@ -47,7 +48,7 @@ void Scenario::UpdateScenario(UIManager& uim, ObjectManager &objm, GameStateMana
 
     if (sType == "dialogue") {
         //어느 섹션의 대화인지를 찾아서 가져온다.
-        objm.mJsm->LoadJsonFile(mDialogue, section["path"].get<std::string>());
+        jh.LoadJsonFile(mDialogue, section["path"].get<std::string>());
 
         std::string dSection = section["d_section"].get<std::string>();
         mDialogueSection = mDialogue["items"][dSection];
@@ -199,7 +200,8 @@ void Scenario::UpdateDialogue(UIManager &uim, ObjectManager& objm, json data)
 
 void NGScenario::LoadScenarioData(ObjectManager &objm)
 {
-    objm.mJsm->LoadJsonFile(mData, "data/scenario/main.json");
+    JsonHelper jh;
+    jh.LoadJsonFile(mData, "data/scenario/main.json");
 }
 
 void NGScenario::LoadSubMap(ObjectManager &objm)

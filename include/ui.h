@@ -197,6 +197,7 @@ class TileHLUI {
     ~TileHLUI();
 
     void SetTileIds(std::vector<int> ids);
+    void ClearTileIds();
 
     void Update();
 

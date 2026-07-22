@@ -49,11 +49,12 @@ void Map::Destroy()
     delete this;
 }
 
-//최적화/기능 추가 여지가 남아있음.
 void Map::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, float mouseX, float mouseY)
 {
     if(uim.mDialogueUI->mIsRender) return; //대화창이 렌더링중이면 반환한다.  
     //마우스오버
+    //맵 이벤트 핸들러는 맵상에서의 범위 표시 등을 제어한다.
+    //엔티티 자체의 포커스 여부 등은 제어하지 않는다.
 
     MapManager mm;
     mouseX += mCam->mSight.x; //카메라 보정
@@ -70,14 +71,15 @@ void Map::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, float m
     MapTile* tile = mMapTiles[tid];
 
     Entity* target {nullptr};
-    //턴을 잡은 아군이 있을 경우
+    //턴을 잡은 아군이 있을 경우 타겟을 금마로 설정
     for (Entity* ent : mPawns) {
         if (ent->mIsTakingTurn) {
             target = ent;
         }
     }    
-    if (!target) return;
+    if (!target) return; //턴을 잡은 아군이 없으면 반환
 
+    //아군 엔티티 이동 동작 
     //타겟이 포커스 상태고 아군일때 이동 타일 범위 렌더링
     if (target != mFocusedEnt || !target->mIsPawn) {
         //둘중 하나라도 만족하지 않으면 렌더링 안함
@@ -88,17 +90,25 @@ void Map::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, float m
         uim.mTileHLUI->mIsRenderBetweenTiles = true;
     }
 
-    //타일 범위 구하는 로직,
+    //타일 범위 구하는 로직
+    if (target->mTileId == tid) { 
+        return; //같은 타일을 두번 누름
+    }
     MapTile* tile1 = mMapTiles[target->mTileId];
     MapTile* tile2 = tile;
     //TODO:이동 능력에 따라서 조절되어야 함.
     std::vector<int> tids = mm.GetTilesIdBetween(this, tile1, tile2);
-
+    
     //타일 ui 관련 세팅
     uim.mTileHLUI->SetTileIds(tids);
     
-    //클릭시 행동
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return; //클릭만 감지
+    if (tile->mIsEntOn) {
+        //목표 타일에 엔티티가 이미 있음
+        return;        
+    }
+    //마우스 왼쪽 클릭시 행동
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+    if (e.button.button != SDL_BUTTON_LEFT) return; 
     //엔티티 이동
     MoveManager mvm = MoveManager(&uim, &objm);
     mvm.MoveEntityTo(this, target, target->mTileId, tid);
@@ -167,6 +177,8 @@ MapTile::MapTile(int x, int y, int w, int h, std::string path)
 {
     mX = x; mY = y;
     mW = w; mH = h;
+
+    mIsEntOn = false;
 
     mTileTex = new Texture();
 

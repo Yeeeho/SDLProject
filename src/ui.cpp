@@ -920,6 +920,11 @@ void TileHLUI::SetTileIds(std::vector<int> ids)
     mTIds = ids;
 }
 
+void TileHLUI::ClearTileIds()
+{
+    mTIds.clear();
+}
+
 void TileHLUI::Update()
 {
 }

@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "game_object.h"
+#include "game_json.h"
 #include "text.h"
 #include "city.h"
 #include "entity.h"
@@ -9,6 +10,7 @@
 
 ObjectManager::ObjectManager()
 {
+    mJsm = new JsonManager();
 }
 
 void ObjectManager::RenderObjects()

@@ -25,8 +25,5 @@ Equipment:: Equipment(const ObjectManager& objm, std::string name)
         eq = equipmentItems[name];
     }
 
-    mName = name;
-    if (eq.contains("value")) mValue = eq["value"].get<int>();
-    if (eq.contains("damage")) mDamage = eq["damage"].get<int>();
-    if (eq.contains("armor")) mArmor = eq["armor"].get<int>();
+    mName = eq["name"].get<std::string>();
 }

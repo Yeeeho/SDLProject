@@ -1,0 +1,18 @@
+{
+    "type" : "entity_schema",
+    "desc" : "엔티티의 데이터 스키마",
+    "items" : [
+        
+        {
+            "name" : "general_stat",
+            "type" : "int",
+            "items" : [
+                "str", "end", "dex", "agi", "wil", "int", "spd"             
+            ]
+        },
+        {
+
+        }
+    ]
+
+}

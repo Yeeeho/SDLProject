@@ -2,7 +2,7 @@
 
 #include "game_json.h"
 
-bool JsonManager::LoadJsonFile(json& j, std::string path)
+bool JsonHelper::LoadJsonFile(json &j, std::string path)
 {
     bool success = true;
 

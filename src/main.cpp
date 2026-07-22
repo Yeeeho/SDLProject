@@ -11,7 +11,7 @@
 
 int main() {
     System sys;
-    
+
     if (sys.Init() == false) {
         SDL_Log("Unable to init SDL");
     }

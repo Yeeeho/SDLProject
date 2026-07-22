@@ -143,7 +143,7 @@ class Entity {
 
     //식별 정보
     std::string mName {""};
-    std::string mRace {""};
+
     Demeanor mDemeanor {Demeanor::Neutral};
 
     int mId;
@@ -162,26 +162,29 @@ class Entity {
     int mXspeed {0};
     int mYspeed {0};
 
-    //전투용 스탯
-    int mMaxHp {0}; //max~ 는 최대치.
-    int mCurHp {0}; //cur~ 는 현재 상태.
+    //범용 스탯
+    int mStr {0};
+    int mEnd {0};
+    int mDex {0};
+    int mAgi {0};
+    int mWil {0};
+    int mInt {0};
+    int mSpd {0};
 
-    int mMaxAp {0};
-    int mCurAp {0};
+    //전투 스탯, 최대 스탯(체력 등)은 범용 스탯에 따라 결정되며, 뭐 헬퍼 함수 등으로 그때그때 구하게 한다.
+    int mCurHp {0}; //현재 체력.
+    int mCurAp {0}; //현재 행동력
+    
+    float mWeight {0.f}; //엔티티 무게. kg단위 참고
+    
+    //패시브 플래그
 
-    int mMaxSpd {0};
-    int mCurSpd {0};
-
-    int mMaxAtk {0};
-    int mCurAtk {0};
-
-    int mMaxArmor {0};
-    int mCurArmor {0};
+    //액티브 플래그 (배운기술)
     
     std::unordered_map<EqType, Equipment*> mEqs; //실제로 장비한 장비들 컨테이너
 
     //여행용 스탯
-    int mSupplyDemand = 0; //턴당 요구 보급품량
+    //턴당 요구 보급품량 << 헬퍼에서 연산
 };
 
 enum class PawnType {
@@ -192,8 +195,20 @@ class Pawn : public Entity {
     public:
     Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id);
 
-    //엔티티의 원래 이름
-    std::string mOriginalName {""};
+    std::string mCustomName {""};
 
     PawnType mType;
+};
+
+//스탯 관련 연산을 보조해주는 헬퍼 클래스에용
+class StatHelper {
+    public:
+    int GetMaxHp(Entity* ent); //최대체력을 계산한다.
+    int GetMaxAp(Entity* ent); //최대 ap를 계산한다.
+    
+    //무게 상한 계산
+    int GetMediumWeightLimit(Entity* ent); //페널티가 없는 무게 상한을 계산한다.
+    int GetMaxWeightLimit(Entity* ent); //최대 무게 상한을 계산한다.
+    //이동력 계산
+    int GetApPerTileMove(Entity* ent); //타일당 표준 이동력을 계산한다.
 };

@@ -57,11 +57,12 @@ bool System::Init()
 bool System::LoadData(ObjectManager& objm)
 {
     bool success = true;
-
-    objm.mJsm = new JsonManager();
-    objm.mJsm->LoadJsonFile(objm.mJsm->mPawnDb, "data/entity/pawn.json");
-    objm.mJsm->LoadJsonFile(objm.mJsm->mEntDb, "data/entity/entity.json");
-    objm.mJsm->LoadJsonFile(objm.mJsm->mEquipmentDb, "data/item/equipment.json");
+    
+    JsonHelper jh;
+    
+    jh.LoadJsonFile(objm.mJsm->mPawnDb, "data/entity/pawn.json");
+    jh.LoadJsonFile(objm.mJsm->mEntDb, "data/entity/entity.json");
+    jh.LoadJsonFile(objm.mJsm->mEquipmentDb, "data/item/equipment.json");
 
     return success;
 }
