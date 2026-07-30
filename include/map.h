@@ -25,6 +25,7 @@ class Map {
 
     //이벤트 핸들링
     void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, float mouseX, float mouseY);
+    bool mCanHandleEvent {true};
 
     //업데이트 관련
     bool mIsMapUpdate {true};

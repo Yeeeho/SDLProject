@@ -7,7 +7,8 @@ g++ -x c++-header^
  include/pch.h -o include/pch.h.gch
 
 @echo compiling source files
-g++ src/*.cpp^
+::소스파일 폴더에 하위 디렉토리가 있다면 여기에 추가해야 한다.
+g++ src/*.cpp src/item/*.cpp src/skill/*.cpp^
  -I./include -I./lib -I./lib/SDL3/include -I./lib/SDL3_ttf/include^
  -I./lib/SDL3_image/include -I./lib/SDL3_mixer/include^
 

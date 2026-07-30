@@ -1,0 +1,69 @@
+{
+    "type" : "skill_db",
+    "desc" : "스킬들의 정보를 기재해놓았다.",
+    "items" : {
+
+        "punch" : {
+            "name" : "주먹질",
+            "img_path" : "images/icons/skill/fist.png",
+            "target" : "single",
+            "range" : 1,
+
+            "dmg" : {
+                "mod" : {
+                    "str_mod" : 0.2,
+                    "dex_mod" : 0.1,
+                    "agi_mod" : 0.2
+                }
+            },
+            "st_use" : {
+                "flat" : 50
+            },
+            "ap_use" : {
+                "flat" : 50
+            }
+        },   
+
+        "bite" : {
+            "name" : "물기",
+            "target" : "single",
+            "range" : 1,
+            "dmg" : {
+                "mod" : {
+                    "str_mod" : 0.5
+                }
+            },
+            "st_use" : {
+                "flat" : 50
+            },
+            "ap_use" : {
+                "flat" : 50
+            }
+        },
+
+        "basic_attack" : {
+            "name" : "기본 공격",
+            "target" : "single",
+            "range" : 1,
+
+            "dmg" : {
+                "mod" : {
+                    "weapon_dmg_mod" : 1,
+                    "desc" : "무기 데미지에 몇배수를 적용할지?"
+                }
+            },
+            "st_use" : {
+                "mod" : {
+                    "weapon_st_use_mod" : 1,
+                    "desc" : "무기의 스태미너 사용량에 몇배수를 적용할지?"
+                }
+            },
+            "ap_use" : {
+                "mod" : {
+                    "weapon_ap_use_mod" : 1,
+                    "desc" : "무기의 활동력 소모량에 몇배수를 적용할지?"
+                }
+            }
+        }
+    }
+}

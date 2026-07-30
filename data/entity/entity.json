@@ -4,6 +4,7 @@
         "error_entity" : {
             "name" : "error_entity",
             "race" : "error_race",
+            "kin" : "error_kin",
             "img_path" : "images/error.png",
 
             "str" : 1,
@@ -18,6 +19,7 @@
         "null_entity" : {
             "name" : "null_entity",
             "race" : "null_race",
+            "kin" : "null_kin",
             "img_path" : "images/null.png",
             
             "str" : 1,
@@ -32,6 +34,7 @@
         "rat" : {
             "name" : "들쥐",
             "race" : "beast",
+            "kin" : "rodent",
             "img_path" : "images/entity/npc/rat.png",
 
             "str" : 1,

@@ -1,0 +1,14 @@
+{
+    "type" : "special",
+    "items" : {
+        "error_equipment" : {
+            "type" : "error",
+            "name" : "error_eq"
+        },
+        
+        "naked" : {
+            "type" : "naked",
+            "name" : "맨몸"
+        }
+    }
+}

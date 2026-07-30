@@ -95,6 +95,8 @@ class Item;
 class Equipment;
 enum class PawnType;
 enum class EqType;
+class Skill;
+enum class SkillCode;
 
 enum class EntitySetting {
     MaxEnt = 64, MaxPawn = 16
@@ -142,14 +144,14 @@ class Entity {
     void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, Map* map, float x, float y);
 
     //식별 정보
-    std::string mName {""};
-
-    Demeanor mDemeanor {Demeanor::Neutral};
+    std::string mName {""}; //이름
+    Demeanor mDemeanor {Demeanor::Neutral}; //태도 (적대적, 중립..)
 
     int mId;
     bool mIsPawn {false};
 
-    Texture* mTexture {nullptr}; //엔티티 텍스처, 최적화 필요?
+    //TODO: 텍스처는 매니저만 관리하게 리팩토링 해야됨
+    Texture* mTexture {nullptr}; //엔티티 텍스처
 
     //플레이어 제어
     bool mIsTakingTurn {false}; //니 턴인가?
@@ -179,10 +181,10 @@ class Entity {
     
     //패시브 플래그
 
-    //액티브 플래그 (배운기술)
-    
-    std::unordered_map<EqType, Equipment*> mEqs; //실제로 장비한 장비들 컨테이너
+    //알고 있는 기술들
+    std::map<std::string, Skill*> mSkills;
 
+    std::unordered_map<EqType, Equipment*> mEqs; //실제로 장비한 장비들 컨테이너
     //여행용 스탯
     //턴당 요구 보급품량 << 헬퍼에서 연산
 };
@@ -198,6 +200,8 @@ class Pawn : public Entity {
     std::string mCustomName {""};
 
     PawnType mType;
+
+    std::vector<std::string> mQuickSkills;
 };
 
 //스탯 관련 연산을 보조해주는 헬퍼 클래스에용
@@ -206,9 +210,12 @@ class StatHelper {
     int GetMaxHp(Entity* ent); //최대체력을 계산한다.
     int GetMaxAp(Entity* ent); //최대 ap를 계산한다.
     
-    //무게 상한 계산
+    //무게 계산
+    float GetTotalWeight(Entity* ent);
     int GetMediumWeightLimit(Entity* ent); //페널티가 없는 무게 상한을 계산한다.
     int GetMaxWeightLimit(Entity* ent); //최대 무게 상한을 계산한다.
     //이동력 계산
     int GetApPerTileMove(Entity* ent); //타일당 표준 이동력을 계산한다.
+    //캐릭터 최종 방어력 계산
+    int GetTotalArmor(Entity* ent);
 };

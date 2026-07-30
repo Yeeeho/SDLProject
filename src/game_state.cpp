@@ -8,7 +8,7 @@
 #include "camera.h"
 #include "map.h"
 #include "entity.h"
-#include "item.h"
+#include "item/item.h"
 #include "city.h"
 #include "render.h"
 #include "square.h"
@@ -139,7 +139,7 @@ void OverMapState::HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm
     objm.mMap->mCam->HandleEvent(e);
 
     uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
-    uim.HandleMapUIEvent(e, gsm, objm.mMap, mouseX, mouseY);
+    uim.HandleMapUIEvent(e, objm, gsm, objm.mMap, mouseX, mouseY);
 }
 
 void OverMapState::Render(RenderManager& rend, UIManager& uim, ObjectManager& objm)
@@ -207,7 +207,7 @@ void SubMapState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm,
     objm.mSubMap->HandleEvent(e, uim, objm, mouseX, mouseY);
 
     uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
-    uim.HandleMapUIEvent(e, gsm, objm.mSubMap, mouseX, mouseY);
+    uim.HandleMapUIEvent(e, objm, gsm, objm.mSubMap, mouseX, mouseY);
 }
 
 void SubMapState::Render(RenderManager &rend, UIManager &uim, ObjectManager &objm)
@@ -270,7 +270,7 @@ void CityViewState::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &obj
 {
     uim.HandleUIEvent(e, gsm, objm, mouseX, mouseY);
 
-    uim.HandleMapUIEvent(e, gsm, objm.mCity->mCityMap, mouseX, mouseY);
+    uim.HandleMapUIEvent(e, objm, gsm, objm.mCity->mCityMap, mouseX, mouseY);
 }
 
 void CityViewState::Render(RenderManager &rend, UIManager &uim, ObjectManager &objm)

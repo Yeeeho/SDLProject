@@ -11,7 +11,9 @@
 #include "text.h"
 #include "game_json.h"
 #include "texture.h"
-#include "item.h"
+#include "item/item.h"
+#include "skill/skill.h"
+#include "skill/skill_enum.h"
 #include "util.h"
 
 using json = nlohmann::json;
@@ -273,6 +275,9 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     //텍스처 할당
     pawn->mTexture->LoadFromFile(pawnData["img_path"].get<std::string>());
 
+    pawn->mSkills.insert({"punch", new Skill("punch")});
+    pawn->mQuickSkills.push_back("punch");
+
     std::string message = "pawn id: " + std::to_string(id) + " name: " + name + " is allocated";
     SDL_Log(message.c_str());
 }
@@ -357,12 +362,17 @@ void EntityManager::Update(ObjectManager &objm)
 
 void EntityManager::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, Map* map, float mouseX, float mouseY)
 {
-    //오른쪽 마우스 버튼 클릭시 포커스 해제
+    //오른쪽 마우스 버튼 클릭시
     if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_RIGHT) {
+        //포커스 해제
         map->mFocusedEnt = nullptr; map->mPrevFocusedEnt = nullptr;
-        uim.mFocusIcon->mIsRender = false;
+        uim.mFocusIcon->mIsRender = false; //포커스 아이콘 렌더링 안함
+        uim.mCharacterSheet->mIsRender = false; //캐릭터 시트 렌더링 안함
+
+        uim.mQSUI->Deactivate(&uim, map);
         return;
     } 
+    
     //카메라 오프셋 계산
     mouseX += map->mCam->mSight.x;
     mouseY += map->mCam->mSight.y;
@@ -430,11 +440,15 @@ void Entity::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, Map*
         if (!mIsPawn) return; //아군이 아니면 반환함. 
 
         //스킬 ui등을 표시.
+        uim.mCharacterSheet->mIsRenderUpdate = true;
+        uim.mCharacterSheet->mIsRender = true;
     }
 
     map->mPrevFocusedEnt = this;
-    //내가 아군이고 턴을 가지고 있을때
-    
+    //내가 아군일때
+    if (this->mIsPawn) {
+        uim.mQSUI->Activate(&uim, map, static_cast<Pawn*>(this));
+    }
 }
 
 //부하 생성자
@@ -459,7 +473,7 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
     mEqs[EqType::Leg] = new Equipment(objm, "naked");
     mEqs[EqType::Hand] = new Equipment(objm, "naked");
     mEqs[EqType::Foot] = new Equipment(objm, "naked");
-    mEqs[EqType::Weapon] = new Equipment(objm, "naked");
+    mEqs[EqType::Weapon] = new Equipment(objm, "dagger");
     mEqs[EqType::Offhand] = new Equipment(objm, "naked");
 }
 
@@ -473,6 +487,21 @@ int StatHelper::GetMaxAp(Entity *ent)
 {
     int ret = ent->mSpd * 10;
     return ret;
+}
+
+float StatHelper::GetTotalWeight(Entity *ent)
+{
+    float weight = 0;
+    //장비의 무게 합산
+    for (auto eq : ent->mEqs) {
+        weight += eq.second->mWeight;
+    }
+    //TODO:
+    //종족값에 따라 무게 추가
+    //인벤토리 아이템에 따라 무게 추가
+    //패시브, 임시 효과에 따라 무게 추가
+
+    return weight;
 }
 
 int StatHelper::GetMediumWeightLimit(Entity *ent)
@@ -499,4 +528,19 @@ int StatHelper::GetApPerTileMove(Entity *ent)
     else {
         return 9999;
     }
+}
+
+int StatHelper::GetTotalArmor(Entity *ent)
+{
+    //장비의 방어력 합산
+    int armor = 0;
+    for (auto eq : ent->mEqs) {
+        armor += eq.second->mArmor;
+    }
+    //TODO:
+    //패시브 플래그에 따라 방어력 추가
+    //임시 효과에 따라 방어력 추가
+    //종족값에 따라 방어력 추가
+
+    return armor;
 }

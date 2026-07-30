@@ -28,8 +28,8 @@ int main() {
 
     /*매니저 객체들을 스택 소환해준다*/
     RenderManager rend;
-    UIManager uim;
     ObjectManager objm;
+    UIManager uim = UIManager(&objm);
 
     //게임 상태 매니저
     GameStateManager gsm;

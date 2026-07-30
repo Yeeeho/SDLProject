@@ -1,15 +1,6 @@
 {
-    "type" : "equipment",
-    "desc" : "장비 카테고리별 정보에 대해서 대충 기술해놓음",
+    "type" : "weapon",
     "items" : {
-        "error_equipment" : {
-            "name" : "error_eq"
-        },
-        
-        "naked" : {
-            "name" : "맨몸"
-        },
-
         "dagger" : {
             "type" : "weapon",
             "name" : "단검",
@@ -17,7 +8,8 @@
                 "one_hand" 
             ],
             "base_dmg" : 10,
-            "scale" : {
+            "base_armor" : 1,
+            "dmg_scale" : {
                 "str" : 0.1,
                 "dex" : 0.2,
                 "agi" : 0.2

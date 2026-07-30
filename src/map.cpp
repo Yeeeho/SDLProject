@@ -51,7 +51,9 @@ void Map::Destroy()
 
 void Map::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, float mouseX, float mouseY)
 {
-    if(uim.mDialogueUI->mIsRender) return; //대화창이 렌더링중이면 반환한다.  
+    if(uim.mDialogueUI->mIsRender) return; //대화창이 렌더링중이면 반환한다.
+    if(!mCanHandleEvent) return;
+
     //마우스오버
     //맵 이벤트 핸들러는 맵상에서의 범위 표시 등을 제어한다.
     //엔티티 자체의 포커스 여부 등은 제어하지 않는다.

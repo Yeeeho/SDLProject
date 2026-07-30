@@ -1,0 +1,9 @@
+{
+    "type" : "item_code_table",
+    "desc" : "아이템 타입을 알아내기 위해 존재하는 테이블",
+    "items" : {
+        "naked" : "special",
+        "dagger" : "weapon",
+        "robe" : "gear"
+    }
+}

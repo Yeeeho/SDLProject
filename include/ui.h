@@ -7,15 +7,17 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 //전방선언 리스트
+class ObjectManager;
+class UIManager;
+class GameStateManager;
 class Square;
 struct Point;
-class ObjectManager;
+class Pawn; class Entity;
 class TTFWord;
 class Map;
 class UI;
 class Camera;
 class Texture;
-class GameStateManager;
 
 class UI {
     public:
@@ -72,7 +74,6 @@ class FramedTUI : public UI {
 
     void AddWord(TTFWord word);
     void ClearText();
-
     //렌더링
     void RenderOnUpdate() override;
     void Render();
@@ -81,6 +82,8 @@ class FramedTUI : public UI {
 
     TextUI* mTui {nullptr};
 
+    int mTotalW {0};
+    int mTotalH {0};
     int mX {0}, mY {0};
     int mW {0}, mH {0};
 };
@@ -210,9 +213,72 @@ class TileHLUI {
     std::vector<int> mTIds;
 };
 
+//캐릭터 시트용 ui
+class CharacterSkillUI {
+    public:
+    CharacterSkillUI();
+
+    std::vector<FramedTUI*> mSkill;
+    FramedTUI* mSkillDesc {nullptr};
+    IconUI* mSkillIcon {nullptr};
+};
+
+enum class CharacterSheetType {
+    Skill, Info
+};
+
+//TODO: 렌더링 동작이 비슷하므로 상위 인터페이스를 만들고 메서드를 공유해야 함.
+class CharacterSheetUI {
+    public:
+    CharacterSheetUI(int x, int y, int w, int h);
+
+    void StoreTexture();
+    void RenderStoredTex();
+    void Render();
+
+    Texture* mTex {nullptr}; //배경용 텍스처
+    SDL_Texture* mTempTex {nullptr};
+
+    bool mIsRenderUpdate {true};
+    bool mIsRender {false};
+
+    private:
+    int mX {0}, mY {0}, mW {0}, mH {0};
+};
+
+class QuickSkillUI {
+    public:
+    QuickSkillUI(int x, int y, int w, int h, ObjectManager* objm);
+
+    void StoreTexture();
+    void RenderStoredTex();
+    void Render();
+
+    void HandleEvent(SDL_Event& e, UIManager* uim, ObjectManager* objm, Map* map, float mouseX, float mouseY);
+    void Activate(UIManager* uim, Map* map, Pawn* pawn);
+    void Deactivate(UIManager* uim, Map* map);
+
+    ObjectManager* mObjm {nullptr};
+    Pawn* mFocusedPawn {nullptr};
+
+    std::vector<std::string> mSkillList;
+
+    bool mIsRender = false;
+    bool mIsRenderUpdate = false;
+
+    SDL_Texture* mTempTex {nullptr};
+
+    int mPadding {10};
+    int mX {0}, mY {0};
+    int mW {0}, mH {0};
+};
+
 class UIManager {
     public:
-    UIManager();
+    UIManager(ObjectManager* objm);
+
+    //참고용 오브젝트 매니저
+    ObjectManager* mObjm;
 
     //ui 컨테이너
     std::map<std::string, UI*> uiMap;
@@ -227,7 +293,7 @@ class UIManager {
     
     //이벤트 핸들링
     void HandleUIEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mousey);
-    void HandleMapUIEvent(SDL_Event& e, GameStateManager& gsm, Map* map, float mx, float my);
+    void HandleMapUIEvent(SDL_Event& e, ObjectManager& objm, GameStateManager& gsm, Map* map, float mx, float my);
 
     //렌더링
     void RenderUIs();
@@ -245,12 +311,18 @@ class UIManager {
     IconUI* mFocusIcon {nullptr}; //맵 타일 포커스 아이콘
     TileHLUI* mTileHLUI {nullptr}; //맵 타일 강조 ui
 
+    //스킬 퀵슬롯
+    QuickSkillUI* mQSUI {nullptr};
+
     //대화창
     DialogueUI* mDialogueUI {nullptr};
+    //캐릭터 정보창
+    CharacterSheetUI* mCharacterSheet {nullptr};
     //턴 종료 버튼
     Button* mTurnOverBtn {nullptr};
     bool mWasMouseOnMap {false};
     
     //레이아웃 관련 변수
+    //TODO: 이런거는 설정 파일로 빼라
     int mTopPanelH{60};
 };

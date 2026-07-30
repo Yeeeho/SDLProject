@@ -13,7 +13,6 @@ class JsonManager {
     //데이터베이스
     json mEntDb;
     json mPawnDb;
-    json mEquipmentDb;
 };
 
 class JsonHelper {

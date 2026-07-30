@@ -1,0 +1,9 @@
+{
+    "type" : "gear",
+    "items" : {
+        "robe" : {
+            "name" : "로브",
+            "type" : "back"
+        }
+    }
+}

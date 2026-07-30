@@ -62,7 +62,6 @@ bool System::LoadData(ObjectManager& objm)
     
     jh.LoadJsonFile(objm.mJsm->mPawnDb, "data/entity/pawn.json");
     jh.LoadJsonFile(objm.mJsm->mEntDb, "data/entity/entity.json");
-    jh.LoadJsonFile(objm.mJsm->mEquipmentDb, "data/item/equipment.json");
 
     return success;
 }

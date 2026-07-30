@@ -2,19 +2,21 @@
 #include "ui.h"
 
 #include "system.h"
-#include "turn.h"
-#include "scenario.h"
-#include "math.h"
-#include "camera.h"
 #include "render.h"
-#include "util.h"
-#include "map.h"
+#include "math.h"
 #include "game_object.h"
 #include "game_state.h"
-#include "text.h"
 #include "texture.h"
-#include "square.h"
+#include "text.h"
 #include "shape/point.h"
+#include "square.h"
+#include "turn.h"
+#include "scenario.h"
+#include "camera.h"
+#include "util.h"
+#include "map.h"
+#include "entity.h"
+#include "skill/skill.h"
 
 //무조건 이걸로만 생성해라..
 UI::UI(Square* uiFrame, std::string uiText)
@@ -167,8 +169,10 @@ void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, ObjectManager& obj
     }
 }
 
-UIManager::UIManager()
+UIManager::UIManager(ObjectManager* objm)
 {
+    mObjm = objm;
+
     int panelX = System::sWindowWidth * 0.5 - 400;
     int panelY = System::sWindowHeight - 300;
 
@@ -177,11 +181,22 @@ UIManager::UIManager()
 
     mFocusIcon = new IconUI(0, 0, 100, 100, "images/ui/focus.png");
     int x = System::sWindowWidth - 300;
-    int y = System::sWindowHeight - 200;
+    int y = System::sWindowHeight - 100;
     Square* sq = new Square(x, y, 100, 40);
+    
     mTurnOverBtn = new Button(sq, "턴 종료", BtnType::SubMapTurnOver);
 
     mTileHLUI = new TileHLUI();
+
+    mCharacterSheet = new CharacterSheetUI(
+        System::sWindowWidth * 0.5 - 500, System::sWindowHeight * 0.5 - 300,
+        1000, 600 
+    );
+
+    mQSUI = new QuickSkillUI(
+        System::sWindowWidth * 0.5 - 400, System::sWindowHeight - 100,
+        800, 100, mObjm
+    );
 }
 
 void UIManager::InitTopBar()
@@ -213,9 +228,10 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager
     if (!mDialogueUI->mIsRender) mTurnOverBtn->HandleEvent(e, gsm, objm, mouseX, mouseY);
 }
 
-void UIManager::HandleMapUIEvent(SDL_Event &e, GameStateManager &gsm, Map *map, float mx, float my)
+void UIManager::HandleMapUIEvent(SDL_Event &e, ObjectManager& objm, GameStateManager &gsm, Map *map, float mx, float my)
 {
     HandleMapToolTipEvent(e, gsm, map, mx, my);
+    mQSUI->HandleEvent(e, this, &objm, map, mx, my);
 }
 
 void UIManager::RenderUIs()
@@ -254,6 +270,9 @@ void UIManager::RenderMapUIs(Map* map)
 
     RenderMapToolTip(map);
     if (!mDialogueUI->mIsRender) mTurnOverBtn->RenderOnUpdate();
+
+    mCharacterSheet->Render();
+    mQSUI->Render();
 }
 
 void UIManager::DestroyUIs()
@@ -572,6 +591,7 @@ void TextUI::ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font
 
 void TextUI::RenderWords()
 {
+    mTotalWidth = 0; mTotalHeight = 0;
     for (TTFWord word : mTexts) {
         if (word.mType == TextType::NewLine) NewLine(word.mFont);
         else if (word.mType == TextType::Space) AddSpace(word.mFont);
@@ -685,13 +705,14 @@ void FramedTUI::RenderOnUpdate()
     mIsUIUpdate = false;
 }
 
-//공사중
 void FramedTUI::Render()
 {
     //프레임에 맞춰서 줄바꿈
 
-    int mTotalW = 0;
-    int mTotalH = 0;
+    mTui->mTotalHeight = 0;
+    mTui->mTotalWidth = 0;
+    mTotalW = 0;
+    mTotalH = 0;
     for (TTFWord word: mTui->mTexts) {
         if (word.mType == TextType::NewLine) {
             mTotalW = 0;
@@ -944,4 +965,152 @@ void TileHLUI::RenderBetweenTiles(Map* map)
             (float) map->mTileLen, (float) map->mTileLen
         );
     }
+}
+
+CharacterSheetUI::CharacterSheetUI(int x, int y, int w, int h)
+{
+    mX = x; mY = y; mW = w; mH = h;
+
+    SDL_Color green = {0x00, 0xB0, 0x00, 0xFF};
+    SDL_Color fill = {0x20, 0x20, 0x20, 0xF0};
+
+    mTex = new Texture("images/ui/character_sheet.png");
+    SDL_SetTextureScaleMode(mTex->mTexture, SDL_SCALEMODE_NEAREST);
+
+    TextureManager tm;
+    mTempTex = tm.CreateTempTexture(System::sRenderer, w, h);
+}
+
+void CharacterSheetUI::StoreTexture()
+{
+    if (mIsRenderUpdate == false) return;
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTempTex);
+
+    mTex->Render(0.f, 0.f, nullptr,(float) mW,(float) mH);
+
+    SDL_SetRenderTarget(System::sRenderer, nullptr);
+    mIsRenderUpdate = false;
+}
+
+void CharacterSheetUI::RenderStoredTex()
+{
+    if (!mIsRender) return;
+    SDL_FRect fr = {(float) mX, (float) mY, (float) mW, (float) mH};
+    SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, &fr);
+}
+
+void CharacterSheetUI::Render()
+{
+    RenderStoredTex();
+    StoreTexture();
+}
+
+CharacterSkillUI::CharacterSkillUI()
+{
+}
+
+QuickSkillUI::QuickSkillUI(int x, int  y, int w, int h, ObjectManager* objm)
+{
+    mX = x; mY = y; mW = w; mH = h;
+
+    TextureManager tm;
+    mTempTex = tm.CreateTempTexture(System::sRenderer, mW, mH);
+
+    mObjm = objm;
+}
+
+void QuickSkillUI::StoreTexture()
+{
+    if (!mIsRenderUpdate) return;
+
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTempTex);
+
+    Texture t;
+    t.LoadFromFile("images/black.png");
+    t.Render(0.f, 0.f, nullptr, (float) mW, (float) mH);
+
+    t.LoadFromFile("images/frame.png"); 
+    for (int i = 0; i < 8; i++) {
+        t.Render((float) (mPadding + i * 80), (float) (mPadding), nullptr, 80.f, 80.f);
+    }
+
+    //포커스된 pc가 있는 경우
+    if (mFocusedPawn) {
+        json skillDb = mObjm->mSkm->mSkillData["items"];
+        int i = 0;
+        for (std::string code : mFocusedPawn->mQuickSkills) {
+            if (skillDb.contains(code)) {
+                std::string path = skillDb[code]["img_path"].get<std::string>();
+                t.LoadFromFile(path);
+                //스킬 아이콘을 렌더링
+                t.Render((float) (mPadding + i * 80), (float) (mPadding), nullptr, 80.f, 80.f);
+            }
+            else {
+                SDL_Log("quick skill ui: cannot find skill code in skill db");
+            }
+        }
+    }
+
+    SDL_SetRenderTarget(System::sRenderer, nullptr);
+    mIsRenderUpdate = false;
+}
+
+void QuickSkillUI::RenderStoredTex()
+{
+    if (!mIsRender) return;
+    SDL_FRect fr = {(float) mX, (float) mY, (float) mW, (float) mH};
+    SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, &fr);
+}
+
+void QuickSkillUI::Render()
+{
+    RenderStoredTex();
+    StoreTexture();
+}
+
+void QuickSkillUI::HandleEvent(SDL_Event &e, UIManager* uim, ObjectManager* objm, Map* map, float mouseX, float mouseY)
+{
+    if (!map->mFocusedEnt) return;
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return; //클릭시만 핸들링
+ 
+    Math mth;
+    bool mouseIn = mth.IsPointInSquare(mouseX, mouseY, (float) mX, (float) mY, (float) mW, (float) mH);
+    if (!mouseIn) return;
+
+    float xDis = mouseX - (float) mX;
+    int xPos = xDis/80;
+
+    if (xPos < 0) xPos = 0;
+    if (xPos > 7) xPos = 7;
+
+    if (mSkillList.size() > xPos) {
+        std::string skillCode = mSkillList[xPos];
+        SDL_Log(skillCode.c_str());
+        Skill* skill = map->mFocusedEnt->mSkills[skillCode];
+        objm->mSkm->SetActor(map->mFocusedEnt);
+        map->mCanHandleEvent = true;
+    }
+}
+
+void QuickSkillUI::Activate(UIManager *uim, Map *map, Pawn *pawn)
+{
+    mIsRenderUpdate = true;
+    mIsRender = true;
+    int i = 0;
+    for (std::string skillCode : pawn->mQuickSkills) {
+        if (i >= 9) break;
+        mSkillList.push_back(skillCode);
+        i++;
+    }
+    mFocusedPawn = pawn;
+    map->mCanHandleEvent = false;
+}
+
+void QuickSkillUI::Deactivate(UIManager* uim, Map* map)
+{
+    mIsRender = false; //스킬 퀵슬롯 렌더링 안함
+    mFocusedPawn = nullptr;
+    map->mCanHandleEvent = true;
 }
