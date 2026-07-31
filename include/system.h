@@ -6,6 +6,7 @@
 class UIManager;
 class ObjectManager;
 class GameState;
+struct GameContext;
 class GameStateManager;
 
 using json = nlohmann::json;
@@ -38,7 +39,7 @@ class System {
     bool LoadUIs(UIManager&, ObjectManager&); //ui 객체 로드
 
     void Close();
-    bool HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm);
+    bool HandleEvents(SDL_Event& e, GameContext& gc);
 
     private:
 };

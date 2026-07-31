@@ -4,6 +4,7 @@
 #include "system.h"
 #include "render.h"
 #include "math.h"
+#include "game_context.h"
 #include "game_object.h"
 #include "game_state.h"
 #include "texture.h"
@@ -37,7 +38,7 @@ void UI::Destroy()
     delete this;
 }
 
-void UI::HandleEvent(SDL_Event &e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY)
+void UI::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
 
 }
@@ -118,7 +119,7 @@ Button::Button(Square *uiFrame, std::string uiText, BtnType type)
     mTempTex = tm.CreateTempTexture();
 }
 
-void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY)
+void Button::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
     if (!mIsRender) return; //렌더링되고 있지 않으면 반환
     //버튼 안에 있는지 확인
@@ -136,42 +137,42 @@ void Button::HandleEvent(SDL_Event &e, GameStateManager& gsm, ObjectManager& obj
     //버튼을 눌렀을 경우
     if (mType == BtnType::OverMap) {
         SDL_Log("overmap button pressed");
-        gsm.mNextState = gsm.mOms; //다음 타깃 상태는 오버맵 상태다.
-        gsm.mIsStateChange = true;
+        gc.mGsm->mNextState = gc.mGsm->mOms; //다음 타깃 상태는 오버맵 상태다.
+        gc.mGsm->mIsStateChange = true;
     }
     else if (mType == BtnType::City) {
         SDL_Log("city button pressed");
-        gsm.mNextState = gsm.mCvs;
-        gsm.mIsStateChange = true;
+        gc.mGsm->mNextState = gc.mGsm->mCvs;
+        gc.mGsm->mIsStateChange = true;
     }
     else if (mType == BtnType::Title) {
         SDL_Log("title button pressed");
-        gsm.mNextState = gsm.mIs; //다음 타깃 상태는 인트로다.
-        gsm.mIsStateChange = true;
+        gc.mGsm->mNextState = gc.mGsm->mIs; //다음 타깃 상태는 인트로다.
+        gc.mGsm->mIsStateChange = true;
     }
     else if (mType == BtnType::SubMap) {
         SDL_Log("change to submap state");
-        gsm.mNextState = gsm.mSms;
-        gsm.mIsStateChange = true;
+        gc.mGsm->mNextState = gc.mGsm->mSms;
+        gc.mGsm->mIsStateChange = true;
     }
     else if (mType == BtnType::NewGame) {
         SDL_Log("new game start");
-        gsm.mNextState = gsm.mSms;
-        gsm.mScm->SetCurrentScenario(new NGScenario(), objm);
-        gsm.mIsStateChange = true;
+        gc.mGsm->mNextState = gc.mGsm->mSms;
+        gc.mScm->SetCurrentScenario(new NGScenario(), *gc.mObjm);
+        gc.mGsm->mIsStateChange = true;
     }
     else if (mType == BtnType::SubMapTurnOver) {
         SDL_Log("submap turn over button pressed");
-        gsm.mTms->mSmtm.mIsTurnUpdate = true;
+        gc.mTms->mSmtm.mIsTurnUpdate = true;
     }
     else {
         SDL_Log("button action not specified");
     }
 }
 
-UIManager::UIManager(ObjectManager* objm)
+UIManager::UIManager(GameContext& gc)
 {
-    mObjm = objm;
+    mGc = &gc;
 
     int panelX = System::sWindowWidth * 0.5 - 400;
     int panelY = System::sWindowHeight - 300;
@@ -195,7 +196,7 @@ UIManager::UIManager(ObjectManager* objm)
 
     mQSUI = new QuickSkillUI(
         System::sWindowWidth * 0.5 - 400, System::sWindowHeight - 100,
-        800, 100, mObjm
+        800, 100, gc
     );
 }
 
@@ -217,21 +218,21 @@ void UIManager::InitUIs()
 {
 }
 
-void UIManager::HandleUIEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager& objm, float mouseX, float mouseY)
+void UIManager::HandleUIEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
     for (auto ui : uiMap) {
-        ui.second->HandleEvent(e, gsm, objm, mouseX, mouseY);
+        ui.second->HandleEvent(e, gc, mouseX, mouseY);
     }
     for (auto ftui : ftuiMap) {
-        ftui.second->HandleEvent(e, gsm, objm, mouseX, mouseY);
+        ftui.second->HandleEvent(e, gc, mouseX, mouseY);
     }
-    if (!mDialogueUI->mIsRender) mTurnOverBtn->HandleEvent(e, gsm, objm, mouseX, mouseY);
+    if (!mDialogueUI->mIsRender) mTurnOverBtn->HandleEvent(e, gc, mouseX, mouseY);
 }
 
-void UIManager::HandleMapUIEvent(SDL_Event &e, ObjectManager& objm, GameStateManager &gsm, Map *map, float mx, float my)
+void UIManager::HandleMapUIEvent(SDL_Event &e, GameContext& gc, Map *map, float mx, float my)
 {
-    HandleMapToolTipEvent(e, gsm, map, mx, my);
-    mQSUI->HandleEvent(e, this, &objm, map, mx, my);
+    HandleMapToolTipEvent(e, *gc.mGsm, map, mx, my);
+    mQSUI->HandleEvent(e, gc, map, mx, my);
 }
 
 void UIManager::RenderUIs()
@@ -754,7 +755,7 @@ void FramedTUI::Render()
 }
 
 //공사중
-void FramedTUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, ObjectManager& objm, float mouseX, float mouseY)
+void FramedTUI::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
 }
 
@@ -780,7 +781,7 @@ void IconUI::RenderByCam(Camera *cam)
     mTex->Render(mX - cam->mSight.x, mY - cam->mSight.y, nullptr, mW, mH);
 }
 
-void IconUI::HandleEvent(SDL_Event &e, GameStateManager &gs, ObjectManager& objm, float mouseX, float mouseY)
+void IconUI::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
     //버튼 안에 있는지 확인
     if (e.button.x < mX) return;
@@ -826,7 +827,7 @@ DialogueUI::DialogueUI(float x, float y)
     StoreBasicTex();
 }
 
-void DialogueUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
+void DialogueUI::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
     if (!mIsRender) return; //렌더링되지 않으면 이벤트 핸들링도 하지 않음
 
@@ -842,7 +843,7 @@ void DialogueUI::HandleEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, 
     //클릭 동작
 
     SDL_Log("clicked dialogue panel");
-    gsm.mScm->mCurrentSc->mIsDialogueUpdate = true;
+    gc.mScm->mCurrentSc->mIsDialogueUpdate = true;
 }
 
 void DialogueUI::Update(ScenarioManager &scm)
@@ -1010,14 +1011,14 @@ CharacterSkillUI::CharacterSkillUI()
 {
 }
 
-QuickSkillUI::QuickSkillUI(int x, int  y, int w, int h, ObjectManager* objm)
+QuickSkillUI::QuickSkillUI(int x, int  y, int w, int h, GameContext& gc)
 {
     mX = x; mY = y; mW = w; mH = h;
 
     TextureManager tm;
     mTempTex = tm.CreateTempTexture(System::sRenderer, mW, mH);
 
-    mObjm = objm;
+    mGc = &gc;
 }
 
 void QuickSkillUI::StoreTexture()
@@ -1038,9 +1039,10 @@ void QuickSkillUI::StoreTexture()
 
     //포커스된 pc가 있는 경우
     if (mFocusedPawn) {
-        json skillDb = mObjm->mSkm->mSkillData["items"];
+        json skillDb = mGc->mSkm->mSkillDb["items"];
         int i = 0;
         for (std::string code : mFocusedPawn->mQuickSkills) {
+            if (i >= 8) break;
             if (skillDb.contains(code)) {
                 std::string path = skillDb[code]["img_path"].get<std::string>();
                 t.LoadFromFile(path);
@@ -1050,6 +1052,7 @@ void QuickSkillUI::StoreTexture()
             else {
                 SDL_Log("quick skill ui: cannot find skill code in skill db");
             }
+            i++;
         }
     }
 
@@ -1070,14 +1073,20 @@ void QuickSkillUI::Render()
     StoreTexture();
 }
 
-void QuickSkillUI::HandleEvent(SDL_Event &e, UIManager* uim, ObjectManager* objm, Map* map, float mouseX, float mouseY)
+void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mouseX, float mouseY)
 {
     if (!map->mFocusedEnt) return;
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return; //클릭시만 핸들링
- 
+    
     Math mth;
     bool mouseIn = mth.IsPointInSquare(mouseX, mouseY, (float) mX, (float) mY, (float) mW, (float) mH);
-    if (!mouseIn) return;
+    //마우스가 ui안에 있으면 맵 이벤트핸들링 안함.
+    if (!mouseIn) {
+        map->mCanHandleEvent = true;
+        return;
+    }
+    else map->mCanHandleEvent = false;
+
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
 
     float xDis = mouseX - (float) mX;
     int xPos = xDis/80;
@@ -1086,15 +1095,37 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, UIManager* uim, ObjectManager* objm
     if (xPos > 7) xPos = 7;
 
     if (mSkillList.size() > xPos) {
+        //스킬 발동을 위한 준비 단계
+        //인덱스에 따라서 스킬 코드를 가져온다.
         std::string skillCode = mSkillList[xPos];
-        SDL_Log(skillCode.c_str());
+        //TODO: 여기부터는 따로 함수로 래핑하는게 좋을듯
+        //엔티티에 저장된 실제 스킬 객체를 찾아온다.
         Skill* skill = map->mFocusedEnt->mSkills[skillCode];
-        objm->mSkm->SetActor(map->mFocusedEnt);
+
+        //현재 스킬에 따라서 맵 타일 하이라이트 색을 바꿔준다.
+        json skillTable = gc.mSkm->mSkillDb["items"];
+        if (!skillTable.contains(skillCode)) {
+            SDL_Log("quick skill ui: cannot find skill code in skill database!");
+        }
+        else {
+            json sd = skillTable[skillCode];
+            std::string stype = sd["type"].get<std::string>();
+            if (stype == "movement") gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight.png");
+            else if (stype == "attack") gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight_red.png");
+            else SDL_Log("quick skill ui: unknown skill type!");
+
+            mGc->mSkm->SetSkillData(sd); //스킬 데이터 캐싱
+            mGc->mSkm->mIsSkillReady = true; //스킬 사용 준비 완료
+        }
+
+        mGc->mSkm->SetSkill(skill); //스킬 객체 캐싱
+        mGc->mSkm->SetActor(map->mFocusedEnt); //액터 캐싱
+
         map->mCanHandleEvent = true;
     }
 }
 
-void QuickSkillUI::Activate(UIManager *uim, Map *map, Pawn *pawn)
+void QuickSkillUI::Activate(GameContext& gc, Map *map, Pawn *pawn)
 {
     mIsRenderUpdate = true;
     mIsRender = true;
@@ -1108,7 +1139,7 @@ void QuickSkillUI::Activate(UIManager *uim, Map *map, Pawn *pawn)
     map->mCanHandleEvent = false;
 }
 
-void QuickSkillUI::Deactivate(UIManager* uim, Map* map)
+void QuickSkillUI::Deactivate(GameContext& gc, Map* map)
 {
     mIsRender = false; //스킬 퀵슬롯 렌더링 안함
     mFocusedPawn = nullptr;

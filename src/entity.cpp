@@ -1,15 +1,16 @@
 #include "pch.h"
 
-#include "entity.h"
 #include "math.h"
 #include "render.h"
 #include "system.h"
-#include "ui.h"
+#include "game_context.h"
+#include "game_json.h"
 #include "game_object.h"
+#include "ui.h"
 #include "map.h"
+#include "entity.h"
 #include "camera.h"
 #include "text.h"
-#include "game_json.h"
 #include "texture.h"
 #include "item/item.h"
 #include "skill/skill.h"
@@ -275,6 +276,8 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     //텍스처 할당
     pawn->mTexture->LoadFromFile(pawnData["img_path"].get<std::string>());
 
+    pawn->mSkills.insert({"move", new Skill("move")});
+    pawn->mQuickSkills.push_back("move");
     pawn->mSkills.insert({"punch", new Skill("punch")});
     pawn->mQuickSkills.push_back("punch");
 
@@ -360,16 +363,15 @@ void EntityManager::Update(ObjectManager &objm)
 {
 }
 
-void EntityManager::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, Map* map, float mouseX, float mouseY)
+void EntityManager::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mouseX, float mouseY)
 {
     //오른쪽 마우스 버튼 클릭시
     if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_RIGHT) {
         //포커스 해제
         map->mFocusedEnt = nullptr; map->mPrevFocusedEnt = nullptr;
-        uim.mFocusIcon->mIsRender = false; //포커스 아이콘 렌더링 안함
-        uim.mCharacterSheet->mIsRender = false; //캐릭터 시트 렌더링 안함
-
-        uim.mQSUI->Deactivate(&uim, map);
+        gc.mUim->mFocusIcon->mIsRender = false; //포커스 아이콘 렌더링 안함
+        gc.mUim->mCharacterSheet->mIsRender = false; //캐릭터 시트 렌더링 안함
+        gc.mUim->mQSUI->Deactivate(gc, map); //퀵슬롯 비활성화
         return;
     } 
     
@@ -377,11 +379,77 @@ void EntityManager::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& obj
     mouseX += map->mCam->mSight.x;
     mouseY += map->mCam->mSight.y;
 
+    //각 엔티티에 대해 이벤트 핸들링
     for (Entity* p : map->mPawns) {
-        p->HandleEvent(e, uim, objm, map, mouseX, mouseY);
+        HandleEntityEvent(e, gc, map, p, mouseX, mouseY);
     }
     for (Entity* npc : map->mNpcs) {
-        npc->HandleEvent(e, uim, objm, map, mouseX, mouseY);
+        HandleEntityEvent(e, gc, map, npc, mouseX, mouseY);
+    }
+}
+
+void EntityManager::HandleEntityEvent(SDL_Event &e, GameContext &gc, Map *map, Entity *ent, float mx, float my)
+{
+    //엔티티 이벤트 핸들러는 포커스 상태만 제어함
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return; //마우스 왼쪽 클릭
+    if (e.button.button != SDL_BUTTON_LEFT) return;
+    
+    MapTile* tile = map->mMapTiles[ent->mTileId]; //타일 기준으로 이벤트 핸들링
+    Math ph;
+    bool mouseIn = ph.IsPointInSquare(mx, my, tile->mX, tile->mY, tile->mW, tile->mH);
+    if (!mouseIn) return;
+
+    SkillHelper skh;
+    //스킬이 준비되었다면 클릭된 엔티티는 타겟이 된다.
+    if (gc.mSkm->mIsSkillReady) {
+        json sd = gc.mSkm->mSkillData;
+        Skill* sk = gc.mSkm->mSkill;
+        int tn = skh.GetSkillTargetNum(sd, sk);
+
+        if (gc.mSkm->mTargets.size() >= tn) {
+            //최대 타겟 개수를 넘어가면 리턴함.
+            return; 
+        }
+
+        //타겟 개수에 따라 동작을 변경해야 한다.
+        gc.mSkm->mTargets.push_back(ent);
+        SDL_Log("스킬의 타겟이 설정됨");
+        return;
+    } 
+    
+    FocusEntity(gc, map, ent);
+}
+
+void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
+{
+    //엔티티 태도에 따라 포커스 텍스처를 변경.
+    gc.mUim->mFocusIcon->SetDimension(ent->mMapX, ent->mMapY, map->mTileLen, map->mTileLen);
+    if (ent->mDemeanor == Demeanor::Neutral) gc.mUim->mFocusIcon->mTex->LoadFromFile("images/ui/focus.png");
+    else if (ent->mDemeanor == Demeanor::Friendly) gc.mUim->mFocusIcon->mTex->LoadFromFile("images/ui/focus_friendly.png");
+    else if (ent->mDemeanor == Demeanor::Hostile) gc.mUim->mFocusIcon->mTex->LoadFromFile("images/ui/focus_hostile.png");
+    gc.mUim->mFocusIcon->mIsRender = true;
+
+    //포커스 엔티티 캐싱
+    map->mFocusedEnt = ent;
+    //아군이 아닐 경우 타일 범위 렌더링 끔
+    if (!ent->mIsPawn) gc.mUim->mTileHLUI->mIsRenderBetweenTiles = false;
+
+    //이전 엔티티와 같은 경우
+    if (ent == map->mPrevFocusedEnt)  {
+        //포커스된 엔티티를 한번 더 클릭했을 경우 
+        SDL_Log("one more click on focused entity");
+        map->mPrevFocusedEnt = ent;
+        if (!ent->mIsPawn) return; //아군이 아니면 반환함. 
+
+        //스킬 ui등을 표시.
+        gc.mUim->mCharacterSheet->mIsRenderUpdate = true;
+        gc.mUim->mCharacterSheet->mIsRender = true;
+    }
+
+    map->mPrevFocusedEnt = ent;
+    //내가 아군일때
+    if (ent->mIsPawn) {
+        gc.mUim->mQSUI->Activate(gc, map, static_cast<Pawn*>(ent));
     }
 }
 
@@ -407,48 +475,6 @@ Entity::Entity(std::string name, int id)
     mId = id;
 
     mTexture = new Texture();
-}
-
-void Entity::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, Map* map,  float x, float y)
-{
-    //엔티티 이벤트 핸들러는 포커스 상태만 제어함
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return; //마우스 왼쪽 클릭
-    if (e.button.button != SDL_BUTTON_LEFT) return;
-
-    MapTile* tile = map->mMapTiles[mTileId]; //타일 기준으로 이벤트 핸들링
-    Math ph;
-    bool mouseIn = ph.IsPointInSquare(x, y, tile->mX, tile->mY, tile->mW, tile->mH);
-    if (!mouseIn) return;
-    
-    //엔티티 태도에 따라 포커스 텍스처를 변경.
-    uim.mFocusIcon->SetDimension(mMapX, mMapY, map->mTileLen, map->mTileLen);
-    if (mDemeanor == Demeanor::Neutral) uim.mFocusIcon->mTex->LoadFromFile("images/ui/focus.png");
-    else if (mDemeanor == Demeanor::Friendly) uim.mFocusIcon->mTex->LoadFromFile("images/ui/focus_friendly.png");
-    else if (mDemeanor == Demeanor::Hostile) uim.mFocusIcon->mTex->LoadFromFile("images/ui/focus_hostile.png");
-    uim.mFocusIcon->mIsRender = true;
-
-    //포커스 엔티티 캐싱
-    map->mFocusedEnt = this;
-    //아군이 아닐 경우 타일 범위 렌더링 끔
-    if (!this->mIsPawn) uim.mTileHLUI->mIsRenderBetweenTiles = false;
-
-    //이전 엔티티와 같은 경우
-    if (this == map->mPrevFocusedEnt)  {
-        //포커스된 엔티티를 한번 더 클릭했을 경우 
-        SDL_Log("one more click on focused entity");
-        map->mPrevFocusedEnt = this;
-        if (!mIsPawn) return; //아군이 아니면 반환함. 
-
-        //스킬 ui등을 표시.
-        uim.mCharacterSheet->mIsRenderUpdate = true;
-        uim.mCharacterSheet->mIsRender = true;
-    }
-
-    map->mPrevFocusedEnt = this;
-    //내가 아군일때
-    if (this->mIsPawn) {
-        uim.mQSUI->Activate(&uim, map, static_cast<Pawn*>(this));
-    }
 }
 
 //부하 생성자

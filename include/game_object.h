@@ -31,8 +31,6 @@ class ObjectManager {
     TeamManager* mTeamm{nullptr};
     //엔티티 매니저
     EntityManager* mEntm{nullptr};
-    //스킬 매니저
-    SkillManager* mSkm{nullptr};
 
     //도시 객체
     City* mCity {nullptr};

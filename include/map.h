@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 //전방 선언
+struct GameContext;
 class GameStateManager;
 class UIManager;
 class ObjectManager;
@@ -24,7 +25,7 @@ class Map {
     void Destroy();
 
     //이벤트 핸들링
-    void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, float mouseX, float mouseY);
+    void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY);
     bool mCanHandleEvent {true};
 
     //업데이트 관련

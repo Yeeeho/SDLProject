@@ -54,11 +54,12 @@ Done:
     - 서브맵 지형 구현: in progress
     - 오버맵으로 이동 기능 구현: in progress
 
-- 맵 이동:
+- 맵 이동 (스킬로 편입된):
     - 엔티티 이동시 연관 데이터도 움직이게 바꿈: done
     - 엔티티 이동시 행동력을 소모하게 바꿈: in progress 
     - ui:
         - 공격(이동) 범위 표시 구현: done
+        - 기술의 실제 범위에 따라 범위 표시 제한: done
 
 - 전투 시스템:
     - 서브맵 턴 구현: done
@@ -69,10 +70,13 @@ Done:
     - 범위 공격 구현: in progress
 
 - 스킬:
-    - 스킬 데이터 구현: in progress
-    - 스킬 로직 구현: in progress
-    - 엔티티에 실제로 연결: in progress
-    - ui에도 표시: in progress
+    - 스킬 데이터 구현: done
+    - 스킬 로직 구현: done
+    - 엔티티에 실제로 연결: done
+    - ui에도 표시: partly done
+    - 멀티 타겟 스킬 구현: maybe?
+    - 광역 스킬 구현: yet
+    - 타겟 설정: in progress
 
 - 엔티티:
     - 데이터:

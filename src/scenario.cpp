@@ -1,7 +1,10 @@
 #include "pch.h"
 
 #include "system.h"
+#include "game_context.h"
 #include "game_state.h"
+#include "game_json.h"
+#include "game_object.h"
 #include "turn.h"
 #include "map.h"
 #include "city.h"
@@ -9,8 +12,6 @@
 #include "text.h"
 #include "texture.h"
 #include "ui.h"
-#include "game_json.h"
-#include "game_object.h"
 #include "entity.h"
 
 void Scenario::LoadScenarioData(ObjectManager &objm)
@@ -29,11 +30,11 @@ void Scenario::LoadCityMap(ObjectManager &objm)
 {
 }
 
-void Scenario::Update(UIManager &uim, ObjectManager &objm, GameStateManager& gsm)
+void Scenario::Update(GameContext& gc)
 {
 }
 
-void Scenario::UpdateScenario(UIManager& uim, ObjectManager &objm, GameStateManager& gsm)
+void Scenario::UpdateScenario(GameContext& gc)
 {
     if (!mIsScUpdate) return;
 
@@ -59,7 +60,7 @@ void Scenario::UpdateScenario(UIManager& uim, ObjectManager &objm, GameStateMana
         mDialogueSection = mDialogue["items"][dSection];
 
         mIsDialogueUpdate = true;
-        uim.mDialogueUI->mIsRenderUpdate = true;
+        gc.mUim->mDialogueUI->mIsRenderUpdate = true;
     }
     else if (sType == "static_spawn") {
         Map* map {nullptr};
@@ -67,16 +68,16 @@ void Scenario::UpdateScenario(UIManager& uim, ObjectManager &objm, GameStateMana
         //어떤 맵에 스폰할지 결정한다.
         TurnManager* turnM;
         if (where == "submap") {
-            map = objm.mSubMap;
-            turnM = &gsm.mTms->mSmtm;
+            map = gc.mObjm->mSubMap;
+            turnM = &gc.mTms->mSmtm;
         } 
         else if (where == "overmap") {
-            map = objm.mMap;
-            turnM = &gsm.mTms->mOmtm; 
+            map = gc.mObjm->mMap;
+            turnM = &gc.mTms->mOmtm; 
         } 
         else if (where == "citymap") {
-            map = objm.mCity->mCityMap;
-            turnM = &gsm.mTms->mCmtm;
+            map = gc.mObjm->mCity->mCityMap;
+            turnM = &gc.mTms->mCmtm;
         }  
 
         json items = section["items"];
@@ -88,14 +89,14 @@ void Scenario::UpdateScenario(UIManager& uim, ObjectManager &objm, GameStateMana
                 
                 int tileId = item["tile_id"].get<int>();
             
-                objm.mEntm->AllocEntityOnTable(objm, name, -1, -1, 0);
-                Entity* ent = objm.mEntm->mEntTable[0];
+                gc.mObjm->mEntm->AllocEntityOnTable(*gc.mObjm, name, -1, -1, 0);
+                Entity* ent = gc.mObjm->mEntm->mEntTable[0];
                 //태도를 결정한다.
                 if (demeanor == "hostile") ent->mDemeanor = Demeanor::Hostile;
                 else if (demeanor == "friendly") ent->mDemeanor = Demeanor::Friendly;
                 else if (demeanor == "neutral") ent->mDemeanor = Demeanor::Neutral;
 
-                objm.mEntm->SpawnEntityOnMap(objm, map, ent, tileId);
+                gc.mObjm->mEntm->SpawnEntityOnMap(*gc.mObjm, map, ent, tileId);
                 turnM->mIsQueueUpdate = true;
             }
         }
@@ -109,11 +110,11 @@ void Scenario::UpdateScenario(UIManager& uim, ObjectManager &objm, GameStateMana
     mIsScUpdate = false;
 }
 
-void Scenario::UpdateDialogue(UIManager &uim, ObjectManager& objm, json data)
+void Scenario::UpdateDialogue(GameContext& gc, json data)
 {
     if (!mIsDialogueUpdate) return;
 
-    uim.mDialogueUI->mDialogueBody->mTui->ClearTexts();
+    gc.mUim->mDialogueUI->mDialogueBody->mTui->ClearTexts();
     
     json d = data[mDialogueProgress];
     std::string dType = d["type"].get<std::string>();
@@ -124,18 +125,18 @@ void Scenario::UpdateDialogue(UIManager &uim, ObjectManager& objm, json data)
 
     if (dType == "narration") {        
         std::string text = d["text"].get<std::string>();
-        uim.mDialogueUI->SetUI(text);
+        gc.mUim->mDialogueUI->SetUI(text);
         mDialogueProgress += 1;
 
-        uim.mDialogueUI->mIsRender = true;
+        gc.mUim->mDialogueUI->mIsRender = true;
     }
     else if (dType == "player_line") {
         TTFWord name = TTFWord("당신", white, System::sFont);
         std::string text = d["text"].get<std::string>();
-        uim.mDialogueUI->SetUI(uim.mDialogueUI->mSpkrBlankImg, name, text);
+        gc.mUim->mDialogueUI->SetUI(gc.mUim->mDialogueUI->mSpkrBlankImg, name, text);
         mDialogueProgress += 1;
 
-        uim.mDialogueUI->mIsRender = true;
+        gc.mUim->mDialogueUI->mIsRender = true;
     }
     else if (dType == "static_line") {
         SDL_Log("static line update at dialogue");
@@ -144,20 +145,20 @@ void Scenario::UpdateDialogue(UIManager &uim, ObjectManager& objm, json data)
 
         if (d["ent_type"].get<std::string>() == "npc") {
 
-            json entDb = objm.mJsm->mEntDb["items"];
+            json entDb = gc.mObjm->mJsm->mEntDb["items"];
 
             name = d["speaker"].get<std::string>();
             speaker = entDb[name];
         }
         else if (d["ent_type"].get<std::string>() == "pawn") {
-            json pawnDb = objm.mJsm->mPawnDb["items"];
+            json pawnDb = gc.mObjm->mJsm->mPawnDb["items"];
 
             name = d["speaker"].get<std::string>();
             speaker = pawnDb[name];
         }
 
         std::string imgPath = speaker["img_path"].get<std::string>();
-        uim.mDialogueUI->mSpeakerImg->LoadFromFile(imgPath);
+        gc.mUim->mDialogueUI->mSpeakerImg->LoadFromFile(imgPath);
 
         name = speaker["name"].get<std::string>();
 
@@ -166,17 +167,17 @@ void Scenario::UpdateDialogue(UIManager &uim, ObjectManager& objm, json data)
 
         std::string text = d["text"].get<std::string>();
 
-        uim.mDialogueUI->SetUI(uim.mDialogueUI->mSpeakerImg, entName, text);
+        gc.mUim->mDialogueUI->SetUI(gc.mUim->mDialogueUI->mSpeakerImg, entName, text);
 
         mDialogueProgress += 1;
 
-        uim.mDialogueUI->mIsRender = true;
+        gc.mUim->mDialogueUI->mIsRender = true;
     }
     else if (dType == "choice") {
         mIsDialogueEnd = true;
         mDialogueProgress = 0;
 
-        uim.mDialogueUI->mIsRender = true;
+        gc.mUim->mDialogueUI->mIsRender = true;
     }
     else if (dType == "end") {
         mDialogueProgress = 0;
@@ -185,15 +186,15 @@ void Scenario::UpdateDialogue(UIManager &uim, ObjectManager& objm, json data)
         mScProgress += 1;
         mIsScUpdate = true;
         
-        uim.mDialogueUI->mIsRender = false; //렌더링도 꺼야한다.
+        gc.mUim->mDialogueUI->mIsRender = false; //렌더링도 꺼야한다.
     }
     else {
         std::string text = "dialogue type not found";
-        uim.mDialogueUI->SetUI(text);
-        uim.mDialogueUI->mIsRender = true;
+        gc.mUim->mDialogueUI->SetUI(text);
+        gc.mUim->mDialogueUI->mIsRender = true;
     }
 
-    uim.mDialogueUI->mIsRenderUpdate = true;
+    gc.mUim->mDialogueUI->mIsRenderUpdate = true;
 
     mIsDialogueUpdate = false; //플래그 초기화
 }
@@ -222,10 +223,10 @@ void NGScenario::LoadCityMap(ObjectManager& objm)
 {
 }
 
-void NGScenario::Update(UIManager& uim, ObjectManager &objm, GameStateManager& gsm)
+void NGScenario::Update(GameContext& gc)
 {
-    UpdateScenario(uim, objm, gsm);
-    UpdateDialogue(uim, objm, mDialogueSection);
+    UpdateScenario(gc);
+    UpdateDialogue(gc, mDialogueSection);
 }
 
 void DefScenario::LoadScenarioData(ObjectManager &objm)
@@ -242,7 +243,7 @@ void DefScenario::LoadCityMap(ObjectManager& objm)
 {
 }
 
-void DefScenario::Update(UIManager& uim, ObjectManager &objm, GameStateManager& gsm)
+void DefScenario::Update(GameContext& gc)
 {
 }
 
@@ -263,14 +264,14 @@ void ScenarioManager::DestroyCurrentScenario()
     if (mCurrentSc != nullptr) delete mCurrentSc;
 }
 
-void ScenarioManager::HandleEvent(SDL_Event &e, UIManager &uim, ObjectManager &objm, float mouseX, float mouseY)
+void ScenarioManager::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
 
 }
 
-void ScenarioManager::Update(UIManager &uim, ObjectManager &objm, GameStateManager& gsm)
+void ScenarioManager::Update(GameContext& gc)
 {
-    mCurrentSc->Update(uim, objm, gsm);
+    mCurrentSc->Update(gc);
 }
 
 void ScenarioManager::LoadThings(ObjectManager& objm)

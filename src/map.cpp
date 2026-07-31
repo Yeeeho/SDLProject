@@ -1,16 +1,18 @@
 #include "pch.h"
 
-#include "map.h"
-#include "move.h"
+#include "game_context.h"
 #include "game_object.h"
+#include "map.h"
 #include "ui.h"
-#include "entity.h"
 #include "math.h"
 #include "camera.h"
 #include "text.h"
 #include "texture.h"
 #include "system.h"
 #include "square.h"
+#include "entity.h"
+#include "skill/skill.h"
+#include "move.h"
 
 Map::Map(int x, int y, int xTiles, int yTiles, int tileLen)
 {
@@ -49,9 +51,9 @@ void Map::Destroy()
     delete this;
 }
 
-void Map::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, float mouseX, float mouseY)
+void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
-    if(uim.mDialogueUI->mIsRender) return; //대화창이 렌더링중이면 반환한다.
+    if(gc.mUim->mDialogueUI->mIsRender) return; //대화창이 렌더링중이면 반환한다.
     if(!mCanHandleEvent) return;
 
     //마우스오버
@@ -65,7 +67,7 @@ void Map::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, float m
     Math mth;
     bool isInMap = mth.IsPointInSquare(mouseX, mouseY, mX, mY, mW, mH); 
     if (!isInMap) { //맵 밖에 있는 경우
-        uim.mTileHLUI->mIsRenderBetweenTiles = false; //타일 ui 렌더링 플래그 거짓
+        gc.mUim->mTileHLUI->mIsRenderBetweenTiles = false; //타일 ui 렌더링 플래그 거짓
         return;
     }
 
@@ -85,35 +87,49 @@ void Map::HandleEvent(SDL_Event &e, UIManager& uim, ObjectManager& objm, float m
     //타겟이 포커스 상태고 아군일때 이동 타일 범위 렌더링
     if (target != mFocusedEnt || !target->mIsPawn) {
         //둘중 하나라도 만족하지 않으면 렌더링 안함
-        uim.mTileHLUI->mIsRenderBetweenTiles = false;
+        gc.mUim->mTileHLUI->mIsRenderBetweenTiles = false;
         return;
     }
     else {
-        uim.mTileHLUI->mIsRenderBetweenTiles = true;
+        gc.mUim->mTileHLUI->mIsRenderBetweenTiles = true;
     }
 
     //타일 범위 구하는 로직
-    if (target->mTileId == tid) { 
-        return; //같은 타일을 두번 누름
-    }
+    
+    //두 타일 사이의 아이디가 담긴 컨테이너를 구한다.
     MapTile* tile1 = mMapTiles[target->mTileId];
     MapTile* tile2 = tile;
-    //TODO:이동 능력에 따라서 조절되어야 함.
     std::vector<int> tids = mm.GetTilesIdBetween(this, tile1, tile2);
     
     //타일 ui 관련 세팅
-    uim.mTileHLUI->SetTileIds(tids);
-    
-    if (tile->mIsEntOn) {
-        //목표 타일에 엔티티가 이미 있음
-        return;        
+    if (gc.mSkm->mIsSkillReady) { //스킬매니저가 스킬을 사용할 준비가 되었다면
+        //범위에 따라 타일을 제한한다.
+        //현재는 광역공격을 위한 계산식은 없다.
+        SkillHelper skh;
+        int range = skh.GetSkillRange(gc.mSkm->mSkillData, gc.mSkm->mSkill);
+        
+        if (range + 1 > tids.size()) {            
+            //강조될 타일 개수보다 스킬 범위가 크면 타일 컨테이너를 조정하지 않는다.
+        } 
+        else {
+            //스킬 범위가 타일 개수보다 적은 경우
+            std::vector<int> tidsCpy = tids; //복사해놓는다.
+            tids.clear(); //실제 사용할 객체를 비운다.
+            for (int i = 0; i < range+1; i++) {
+                tids.push_back(tidsCpy[i]); //복사된 친구에게서 다시 원소를 받는다. 범위만큼만.
+            }
+        }
     }
-    //마우스 왼쪽 클릭시 행동
+
+    gc.mUim->mTileHLUI->SetTileIds(tids);
+    
+    //마우스 왼쪽 클릭시
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
     if (e.button.button != SDL_BUTTON_LEFT) return; 
-    //엔티티 이동
-    MoveManager mvm = MoveManager(&uim, &objm);
-    mvm.MoveEntityTo(this, target, target->mTileId, tid);
+    //기술 발현데스
+    gc.mSkm->mMap = this; //이 단계에서 스킬 발동에 필수적인 멤버 변수들이 모두 설정된다.
+    gc.mSkm->SetTargetTileId(tid);
+    gc.mSkm->ActivateSkill();
 }
 
 void Map::GenerateMapTiles()

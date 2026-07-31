@@ -6,6 +6,7 @@
 #include "item/item_manager.h"
 #include "skill/skill.h"
 #include "skill/skill_enum.h"
+#include "ui.h"
 #include "text.h"
 #include "city.h"
 #include "entity.h"
@@ -16,7 +17,6 @@ ObjectManager::ObjectManager()
 {
     mJsm = new JsonManager();
     mItm = new ItemManager();
-    mSkm = new SkillManager();
 }
 
 void ObjectManager::RenderObjects()

@@ -7,6 +7,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 //전방선언 리스트
+struct GameContext;
 class ObjectManager;
 class UIManager;
 class GameStateManager;
@@ -25,7 +26,7 @@ class UI {
     UI(Square* frame, std::string text);
     void Destroy();
 
-    virtual void HandleEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY);
+    virtual void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY);
 
     bool mIsRender{true}; //렌더링 자체를 제어하는 플래그
     bool mIsUIUpdate{true}; //ui 업데이트 플래그 변수, 생성될 때 참이면 한번 업데이트 하고 거짓으로 바뀐다.
@@ -78,7 +79,7 @@ class FramedTUI : public UI {
     void RenderOnUpdate() override;
     void Render();
     //이벤트 핸들링
-    void HandleEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY) override;
+    void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY) override;
 
     TextUI* mTui {nullptr};
 
@@ -101,7 +102,7 @@ class Button : public UI {
     public:
     Button(Square* frame, std::string text, BtnType BtnType);
 
-    void HandleEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY) override;
+    void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY) override;
 
     BtnType mType;
 };
@@ -141,7 +142,7 @@ class IconUI {
 
     void Render();
     void RenderByCam(Camera* cam);
-    void HandleEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mouseY);
+    void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY);
 
     void SetDimension(int x, int y, int w, int h);
 
@@ -163,7 +164,7 @@ class DialogueUI {
     SDL_Texture* mTempTex {nullptr};
     
     //이벤트 핸들링    
-    void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
+    void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY);
     //업데이트 관련
     void Update(ScenarioManager& scm);
     bool mIsUpdate {false};
@@ -248,17 +249,18 @@ class CharacterSheetUI {
 
 class QuickSkillUI {
     public:
-    QuickSkillUI(int x, int y, int w, int h, ObjectManager* objm);
+    QuickSkillUI(int x, int y, int w, int h, GameContext& gc);
 
     void StoreTexture();
     void RenderStoredTex();
     void Render();
 
-    void HandleEvent(SDL_Event& e, UIManager* uim, ObjectManager* objm, Map* map, float mouseX, float mouseY);
-    void Activate(UIManager* uim, Map* map, Pawn* pawn);
-    void Deactivate(UIManager* uim, Map* map);
+    void HandleEvent(SDL_Event& e, GameContext& gc, Map* map, float mouseX, float mouseY);
+    void Activate(GameContext& gc, Map* map, Pawn* pawn);
+    void Deactivate(GameContext& gc, Map* map);
 
-    ObjectManager* mObjm {nullptr};
+    GameContext* mGc {nullptr};
+
     Pawn* mFocusedPawn {nullptr};
 
     std::vector<std::string> mSkillList;
@@ -275,10 +277,10 @@ class QuickSkillUI {
 
 class UIManager {
     public:
-    UIManager(ObjectManager* objm);
+    UIManager(GameContext& gc);
 
-    //참고용 오브젝트 매니저
-    ObjectManager* mObjm;
+    //참고용 컨텍스트 객체
+    GameContext* mGc {nullptr};
 
     //ui 컨테이너
     std::map<std::string, UI*> uiMap;
@@ -292,8 +294,8 @@ class UIManager {
     void DestroyUIs();
     
     //이벤트 핸들링
-    void HandleUIEvent(SDL_Event& e, GameStateManager& gsm, ObjectManager& objm, float mouseX, float mousey);
-    void HandleMapUIEvent(SDL_Event& e, ObjectManager& objm, GameStateManager& gsm, Map* map, float mx, float my);
+    void HandleUIEvent(SDL_Event& e, GameContext& gc, float mouseX, float mousey);
+    void HandleMapUIEvent(SDL_Event& e, GameContext& gc, Map* map, float mx, float my);
 
     //렌더링
     void RenderUIs();

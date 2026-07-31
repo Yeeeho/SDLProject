@@ -4,6 +4,7 @@
 
 using json = nlohmann::json;
 
+struct GameContext;
 class UIManager;
 class ObjectManager;
 
@@ -23,16 +24,16 @@ class Scenario {
     virtual void LoadOverMap(ObjectManager& objm);
     virtual void LoadCityMap(ObjectManager& objm);
 
-    virtual void Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm);
+    virtual void Update(GameContext& gc);
 
     //비 가상함수들
     //시나리오 진행 업데이트
-    void UpdateScenario(UIManager& uim, ObjectManager& objm, GameStateManager& gsm);
+    void UpdateScenario(GameContext& gc);
     bool mIsScUpdate {true};
     int mScProgress {0};
 
     //공용 대화 업데이트 메서드
-    void UpdateDialogue(UIManager& uim, ObjectManager& objm, json d);
+    void UpdateDialogue(GameContext& gc, json d);
     int mDialogueProgress {0};
     bool mIsDialogueUpdate {true};
     bool mIsDialogueEnd {true}; //하나의 대화 객체가 끝났을때, 기본값 건들지 말것
@@ -46,7 +47,7 @@ class DefScenario : public Scenario {
     void LoadOverMap(ObjectManager& objm) override;
     void LoadCityMap(ObjectManager& objm) override;
 
-    void Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm) override;
+    void Update(GameContext& gc) override;
 
 };
 
@@ -58,7 +59,7 @@ class NGScenario : public Scenario {
     void LoadOverMap(ObjectManager& objm) override;
     void LoadCityMap(ObjectManager& objm) override;
 
-    void Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm) override;
+    void Update(GameContext& gc) override;
     
     private:
 };
@@ -72,9 +73,9 @@ class ScenarioManager {
     void DestroyCurrentScenario();
 
     //이벤트 핸들랑
-    void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, float mouseX, float mouseY);
+    void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY);
     //업데이트
-    void Update(UIManager& uim, ObjectManager& objm, GameStateManager& gsm);
+    void Update(GameContext& gc);
 
     void LoadThings(ObjectManager& objm); //상태가 바뀔 때 한번 로드됨
     void ClearThings(ObjectManager& objm);

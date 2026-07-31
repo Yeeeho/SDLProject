@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 //전방 선언
+struct GameContext;
 class Entity;
 class Map;
 class Pawn;
@@ -121,7 +122,11 @@ class EntityManager {
     //업데이트
     void Update(ObjectManager& objm);
     //이벤트 핸들링
-    void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, Map* map, float mouseX, float mouseY);
+    void HandleEvent(SDL_Event& e, GameContext& gc, Map* map, float mouseX, float mouseY);
+    void HandleEntityEvent(SDL_Event& e, GameContext& gc, Map* map, Entity* ent, float mx, float my);
+
+    void FocusEntity(GameContext& gc, Map* map, Entity* ent); //엔티티를 포커스로 설정함.
+
     //렌더링
     void RenderEntities(Map* map);
 
@@ -140,8 +145,6 @@ class Entity {
     public:
     Entity() = default;
     Entity(std::string name, int id);
-
-    void HandleEvent(SDL_Event& e, UIManager& uim, ObjectManager& objm, Map* map, float x, float y);
 
     //식별 정보
     std::string mName {""}; //이름

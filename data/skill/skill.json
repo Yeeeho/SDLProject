@@ -3,8 +3,23 @@
     "desc" : "스킬들의 정보를 기재해놓았다.",
     "items" : {
 
+        "move" : {
+            "name" : "이동",
+            "type" : "movement",
+            "img_path" : "images/icons/skill/move.png",
+            "target" : "single",
+            "range" : 9999,
+            "st_per_tile" : {
+                "mod" : 0
+            },
+            "ap_per_tile" : {
+                "mod" : 1
+            }
+        },
+
         "punch" : {
             "name" : "주먹질",
+            "type" : "attack",
             "img_path" : "images/icons/skill/fist.png",
             "target" : "single",
             "range" : 1,
@@ -26,6 +41,7 @@
 
         "bite" : {
             "name" : "물기",
+            "type" : "attack",
             "target" : "single",
             "range" : 1,
             "dmg" : {
@@ -43,6 +59,7 @@
 
         "basic_attack" : {
             "name" : "기본 공격",
+            "type" : "attack",
             "target" : "single",
             "range" : 1,
 

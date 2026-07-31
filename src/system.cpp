@@ -1,12 +1,13 @@
 #include "pch.h"
 
 #include "system.h"
-#include "map.h"
-#include "entity.h"
-#include "city.h"
+#include "game_context.h"
 #include "game_json.h"
 #include "game_object.h"
 #include "game_state.h"
+#include "map.h"
+#include "entity.h"
+#include "city.h"
 #include "ui.h"
 
 bool System::Init()
@@ -125,7 +126,7 @@ void System::Close()
     MIX_Quit();
 }
 
-bool System::HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, GameStateManager& gsm)
+bool System::HandleEvents(SDL_Event& e, GameContext& gc)
 {
     bool quit = false;
 
@@ -138,7 +139,7 @@ bool System::HandleEvents(SDL_Event& e, UIManager& uim, ObjectManager& objm, Gam
         if (e.type == SDL_EVENT_QUIT) quit = true;
 
         //현재 상태에 있는 매니저들의 이벤트 핸들링
-        gsm.mCurrentState->HandleEvent(e, uim, objm, gsm, mouseX, mouseY);
+        gc.mGsm->mCurrentState->HandleEvent(e, gc, mouseX, mouseY);
     }
 
     return quit;

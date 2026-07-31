@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h> 
 
 #include "system.h"
+#include "game_context.h"
 #include "scenario.h"
 #include "game_object.h"
 #include "game_state.h"
@@ -26,39 +27,33 @@ int main() {
 
     Timer timer;
 
-    /*매니저 객체들을 스택 소환해준다*/
-    RenderManager rend;
-    ObjectManager objm;
-    UIManager uim = UIManager(&objm);
-
-    //게임 상태 매니저
-    GameStateManager gsm;
+    GameContext gc;
 
     //로딩
-    sys.LoadData(objm); //json 데이터베이스 로드
-    sys.LoadObjects(objm); //게임에서 사용할 객체 로드
-    sys.LoadUIs(uim, objm); //ui객체 로드
-    objm.InitStartObjects();
+    sys.LoadData(*gc.mObjm); //json 데이터베이스 로드
+    sys.LoadObjects(*gc.mObjm); //게임에서 사용할 객체 로드
+    sys.LoadUIs(*gc.mUim, *gc.mObjm); //ui객체 로드
+    gc.mObjm->InitStartObjects();
 
     //초기 게임 상태를 현재 상태에 저장한다.
-    gsm.mCurrentState = gsm.mIs;
-    gsm.mCurrentState->Enter(uim, objm, gsm);
+    gc.mGsm->mCurrentState = gc.mGsm->mIs;
+    gc.mGsm->mCurrentState->Enter(gc);
 
     //메인 루프
     while (quit == false) {
 
-        quit = sys.HandleEvents(e, uim, objm, gsm);
+        quit = sys.HandleEvents(e, gc);
 
-        gsm.mCurrentState->Update(uim, objm, gsm);
+        gc.mGsm->mCurrentState->Update(gc);
 
         //게임 상태를 바꾼다.
-        if (gsm.mIsStateChange) {
-            gsm.SetCurrentState(uim, objm);
+        if (gc.mGsm->mIsStateChange) {
+            gc.mGsm->SetCurrentState(gc);
         }
 
-        gsm.mCurrentState->Render(rend, uim, objm);
+        gc.mGsm->mCurrentState->Render(gc);
 
-        rend.AdjustFps(timer);
+        gc.mRenderM->AdjustFps(timer);
     }
 
     sys.Close();
