@@ -19,10 +19,10 @@ class Scenario {
     json mDialogueSection;
 
     //맵에 정보 로드
-    virtual void LoadScenarioData(ObjectManager& objm);
-    virtual void LoadSubMap(ObjectManager& objm);
-    virtual void LoadOverMap(ObjectManager& objm);
-    virtual void LoadCityMap(ObjectManager& objm);
+    virtual void LoadScenarioData(GameContext& gc);
+    virtual void LoadSubMap(GameContext& gc);
+    virtual void LoadOverMap(GameContext& gc);
+    virtual void LoadCityMap(GameContext& gc);
 
     virtual void Update(GameContext& gc);
 
@@ -42,10 +42,10 @@ class Scenario {
 class DefScenario : public Scenario {
     public:
 
-    void LoadScenarioData(ObjectManager& objm);
-    void LoadSubMap(ObjectManager& objm) override;
-    void LoadOverMap(ObjectManager& objm) override;
-    void LoadCityMap(ObjectManager& objm) override;
+    void LoadScenarioData(GameContext& gc);
+    void LoadSubMap(GameContext& gc) override;
+    void LoadOverMap(GameContext& gc) override;
+    void LoadCityMap(GameContext& gc) override;
 
     void Update(GameContext& gc) override;
 
@@ -54,10 +54,10 @@ class DefScenario : public Scenario {
 class NGScenario : public Scenario {
     public:
     
-    void LoadScenarioData(ObjectManager& objm) override;
-    void LoadSubMap(ObjectManager& objm) override;
-    void LoadOverMap(ObjectManager& objm) override;
-    void LoadCityMap(ObjectManager& objm) override;
+    void LoadScenarioData(GameContext& gc) override;
+    void LoadSubMap(GameContext& gc) override;
+    void LoadOverMap(GameContext& gc) override;
+    void LoadCityMap(GameContext& gc) override;
 
     void Update(GameContext& gc) override;
     
@@ -69,7 +69,7 @@ class ScenarioManager {
     ScenarioManager();
 
     //현재 시나리오 설정
-    void SetCurrentScenario(Scenario* sc, ObjectManager& objm);
+    void SetCurrentScenario(Scenario* sc, GameContext& gc);
     void DestroyCurrentScenario();
 
     //이벤트 핸들랑
@@ -77,8 +77,8 @@ class ScenarioManager {
     //업데이트
     void Update(GameContext& gc);
 
-    void LoadThings(ObjectManager& objm); //상태가 바뀔 때 한번 로드됨
-    void ClearThings(ObjectManager& objm);
+    void LoadThings(GameContext& gc); //상태가 바뀔 때 한번 로드됨
+    void ClearThings(GameContext& gc);
 
     Scenario* mCurrentSc {nullptr};
     private:

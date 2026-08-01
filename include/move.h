@@ -21,3 +21,9 @@ class MoveManager {
     Uint64 mMs {0};
     Uint64 mMaxFrameCapMs {500};
 };
+
+class MoveHelper {
+    public:
+    bool CheckDiagonalMove(int firstTileId, int lastTileId, Map* map);
+    int GetDiagonalMoves(std::vector<int> tids, Map* map);
+};

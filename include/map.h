@@ -41,17 +41,18 @@ class Map {
     int mX {0}, mY {0}; //맵 위치
     int mInitX {0}, mInitY {0}; //맵 시작 위치
 
-    int mW, mH = 0; //맵의 크기. 타일 길이 * 타일 개수
-    int mXTiles, mYTiles = 0; //축의 타일 개수
+    int mW {0}, mH {0}; //맵의 크기. 타일 길이 * 타일 개수
+    int mXTiles {0}, mYTiles {0}; //축의 타일 개수
     int mTileLen = 100; //타일 한 변 길이
+
+    //턴 제어
+    int mCurrentTurn {0};
 
     std::vector<MapTile*> mMapTiles; //맵타일들 담는 컨테이너
 
     //엔티티
     std::vector<Entity*> mNpcs; //맵에 있는 npc들 담는 컨테이너
     std::vector<Entity*> mPawns; //맵에 있는 폰들을 담는 컨테이너
-    Entity* mPrevFocusedEnt {nullptr};
-    Entity* mFocusedEnt {nullptr};
 
     //지형지물(추가 예정)
 
@@ -83,6 +84,19 @@ class MapTile {
 };
 
 class MapManager {
+    public:
+    MapManager();
+    //오버맵에서 사용할 월드맵 객체다.
+    Map* mOverMap {nullptr};
+    //탐험/전투가 일어나는 맵이다.
+    Map* mSubMap {nullptr};
+    //도시의 맵이다.
+    Map* mCityMap {nullptr};
+
+    Map* mCurrentMap {nullptr};
+};
+
+class MapHelper {
     public:
     int WhatTileOnPoint(float x, float y, Map* map); //이 점은 맵의 어느 타일에 있는가?
 

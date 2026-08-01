@@ -21,4 +21,5 @@ class CombatManager {
 class CombatHelper {
     public:
     void TakeDamage(Entity* ent, GameContext& gc, int damageInput);
+    bool DeathCheck(Entity* ent);
 };

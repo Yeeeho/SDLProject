@@ -8,7 +8,8 @@
             "img_path" : "images/error.png",
 
             "str" : 1,
-            "end" : 1,            
+            "end" : 1,
+            "per" : 1,            
             "dex" : 1,
             "agi" : 1,
             "wil" : 1,
@@ -23,7 +24,8 @@
             "img_path" : "images/null.png",
             
             "str" : 1,
-            "end" : 1,            
+            "end" : 1,
+            "per" : 1,            
             "dex" : 1,
             "agi" : 1,
             "wil" : 1,
@@ -38,9 +40,10 @@
             "img_path" : "images/entity/npc/rat.png",
 
             "str" : 1,
-            "end" : 1,            
+            "end" : 1,
+            "per" : 1,            
             "dex" : 1,
-            "agi" : 2,
+            "agi" : 5,
             "wil" : 1,
             "int" : 1,
             "spd" : 20

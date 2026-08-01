@@ -23,70 +23,70 @@ class Texture;
 class UI {
     public:
     UI() = default;
-    UI(Square* frame, std::string text);
-    void Destroy();
 
     virtual void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY);
 
-    bool mIsRender{true}; //렌더링 자체를 제어하는 플래그
-    bool mIsUIUpdate{true}; //ui 업데이트 플래그 변수, 생성될 때 참이면 한번 업데이트 하고 거짓으로 바뀐다.
-
-    virtual void RenderOnUpdate(); //플래그에 따라 업데이트하는 메서드
-
-    std::string mUIText = "null";
-    Square* mUIFrame{nullptr}; //프레임
-
-    //비주얼
-    void SetFrameColor(SDL_Color fillcolor, SDL_Color linecolor);
+    virtual void StoreTexture();
+    virtual void RenderStoredTex();
+    void Render();
 
     SDL_Texture* mTempTex {nullptr}; //여기다 저장해놓고 업데이트시에 이걸 렌더링
-    Texture* mMyTexture {nullptr};
+    
+    int mPadding = 10;
 
-    float mPadding = 10.f;
+    bool mIsRender{false}; //렌더링 자체를 제어하는 플래그
+    bool mIsRenderUpdate{true}; //ui 업데이트 플래그 변수, 생성될 때 참이면 한번 업데이트 하고 거짓으로 바뀐다.
     private:
 };
 
 //텍스트만 있는 ui
-class TextUI : public UI {
+class TextUI {
     public:
     TextUI(float x, float y);
 
     void ClearTexts();
 
+    void AddWord(TTFWord word);
     void ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font);
 
     void RenderWords();
     void RenderAtLine(const TTFWord& text);
     void NewLine(TTF_Font* font);
     void AddSpace(TTF_Font* font);
-
-    void RenderOnUpdate() override;
     
     float mX, mY;
-    int mLineSpacing = 4;
+    int mPadding {10};
+    int mLineSpacing {4};
     int mTotalWidth {0}, mTotalHeight {0}; //텍스처 렌더링 좌표 계산용
 
-    std::vector<TTFWord> mTexts;
+    std::map<int,TTFWord> mTexts;
+    private:
+    int mWordId {0};
 };
+
 // 프레임이 있는 text ui
-class FramedTUI : public UI {
+class FramedTUI {
     public:
     FramedTUI(int x, int y, int w, int h);
 
     void AddWord(TTFWord word);
     void ClearText();
     //렌더링
-    void RenderOnUpdate() override;
     void Render();
     //이벤트 핸들링
-    void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY) override;
+    void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY);
 
     TextUI* mTui {nullptr};
 
+    int mPadding {10};
     int mTotalW {0};
     int mTotalH {0};
     int mX {0}, mY {0};
     int mW {0}, mH {0};
+
+    bool mIsRender {false};
+    bool mIsUIUpdate {true};
+    private:
 };
 
 //버튼 기능 타입
@@ -100,10 +100,17 @@ enum class BtnType {
 //일반적인 버튼
 class Button : public UI {
     public:
-    Button(Square* frame, std::string text, BtnType BtnType);
+    Button(int x, int y, int w, int h, std::string text, BtnType BtnType);
 
     void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY) override;
 
+    void StoreTexture() override;
+    void RenderStoredTex() override;
+
+    Square* mUIFrame {nullptr};
+    TextUI* mTui {nullptr};
+
+    int mX {0}, mY {0}, mW {0}, mH {0};
     BtnType mType;
 };
 
@@ -124,10 +131,12 @@ class ToolTip : public UI {
     //이벤트 핸들러
     void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
     //렌더링 메서드
-    void RenderOnUpdate() override;
+    void StoreTexture();
+    void RenderStoredTex();
     void Render();
 
     TextUI* mTui {nullptr}; //텍스트
+    Square* mUIFrame {nullptr}; //프레임
 
     float mX {0}, mY {0}; //위치
     int mW, mH; //크기
@@ -156,12 +165,11 @@ class IconUI {
 
 class ScenarioManager;
 
-class DialogueUI {
+class DialogueUI : public UI {
     public:
     DialogueUI(float x, float y);
 
     SDL_Texture* mBasicTex {nullptr};
-    SDL_Texture* mTempTex {nullptr};
     
     //이벤트 핸들링    
     void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY);
@@ -171,8 +179,6 @@ class DialogueUI {
     //렌더링
     void StoreBasicTex(); //기본 텍스처 저장
     void RenderOnUpdate();
-    bool mIsRender {false}; //렌더링 자체 플래그
-    bool mIsRenderUpdate {true};
 
     //대화창 설정
     void SetUI(Texture* pic, TTFWord name, std::string text);
@@ -228,32 +234,25 @@ enum class CharacterSheetType {
     Skill, Info
 };
 
-//TODO: 렌더링 동작이 비슷하므로 상위 인터페이스를 만들고 메서드를 공유해야 함.
-class CharacterSheetUI {
+class CharacterSheetUI : public UI{
     public:
     CharacterSheetUI(int x, int y, int w, int h);
 
-    void StoreTexture();
-    void RenderStoredTex();
-    void Render();
+    void StoreTexture() override;
+    void RenderStoredTex() override;
 
     Texture* mTex {nullptr}; //배경용 텍스처
-    SDL_Texture* mTempTex {nullptr};
-
-    bool mIsRenderUpdate {true};
-    bool mIsRender {false};
 
     private:
     int mX {0}, mY {0}, mW {0}, mH {0};
 };
 
-class QuickSkillUI {
+class QuickSkillUI : public UI{
     public:
     QuickSkillUI(int x, int y, int w, int h, GameContext& gc);
 
-    void StoreTexture();
-    void RenderStoredTex();
-    void Render();
+    void StoreTexture() override;
+    void RenderStoredTex() override;
 
     void HandleEvent(SDL_Event& e, GameContext& gc, Map* map, float mouseX, float mouseY);
     void Activate(GameContext& gc, Map* map, Pawn* pawn);
@@ -265,14 +264,27 @@ class QuickSkillUI {
 
     std::vector<std::string> mSkillList;
 
-    bool mIsRender = false;
-    bool mIsRenderUpdate = false;
-
-    SDL_Texture* mTempTex {nullptr};
-
-    int mPadding {10};
     int mX {0}, mY {0};
     int mW {0}, mH {0};
+};
+
+enum class BCUIMainStatIdx {
+    Name = 0, CurHp = 4, MaxHp = 5, CurSp = 9, MaxSp = 10, CurAp = 14, MaxAp = 15
+};
+
+class BottomCharacterUI : public UI{
+    public:
+    BottomCharacterUI(int x, int y, int w, int h);
+
+    void UpdateUI(Entity* ent);
+
+    void StoreTexture() override;
+    void RenderStoredTex() override;
+
+    FramedTUI* mMainStat {nullptr}; //hp 등을 보여주는 ui컴포넌트
+    FramedTUI* mStatEffect {nullptr}; //상태이상들을 보여주는 ui 컴포넌트
+
+    int mX {0}, mY {0}, mW {0}, mH {0};
 };
 
 class UIManager {
@@ -284,7 +296,6 @@ class UIManager {
 
     //ui 컨테이너
     std::map<std::string, UI*> uiMap;
-    std::unordered_map<std::string, FramedTUI*> ftuiMap;
     std::unordered_map<std::string, Square*> mPanels;
     
     void InitTopBar(); //탑 바를 초기화하는 녀석
@@ -313,11 +324,13 @@ class UIManager {
     IconUI* mFocusIcon {nullptr}; //맵 타일 포커스 아이콘
     TileHLUI* mTileHLUI {nullptr}; //맵 타일 강조 ui
 
-    //스킬 퀵슬롯
-    QuickSkillUI* mQSUI {nullptr};
-
     //대화창
     DialogueUI* mDialogueUI {nullptr};
+    //스킬 퀵슬롯
+    QuickSkillUI* mQSUI {nullptr};
+    //캐릭터 하단 간략화 정보창
+    BottomCharacterUI* mBCUI {nullptr};
+
     //캐릭터 정보창
     CharacterSheetUI* mCharacterSheet {nullptr};
     //턴 종료 버튼

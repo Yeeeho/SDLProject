@@ -1,9 +1,11 @@
 #include "pch.h"
 
 #include "game_context.h"
+#include "map.h"
+#include "game_object.h"
 #include "ui.h"
-#include "combat.h"
 #include "entity.h"
+#include "combat.h"
 
 void CombatManager::EnterCombatState()
 {
@@ -31,11 +33,25 @@ void CombatHelper::TakeDamage(Entity *ent, GameContext& gc, int damageInput)
     int armor = sh.GetTotalArmor(ent);
 
     damageInput -= armor;
-
     ent->mCurHp -= damageInput;
 
-    std::string message = ent->mName + " 는 " + std::to_string(damageInput) + "체력 데미지를 받았다!";
+    std::string message = ent->mName + "는 " + std::to_string(damageInput) + "체력 데미지를 받았다!";
     SDL_Log(message.c_str());
 
-    gc.mUim->mToolTip->mIsUIUpdate = true;
+    if (DeathCheck(ent)) {
+        std::string message = ent->mName + "이(가) 죽었습니다!";
+        SDL_Log(message.c_str());
+        gc.mObjm->mEntm->KillEntityOnMap(gc, gc.mMapm->mCurrentMap, ent);
+    }
+}
+
+bool CombatHelper::DeathCheck(Entity *ent)
+{
+    bool isDead = false;
+
+    if (ent->mCurHp <= 0) {
+        isDead = true;
+    } 
+
+    return isDead;
 }

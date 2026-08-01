@@ -20,9 +20,6 @@ class ObjectManager {
     void RenderObjects();
     void DestroyObjects();
 
-    //게임 시작용 오브젝트들 로드
-    void InitStartObjects();
-
     //아이템 매니저
     ItemManager* mItm {nullptr};
     //json 매니저
@@ -34,10 +31,4 @@ class ObjectManager {
 
     //도시 객체
     City* mCity {nullptr};
-
-    //오버맵에서 사용할 월드맵 객체다.
-    Map* mMap {nullptr};
-    //탐험/전투가 일어나는 맵이다.
-    Map* mSubMap {nullptr};
-
 };

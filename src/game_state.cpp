@@ -58,8 +58,8 @@ GameState::GameState()
 void IntroState::Enter(GameContext& gc)
 {
     SDL_Log("enter intro");
-    gc.mUim->uiMap["debugBtn"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 25, 200, 50), "디버그", BtnType::OverMap);
-    gc.mUim->uiMap["newGameBtn"] = new Button(new Square(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 150, 200, 50), "새 게임", BtnType::NewGame);
+    gc.mUim->uiMap["debugBtn"] = new Button(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 25, 200, 50, "디버그", BtnType::OverMap);
+    gc.mUim->uiMap["newGameBtn"] = new Button(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 150, 200, 50, "새 게임", BtnType::NewGame);
 }
 
 void IntroState::Exit(GameContext& gc)
@@ -94,26 +94,22 @@ void OverMapState::Enter(GameContext& gc)
 {
     SDL_Log("enter overmap");
 
+    gc.mTurnm->Enter(gc.mMapm->mOverMap);
+    
     //시나리오 로딩
-
+    gc.mMapm->mCurrentMap = gc.mMapm->mOverMap;
     //렌더링 플래그 일시 true
     //맵 렌더링 플래그
-    gc.mObjm->mMap->mIsMapUpdate = true;
+    gc.mMapm->mOverMap->mIsMapUpdate = true;
     //오버맵에서 팀 렌더링 플래그
     gc.mObjm->mTeamm->mIsTeamUpdate = true;
 
     //ui 생성
     //사이드바
-    gc.mUim->uiMap["titleButton"] = new Button(new Square(10, 10 + gc.mUim->mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
-    gc.mUim->uiMap["cityViewButton"] = new Button(new Square(10, 70 + gc.mUim->mTopPanelH, 100, 50), "도시", BtnType::City);
+    gc.mUim->uiMap["titleButton"] = new Button(10, 10 + gc.mUim->mTopPanelH, 100, 50, "타이틀로", BtnType::Title);
+    gc.mUim->uiMap["cityViewButton"] = new Button(10, 70 + gc.mUim->mTopPanelH, 100, 50, "도시", BtnType::City);
     //턴 종료 버튼 타입 변경
     gc.mUim->mTurnOverBtn->mType = BtnType::OverMapTurnOver;
-
-    gc.mUim->ftuiMap["babo"] = new FramedTUI(100, 100, 200, 400);
-    FramedTUI* ftui = gc.mUim->ftuiMap["babo"];
-
-    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
-    ftui->mTui->ProcessAndAddText("hi my name is babo and i would like to die 그리고 응애에요.", tc, System::sFont);
 
     //탑 바
     gc.mUim->InitTopBar();
@@ -129,16 +125,16 @@ void OverMapState::Update(GameContext& gc)
 {
     gc.mScm->Update(gc);
 
-    gc.mObjm->mMap->mCam->Move();
-    gc.mUim->UpdateMapToolTip(gc.mObjm->mMap);
+    gc.mMapm->mOverMap->mCam->Move();
+    gc.mUim->UpdateMapToolTip(gc.mMapm->mOverMap);
 }
 
 void OverMapState::HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY)
 {
-    gc.mObjm->mMap->mCam->HandleEvent(e);
+    gc.mMapm->mOverMap->mCam->HandleEvent(e);
 
     gc.mUim->HandleUIEvent(e, gc, mouseX, mouseY);
-    gc.mUim->HandleMapUIEvent(e, gc, gc.mObjm->mMap, mouseX, mouseY);
+    gc.mUim->HandleMapUIEvent(e, gc, gc.mMapm->mOverMap, mouseX, mouseY);
 }
 
 void OverMapState::Render(GameContext& gc)
@@ -149,17 +145,17 @@ void OverMapState::Render(GameContext& gc)
     SDL_SetRenderLogicalPresentation(System::sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
     //맵 렌더링
-    gc.mObjm->mMap->RenderOnUpdate();
+    gc.mMapm->mOverMap->RenderOnUpdate();
     //팀 렌더링
-    gc.mObjm->mTeamm->RenderOnUpdate(gc.mObjm->mMap);
+    gc.mObjm->mTeamm->RenderOnUpdate(gc.mMapm->mOverMap);
 
     //ui들 렌더링
-    gc.mUim->mToolTip->RenderOnUpdate();    //툴팁 렌더링
-    gc.mUim->RenderMapUIs(gc.mObjm->mMap);
+    gc.mUim->mToolTip->Render();    //툴팁 렌더링
+    gc.mUim->RenderMapUIs(gc.mMapm->mOverMap);
 
     gc.mUim->RenderUIs();
     //턴종료 버튼
-    if (!gc.mUim->mDialogueUI->mIsRender) gc.mUim->mTurnOverBtn->RenderOnUpdate();
+    if (!gc.mUim->mDialogueUI->mIsRender) gc.mUim->mTurnOverBtn->Render();
     gc.mRenderM->RenderFps();
 
     SDL_RenderPresent(System::sRenderer);
@@ -168,9 +164,10 @@ void OverMapState::Render(GameContext& gc)
 void SubMapState::Enter(GameContext& gc) 
 {
     SDL_Log("enter submap");
-    
-    gc.mTms->mSmtm.EnterMap(gc.mObjm->mSubMap);
-    gc.mObjm->mSubMap->mIsMapUpdate = true;
+    gc.mMapm->mCurrentMap = gc.mMapm->mSubMap;
+
+    gc.mTurnm->Enter(gc.mMapm->mSubMap);
+    gc.mMapm->mSubMap->mIsMapUpdate = true;
 
     gc.mUim->mTurnOverBtn->mType = BtnType::SubMapTurnOver;
 
@@ -181,7 +178,7 @@ void SubMapState::Enter(GameContext& gc)
 void SubMapState::Exit(GameContext& gc)
 {
     SDL_Log("exit submap");
-    gc.mScm->ClearThings(*gc.mObjm);
+    gc.mScm->ClearThings(gc);
 
     gc.mUim->DestroyUIs();
 }
@@ -189,26 +186,26 @@ void SubMapState::Exit(GameContext& gc)
 void SubMapState::Update(GameContext& gc)
 {
     gc.mScm->Update(gc);
-    gc.mTms->mSmtm.Update();
+    gc.mTurnm->Update();
 
-    gc.mObjm->mSubMap->mCam->Move();
+    gc.mMapm->mSubMap->mCam->Move();
 
-    gc.mUim->UpdateMapToolTip(gc.mObjm->mSubMap);
+    gc.mUim->UpdateMapToolTip(gc.mMapm->mSubMap);
 }
 
 void SubMapState::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
     gc.mUim->mDialogueUI->HandleEvent(e, gc, mouseX, mouseY);
 
-    gc.mObjm->mEntm->HandleEvent(e, gc, gc.mObjm->mSubMap, mouseX, mouseY);
+    gc.mObjm->mEntm->HandleEvent(e, gc, gc.mMapm->mSubMap, mouseX, mouseY);
 
-    gc.mObjm->mSubMap->mCam->HandleEvent(e);
-    gc.mObjm->mSubMap->HandleEvent(e, gc, mouseX, mouseY);
+    gc.mMapm->mSubMap->mCam->HandleEvent(e);
+    gc.mMapm->mSubMap->HandleEvent(e, gc, mouseX, mouseY);
 
     gc.mSkm->HandleEvent(e, gc);
 
     gc.mUim->HandleUIEvent(e, gc, mouseX, mouseY);
-    gc.mUim->HandleMapUIEvent(e, gc, gc.mObjm->mSubMap, mouseX, mouseY);
+    gc.mUim->HandleMapUIEvent(e, gc, gc.mMapm->mSubMap, mouseX, mouseY);
 }
 
 void SubMapState::Render(GameContext& gc)
@@ -219,17 +216,17 @@ void SubMapState::Render(GameContext& gc)
     SDL_SetRenderLogicalPresentation(System::sRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
     
     //맵 렌더링
-    gc.mObjm->mSubMap->RenderOnUpdate();
+    gc.mMapm->mSubMap->RenderOnUpdate();
     //엔티티 렌더링
-    gc.mObjm->mEntm->RenderEntities(gc.mObjm->mSubMap);
+    gc.mObjm->mEntm->RenderEntities(gc.mMapm->mSubMap);
     
     //ui들 렌더링
-    gc.mUim->mFocusIcon->RenderByCam(gc.mObjm->mSubMap->mCam);
-    gc.mUim->RenderMapUIs(gc.mObjm->mSubMap);
+    gc.mUim->mFocusIcon->RenderByCam(gc.mMapm->mSubMap->mCam);
+    gc.mUim->RenderMapUIs(gc.mMapm->mSubMap);
     gc.mUim->RenderUIs();
 
     gc.mUim->mDialogueUI->RenderOnUpdate();
-    if (!gc.mUim->mDialogueUI->mIsRender) gc.mUim->mTurnOverBtn->RenderOnUpdate();
+    if (!gc.mUim->mDialogueUI->mIsRender) gc.mUim->mTurnOverBtn->Render();
 
     SDL_RenderPresent(System::sRenderer);
 }
@@ -237,15 +234,15 @@ void SubMapState::Render(GameContext& gc)
 void CityViewState::Enter(GameContext& gc)
 {
     SDL_Log("enter city view");
+    gc.mTurnm->Enter(gc.mMapm->mCityMap);
+    gc.mMapm->mCurrentMap = gc.mMapm->mCityMap;
 
-    //시나리오 로딩
-
-    //도시 렌더링 플래그
-    gc.mObjm->mCity->mCityMap->mIsMapUpdate = true;
+    //도시 맵 렌더링 플래그
+    gc.mMapm->mCityMap->mIsMapUpdate = true;
 
     //사이드바
-    gc.mUim->uiMap["titleButton"] = new Button(new Square(10, 10 + gc.mUim->mTopPanelH, 100, 50), "타이틀로", BtnType::Title);
-    gc.mUim->uiMap["overMapButton"] = new Button(new Square(10, 70 + gc.mUim->mTopPanelH, 100, 50), "오버맵", BtnType::OverMap);
+    gc.mUim->uiMap["titleButton"] = new Button(10, 10 + gc.mUim->mTopPanelH, 100, 50, "타이틀로", BtnType::Title);
+    gc.mUim->uiMap["overMapButton"] = new Button(10, 70 + gc.mUim->mTopPanelH, 100, 50, "오버맵", BtnType::OverMap);
 
     //탑 바
     gc.mUim->InitTopBar();
@@ -264,14 +261,14 @@ void CityViewState::Update(GameContext& gc)
 {
     gc.mScm->Update(gc);
 
-    gc.mUim->UpdateMapToolTip(gc.mObjm->mCity->mCityMap);
+    gc.mUim->UpdateMapToolTip(gc.mMapm->mCityMap);
 }
 
 void CityViewState::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
     gc.mUim->HandleUIEvent(e, gc, mouseX, mouseY);
 
-    gc.mUim->HandleMapUIEvent(e, gc, gc.mObjm->mCity->mCityMap, mouseX, mouseY);
+    gc.mUim->HandleMapUIEvent(e, gc, gc.mMapm->mCityMap, mouseX, mouseY);
 }
 
 void CityViewState::Render(GameContext& gc)
@@ -280,13 +277,13 @@ void CityViewState::Render(GameContext& gc)
     SDL_RenderClear(System::sRenderer);
 
     //도시 맵 렌더링
-    gc.mObjm->mCity->mCityMap->RenderOnUpdate();
+    gc.mMapm->mCityMap->RenderOnUpdate();
     //툴팁 렌더링
-    gc.mUim->mToolTip->RenderOnUpdate();
+    gc.mUim->mToolTip->Render();
     gc.mUim->RenderUIs();    //ui렌더링
-    gc.mUim->RenderMapUIs(gc.mObjm->mCity->mCityMap);
+    gc.mUim->RenderMapUIs(gc.mMapm->mCityMap);
     //턴 종료 버튼
-    if (!gc.mUim->mDialogueUI->mIsRender) gc.mUim->mTurnOverBtn->RenderOnUpdate();
+    if (!gc.mUim->mDialogueUI->mIsRender) gc.mUim->mTurnOverBtn->Render();
 
     gc.mRenderM->RenderFps();
     SDL_RenderPresent(System::sRenderer);

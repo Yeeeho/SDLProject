@@ -120,9 +120,9 @@ void TeamManager::SpawnTeamOnMap(Map *map, Team *team, int id)
     team->isOnMap = true;
 
     //아이디로 좌표를 구한다.
-    MapManager mm;
+    MapHelper mh;
     std::unordered_map<std::string, int> xy;
-    xy = mm.PosXYByTileId(id, map);
+    xy = mh.PosXYByTileId(id, map);
 
     team->mMapPosX = map->mX + map->mTileLen * xy["x"];
     team->mMapPosY = map->mY + map->mTileLen * xy["y"];
@@ -138,8 +138,8 @@ void TeamManager::SpawnTeamOnMap(Map *map, Team *team, int x, int y)
     team->mMapPosX = x; team->mMapPosY = y;
 
     //타일 id 구함
-    MapManager mm;
-    int id = mm.WhatTileOnPoint(x, y, map);
+    MapHelper mh;
+    int id = mh.WhatTileOnPoint(x, y, map);
     //타일 아이디 팀에 할당
     team->mTileId = id;
 
@@ -243,6 +243,7 @@ void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, in
     //최대체력, 최대행동력은 스탯에 따라 결정
     StatHelper sh;
     ent->mCurHp = sh.GetMaxHp(ent);
+    ent->mCurSp = sh.GetMaxSp(ent);
     ent->mCurAp = sh.GetMaxAp(ent);
 
     //선천적으로 방어력을 가진 경우 패시브 플래그에서 가져오는 걸루..
@@ -268,7 +269,8 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     pawn->mDemeanor = Demeanor::Friendly;
 
     StatHelper sh;
-    pawn->mCurHp = sh.GetMaxHp(pawn); 
+    pawn->mCurHp = sh.GetMaxHp(pawn);
+    pawn->mCurSp = sh.GetMaxSp(pawn); 
     pawn->mCurAp = sh.GetMaxAp(pawn); 
 
     pawn->mIsPawn = true;
@@ -295,6 +297,19 @@ void EntityManager::DeallocPawnOnTable(ObjectManager &objm, int id)
 {
     AllocPawnOnTable(objm, "null_pawn", PawnType::Null, id);
     SDL_Log("deallocated pawn");
+}
+
+void EntityManager::KillEntityOnMap(GameContext& gc, Map* map, Entity* ent)
+{
+    gc.mSkm->mTargets.clear();
+    if (ent->mIsOnMap) DespawnEntity(*gc.mObjm, map, ent);
+
+    if (ent->mIsPawn) {
+        DeallocPawnOnTable(*gc.mObjm, ent->mId);
+    }
+    else {
+        DeallocEntityOnTable(*gc.mObjm, ent->mId);
+    }
 }
 
 void EntityManager::LoadDataInTile(MapTile *tile, Entity *ent)
@@ -343,8 +358,8 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent,
     ent->mTileId = tileId;
 
     std::unordered_map<std::string, int> xy;
-    MapManager mm;
-    xy = mm.PosXYByTileId(tileId, map);
+    MapHelper mh;
+    xy = mh.PosXYByTileId(tileId, map);
 
     ent->mMapX = map->mX + map->mTileLen * xy["x"];
     ent->mMapY = map->mY + map->mTileLen * xy["y"];
@@ -359,6 +374,36 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent,
     else map->mNpcs.push_back(ent);
 }
 
+//엔티티 스폰의 정확히 반대 역할을 한다.
+void EntityManager::DespawnEntity(ObjectManager &objm, Map *map, Entity *ent)
+{
+    ent->mIsOnMap = false;
+    int tid = ent->mTileId;
+    MapTile* tile = map->mMapTiles[tid];
+    tile->mIsEntOn = false;
+    tile->DestroyInfos();
+    if (ent->mIsPawn) {
+        int i = 0;
+        for (Entity* p : map->mPawns) {
+            if (p->mId == ent->mId) {
+                map->mPawns.erase(map->mPawns.begin() + i);
+                break;
+            }
+            i++;
+        }
+    }
+    else {
+        int i = 0;
+        for (Entity* npc : map->mNpcs) {
+            if (npc->mId == ent->mId) {
+                map->mNpcs.erase(map->mNpcs.begin() + i);
+                break;
+            }
+            i ++;
+        }
+    }
+}
+
 void EntityManager::Update(ObjectManager &objm)
 {
 }
@@ -368,7 +413,7 @@ void EntityManager::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float m
     //오른쪽 마우스 버튼 클릭시
     if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_RIGHT) {
         //포커스 해제
-        map->mFocusedEnt = nullptr; map->mPrevFocusedEnt = nullptr;
+        mFocusedEnt = nullptr; mPrevFocusedEnt = nullptr;
         gc.mUim->mFocusIcon->mIsRender = false; //포커스 아이콘 렌더링 안함
         gc.mUim->mCharacterSheet->mIsRender = false; //캐릭터 시트 렌더링 안함
         gc.mUim->mQSUI->Deactivate(gc, map); //퀵슬롯 비활성화
@@ -422,6 +467,9 @@ void EntityManager::HandleEntityEvent(SDL_Event &e, GameContext &gc, Map *map, E
 
 void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
 {
+    std::string message = "focusing on " + ent->mName;
+    SDL_Log(message.c_str());
+    
     //엔티티 태도에 따라 포커스 텍스처를 변경.
     gc.mUim->mFocusIcon->SetDimension(ent->mMapX, ent->mMapY, map->mTileLen, map->mTileLen);
     if (ent->mDemeanor == Demeanor::Neutral) gc.mUim->mFocusIcon->mTex->LoadFromFile("images/ui/focus.png");
@@ -429,16 +477,19 @@ void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
     else if (ent->mDemeanor == Demeanor::Hostile) gc.mUim->mFocusIcon->mTex->LoadFromFile("images/ui/focus_hostile.png");
     gc.mUim->mFocusIcon->mIsRender = true;
 
+    gc.mUim->mTileHLUI->ClearTileIds();
+    gc.mUim->mBCUI->UpdateUI(ent);
+
     //포커스 엔티티 캐싱
-    map->mFocusedEnt = ent;
+    mFocusedEnt = ent;
     //아군이 아닐 경우 타일 범위 렌더링 끔
     if (!ent->mIsPawn) gc.mUim->mTileHLUI->mIsRenderBetweenTiles = false;
 
     //이전 엔티티와 같은 경우
-    if (ent == map->mPrevFocusedEnt)  {
+    if (ent == mPrevFocusedEnt)  {
         //포커스된 엔티티를 한번 더 클릭했을 경우 
         SDL_Log("one more click on focused entity");
-        map->mPrevFocusedEnt = ent;
+        mPrevFocusedEnt = ent;
         if (!ent->mIsPawn) return; //아군이 아니면 반환함. 
 
         //스킬 ui등을 표시.
@@ -446,7 +497,7 @@ void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
         gc.mUim->mCharacterSheet->mIsRender = true;
     }
 
-    map->mPrevFocusedEnt = ent;
+    mPrevFocusedEnt = ent;
     //내가 아군일때
     if (ent->mIsPawn) {
         gc.mUim->mQSUI->Activate(gc, map, static_cast<Pawn*>(ent));
@@ -488,6 +539,7 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
     //지금은 하드코딩 했는데 나중에는 인간 디폴트 데이터를 불러오게 할 수도 있다.
     mStr = 10;
     mEnd = 10;
+    mPer = 10;
     mDex = 10;
     mAgi = 10;
     mWil = 10;
@@ -505,7 +557,13 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
 
 int StatHelper::GetMaxHp(Entity *ent)
 {
-    int ret = ent->mEnd * 10 + ent->mWil * 5;
+    int ret = ent->mEnd * 7 + ent->mWil * 3;
+    return ret;
+}
+
+int StatHelper::GetMaxSp(Entity *ent)
+{
+    int ret = ent->mEnd * 7 + ent->mStr * 3;
     return ret;
 }
 

@@ -1,8 +1,9 @@
 #pragma once
 
+class MapManager;
 class GameStateManager;
 class ScenarioManager;
-struct TurnManagers;
+class TurnManager;
 class RenderManager;
 class ObjectManager;
 class UIManager;
@@ -13,7 +14,8 @@ struct GameContext {
     RenderManager* mRenderM {nullptr};
     GameStateManager* mGsm {nullptr};
     ScenarioManager* mScm {nullptr};
-    TurnManagers* mTms {nullptr};
+    TurnManager* mTurnm {nullptr};
+    MapManager* mMapm {nullptr};
     ObjectManager* mObjm {nullptr};
     UIManager* mUim {nullptr};
     SkillManager* mSkm {nullptr};

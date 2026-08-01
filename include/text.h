@@ -11,6 +11,7 @@ enum class TextType {
 
 class TTFWord {
     public:
+    TTFWord() = default;
     TTFWord(TTF_Font* font, TextType type);
     TTFWord(std::string message, SDL_Color color, TTF_Font* font);
 

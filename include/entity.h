@@ -107,6 +107,8 @@ class EntityManager {
     public:
     EntityManager(ObjectManager& objm);
     
+    void KillEntityOnMap(GameContext& gc, Map* map, Entity* ent);
+
     //엔티티 할당 함수
     void AllocEntityOnTable(ObjectManager& objm, std::string name, int xMapPos, int yMapPos, int id);
     void AllocPawnOnTable(ObjectManager& objm, std::string name, PawnType pType, int id);
@@ -118,6 +120,7 @@ class EntityManager {
     void LoadDataInTile(MapTile* tile, Entity* ent); //타일에 데이터 로드
     void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent);
     void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent, int tileId);
+    void DespawnEntity(ObjectManager& objm, Map* map, Entity* ent);
 
     //업데이트
     void Update(ObjectManager& objm);
@@ -135,6 +138,9 @@ class EntityManager {
     
     Entity* mEntTable[static_cast<int>(EntitySetting::MaxEnt)];
     Pawn* mPawnTable[static_cast<int>(EntitySetting::MaxPawn)];
+
+    Entity* mPrevFocusedEnt {nullptr};
+    Entity* mFocusedEnt {nullptr};
 };
 
 enum class Demeanor {
@@ -156,9 +162,6 @@ class Entity {
     //TODO: 텍스처는 매니저만 관리하게 리팩토링 해야됨
     Texture* mTexture {nullptr}; //엔티티 텍스처
 
-    //플레이어 제어
-    bool mIsTakingTurn {false}; //니 턴인가?
-
     //맵 관련 
     bool mIsOnMap {false}; //맵에 있나?
     int mTileId {-1}; //지금 서있는 타일 id
@@ -171,6 +174,7 @@ class Entity {
     int mStr {0};
     int mEnd {0};
     int mDex {0};
+    int mPer {0};
     int mAgi {0};
     int mWil {0};
     int mInt {0};
@@ -178,6 +182,7 @@ class Entity {
 
     //전투 스탯, 최대 스탯(체력 등)은 범용 스탯에 따라 결정되며, 뭐 헬퍼 함수 등으로 그때그때 구하게 한다.
     int mCurHp {0}; //현재 체력.
+    int mCurSp {0}; //현재 지구력
     int mCurAp {0}; //현재 행동력
     
     float mWeight {0.f}; //엔티티 무게. kg단위 참고
@@ -211,6 +216,7 @@ class Pawn : public Entity {
 class StatHelper {
     public:
     int GetMaxHp(Entity* ent); //최대체력을 계산한다.
+    int GetMaxSp(Entity* ent); //최대 sp를 계산한다.
     int GetMaxAp(Entity* ent); //최대 ap를 계산한다.
     
     //무게 계산

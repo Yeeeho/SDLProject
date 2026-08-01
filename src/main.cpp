@@ -33,7 +33,6 @@ int main() {
     sys.LoadData(*gc.mObjm); //json 데이터베이스 로드
     sys.LoadObjects(*gc.mObjm); //게임에서 사용할 객체 로드
     sys.LoadUIs(*gc.mUim, *gc.mObjm); //ui객체 로드
-    gc.mObjm->InitStartObjects();
 
     //초기 게임 상태를 현재 상태에 저장한다.
     gc.mGsm->mCurrentState = gc.mGsm->mIs;

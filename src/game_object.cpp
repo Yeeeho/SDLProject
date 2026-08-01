@@ -28,14 +28,3 @@ void ObjectManager::DestroyObjects()
 {
     //오브젝트 파괴하는 함수. 아직 미구현.
 }
-
-void ObjectManager::InitStartObjects()
-{
-    //오버맵에 도시 생성
-    int cityIdx = mMap->mXTiles * mMap->mYTiles * 0.5 - mMap->mXTiles * 0.5;
-    mMap->mMapTiles[cityIdx]->ChangeTexture("images/map/city.png");
-
-    SDL_Color tc = {0xE0, 0xE0, 0xE0, 0xFF};
-    mMap->mMapTiles[cityIdx]->mInfos.push_back(new TTFWord("당신의 도시", tc, System::sFont));
-    mMap->mMapTiles[cityIdx]->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
-}

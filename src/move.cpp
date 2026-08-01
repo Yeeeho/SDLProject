@@ -25,17 +25,18 @@ void MoveManager::MoveEntity(Map* map, Entity* ent) {
     ent->mYspeed = 0;
 }
 
+//쓰지마라.
 void MoveManager::MoveEntityTo(Map *map, Entity *ent, MapTile *tile1, MapTile *tile2)
 {
-    MapManager mm;
+    MapHelper mh;
     std::vector<int> ids;
-    ids = mm.GetTilesIdBetween(map, tile1, tile2);
+    ids = mh.GetTilesIdBetween(map, tile1, tile2);
     if (ids.size() < 2) return; //제자리
  
-    //TODO: 이 반복문 하자있으니 고쳐야된다
+    //T이 반복문 하자있다.
     for (int i = 0; i < ids.size(); i++) {
-        std::unordered_map<std::string, int> xy1 = mm.PosXYByTileId(ids[i], map);
-        std::unordered_map<std::string, int> xy2 = mm.PosXYByTileId(ids[i+1], map);
+        std::unordered_map<std::string, int> xy1 = mh.PosXYByTileId(ids[i], map);
+        std::unordered_map<std::string, int> xy2 = mh.PosXYByTileId(ids[i+1], map);
         int xDiff = xy2["x"] - xy1["x"];
         int yDiff = xy2["y"] - xy2["y"];
 
@@ -67,7 +68,40 @@ void MoveManager::MoveEntityTo(Map *map, Entity *ent, int currentTId, int target
     //포커스 스프라이트 업데이트
     mUim->mFocusIcon->SetDimension(ent->mMapX, ent->mMapY, map->mTileLen, map->mTileLen);
     //툴팁도 업데이트
-    mUim->mToolTip->mIsUIUpdate = true;
+    mUim->mToolTip->mIsRenderUpdate = true;
     //타일 강조 ui의 참조 타일 컨테이너도 비움
     mUim->mTileHLUI->ClearTileIds();
+}
+
+bool MoveHelper::CheckDiagonalMove(int firstTileId, int lastTileId, Map* map)
+{
+    bool isDiagonal = false;
+
+    MapHelper mh;
+    std::unordered_map<std::string, int> xy1 = mh.PosXYByTileId(firstTileId, map);
+    std::unordered_map<std::string, int> xy2 = mh.PosXYByTileId(lastTileId, map);
+    int xDiff = xy2["x"] - xy1["x"];
+    int yDiff = xy2["y"] - xy1["y"];
+
+    // std::string message = std::to_string(xDiff) + "/" + std::to_string(yDiff);
+    // SDL_Log(message.c_str());
+
+    if (xDiff != 0 && yDiff != 0) {
+        //대각선 이동, 이걸 조건문으로 필터링하는 이유는 대각선일땐 이동력을 더 소모해야 하기 때문.
+        isDiagonal = true;
+    }
+
+    return isDiagonal;
+}
+
+int MoveHelper::GetDiagonalMoves(std::vector<int> tids, Map *map)
+{
+    bool check = false;
+    int count = 0;
+    for (int i = 0; i < tids.size() - 1; i++) {
+        check = CheckDiagonalMove(tids[i], tids[i+1], map);
+        if (check) count++;
+    }
+
+    return count;
 }

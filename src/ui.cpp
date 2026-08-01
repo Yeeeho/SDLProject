@@ -19,114 +19,49 @@
 #include "entity.h"
 #include "skill/skill.h"
 
-//무조건 이걸로만 생성해라..
-UI::UI(Square* uiFrame, std::string uiText)
+void UI::HandleEvent(SDL_Event &e, GameContext &gc, float mouseX, float mouseY)
 {
-    mUIFrame = uiFrame;
-    mUIText = uiText;
-
-    TextureManager tm;
-    mTempTex = tm.CreateTempTexture();
 }
 
-void UI::Destroy()
+void UI::StoreTexture()
 {
-    if (mUIFrame != nullptr) delete mUIFrame;
-    if (mTempTex != nullptr) SDL_DestroyTexture(mTempTex);
-    if (mMyTexture != nullptr) mMyTexture->Destroy();
-
-    delete this;
 }
 
-void UI::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
+void UI::RenderStoredTex()
 {
-
 }
 
-//이렇게 하면 성능 부하가 크다. 이 함수 이제 쓰지마라. 밑에거 써라.
-//근데 해보니까 아니다. 밑에거 함수 너무 더러우니까 이걸로 쓰자..
-void UI::RenderOnUpdate()
+void UI::Render()
 {
-    //업데이트 플래그가 거짓이면 저장된 텍스처를 렌더링한다.
-    if (mIsUIUpdate == false) {
-        SDL_RenderTexture(System::sRenderer ,mTempTex, nullptr, nullptr);
-        return;
-    }
-    //업데이트 플래그가 참이면
-    SDL_Log("updating ui on update flag");
-
-    RenderManager rm;
-    rm.SetRenderTarget(System::sRenderer, mTempTex);
-
-    mUIFrame->RenderColored();
-    Texture textTexture;
-    SDL_Color textColor {0x00, 0xE0, 0x00, 0xFF};
-
-    int totalHeight = 0;
-    int totalWidth = 0;
-    for (int i = 0; i < mUIText.length(); i++) {
-
-        //utf-8에서 한글은 한 문자가 3바이트다. 그걸 구분해야함.
-        //3바이트 문자의 첫번째 바이트는 0b1110xxxx 이므로 비트 비교로 3바이트 문자 추출
-        if ((mUIText[i] & 0b11110000) == 0b11100000) {
-            //이새끼는 한글이구나
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 3), textColor, System::sFont);
-            i += 2;
-        }
-        else {
-            textTexture.LoadFromRenderedText(mUIText.substr(i, 1), textColor, System::sFont);
-        }
-
-        //텍스트 텍스처가 프레임 x축 범위를 넘어갔을 경우
-        if (mUIFrame->GetX() + mPadding + totalWidth + textTexture.GetWidth() > mUIFrame->GetX() + mUIFrame->GetW() - mPadding) {
-            totalHeight += textTexture.GetHeight();  //총높이에 현재 높이도 추가해준다.
-            totalWidth = 0; //총넓이 초기화 잊지말자
-        }
-        //텍스트 텍스처가 프레임 y축 범위를 넘어갔을 경우
-        if (mUIFrame->GetY() + mPadding + totalHeight + textTexture.GetHeight() > mUIFrame->GetY() + mUIFrame->GetH() - mPadding) {
-            break; //이제 그만 안식에 든다.
-        }
-        
-        //줄의 첫 시작이 공백이면 반복 한번 스킵한다.
-        if (totalWidth == 0 && mUIText.substr(i, 1) == " ") {
-            continue;
-        }        
-
-        //렌더링
-        //총 넓이가 얼마였는지 기억해서 더해준다.
-        textTexture.Render(mUIFrame->GetX() + mPadding + totalWidth, mUIFrame->GetY()  + mPadding + totalHeight);
-        //렌더링한 텍스처만큼 총 넓이 변수에 더해준다.
-        totalWidth += static_cast<float>(textTexture.GetWidth());
-    }
-
-    SDL_SetRenderTarget(System::sRenderer, NULL); //렌더러 타겟에서 해제
-
-    mIsUIUpdate = false; //렌더링 완료하면 플래그 변수 초기화
+    RenderStoredTex();
+    StoreTexture();
 }
 
-void UI::SetFrameColor(SDL_Color fillcolor, SDL_Color linecolor)
+Button::Button(int x, int y, int w, int h, std::string uiText, BtnType type)
 {
-    mUIFrame->SetColor(fillcolor, linecolor);
-}
+    mX = x; mY = y; mW = w; mH = h;
+    mUIFrame = new Square(0, 0, w, h);
 
-Button::Button(Square *uiFrame, std::string uiText, BtnType type)
-{
-    mUIFrame = uiFrame;
-    mUIText = uiText;
+    mTui = new TextUI(0.f, 0.f);
+    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+    mTui->AddWord(TTFWord(uiText, tc, System::sFont));
+    
     mType = type;
 
     TextureManager tm;
-    mTempTex = tm.CreateTempTexture();
+    mTempTex = tm.CreateTempTexture(System::sRenderer, w, h);
+
+    mIsRender = true;
 }
 
 void Button::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
     if (!mIsRender) return; //렌더링되고 있지 않으면 반환
     //버튼 안에 있는지 확인
-    if (e.button.x < mUIFrame->GetX()) return;
-    if (e.button.x > mUIFrame->GetX() + mUIFrame->GetW()) return;    
-    if (e.button.y < mUIFrame->GetY()) return;
-    if (e.button.y > mUIFrame->GetY() + mUIFrame->GetH()) return;    
+    if (e.button.x < mX) return;
+    if (e.button.x > mX + mW) return;    
+    if (e.button.y < mY) return;
+    if (e.button.y > mY + mH) return;    
     
     //여기에 마우스 오버 이벤트 로직을 입력.
 
@@ -158,16 +93,36 @@ void Button::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mous
     else if (mType == BtnType::NewGame) {
         SDL_Log("new game start");
         gc.mGsm->mNextState = gc.mGsm->mSms;
-        gc.mScm->SetCurrentScenario(new NGScenario(), *gc.mObjm);
+        gc.mScm->SetCurrentScenario(new NGScenario(), gc);
         gc.mGsm->mIsStateChange = true;
     }
     else if (mType == BtnType::SubMapTurnOver) {
         SDL_Log("submap turn over button pressed");
-        gc.mTms->mSmtm.mIsTurnUpdate = true;
+        gc.mTurnm->UpdateTurn();
     }
     else {
         SDL_Log("button action not specified");
     }
+}
+
+void Button::StoreTexture()
+{
+    if (!mIsRenderUpdate) return;
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTempTex);
+
+    mUIFrame->Render();
+    mTui->RenderWords();
+
+    SDL_SetRenderTarget(System::sRenderer, nullptr);
+    mIsRenderUpdate = false;
+}
+
+void Button::RenderStoredTex()
+{
+    if (!mIsRender) return;
+    SDL_FRect fr = {(float) mX, (float) mY, (float) mW, (float) mH};
+    SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, &fr);
 }
 
 UIManager::UIManager(GameContext& gc)
@@ -183,15 +138,19 @@ UIManager::UIManager(GameContext& gc)
     mFocusIcon = new IconUI(0, 0, 100, 100, "images/ui/focus.png");
     int x = System::sWindowWidth - 300;
     int y = System::sWindowHeight - 100;
-    Square* sq = new Square(x, y, 100, 40);
     
-    mTurnOverBtn = new Button(sq, "턴 종료", BtnType::SubMapTurnOver);
+    mTurnOverBtn = new Button(x, y, 100, 40, "턴 종료", BtnType::SubMapTurnOver);
 
     mTileHLUI = new TileHLUI();
 
     mCharacterSheet = new CharacterSheetUI(
         System::sWindowWidth * 0.5 - 500, System::sWindowHeight * 0.5 - 300,
         1000, 600 
+    );
+
+    mBCUI = new BottomCharacterUI(
+        0, System::sWindowHeight - 120,
+        400, 120
     );
 
     mQSUI = new QuickSkillUI(
@@ -208,10 +167,6 @@ void UIManager::InitTopBar()
     //ui 객체들 생성
     TextUI* turnTui = new TextUI(70, 0);
     SDL_Color tc = {0x00, 0xD0, 0x00, 0xFF};
-    turnTui->mTexts.push_back(TTFWord("0", tc, System::sFont40));
-
-    uiMap["turnText"] = turnTui;
-    uiMap["supplyText"] = new TextUI(190, 0);
 }
 
 void UIManager::InitUIs()
@@ -223,9 +178,7 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameContext& gc, float mouseX, float
     for (auto ui : uiMap) {
         ui.second->HandleEvent(e, gc, mouseX, mouseY);
     }
-    for (auto ftui : ftuiMap) {
-        ftui.second->HandleEvent(e, gc, mouseX, mouseY);
-    }
+
     if (!mDialogueUI->mIsRender) mTurnOverBtn->HandleEvent(e, gc, mouseX, mouseY);
 }
 
@@ -246,14 +199,10 @@ void UIManager::RenderUIs()
     for (auto panel : mPanels) {
         panel.second->Render(lineColor, fillColor);
     }
-    
-    for (auto ftui : ftuiMap) {
-        ftui.second->RenderOnUpdate();
-    }
 
     //기본 ui 렌더링
     for (auto ui : uiMap) {
-        ui.second->RenderOnUpdate();
+        ui.second->Render();
     }
 }
 
@@ -262,7 +211,7 @@ void UIManager::RenderMapToolTip(Map *map)
     //카메라 오프셋
     mToolTip->mX = mToolTip->mRefX + mToolTip->mRefW * 0.5 - map->mCam->mSight.x;
     mToolTip->mY = mToolTip->mRefY + mToolTip->mRefH * 0.5 - map->mCam->mSight.y;
-    mToolTip->RenderOnUpdate();
+    mToolTip->Render();
 }
 
 void UIManager::RenderMapUIs(Map* map)
@@ -270,10 +219,13 @@ void UIManager::RenderMapUIs(Map* map)
     mTileHLUI->RenderBetweenTiles(map);
 
     RenderMapToolTip(map);
-    if (!mDialogueUI->mIsRender) mTurnOverBtn->RenderOnUpdate();
+    if (!mDialogueUI->mIsRender) mTurnOverBtn->Render();
 
     mCharacterSheet->Render();
     mQSUI->Render();
+
+    mBCUI->mIsRender = true; //DEBUG
+    mBCUI->Render();
 }
 
 void UIManager::DestroyUIs()
@@ -283,26 +235,17 @@ void UIManager::DestroyUIs()
         if (ui.second->mTempTex != nullptr) {
             SDL_DestroyTexture(ui.second->mTempTex);
         }
-        if (ui.second->mMyTexture != nullptr) {
-            ui.second->mMyTexture->Destroy();
-            delete ui.second->mMyTexture;
-        }
         //ui 자체 메모리 해제
         delete ui.second;
         ui.second = nullptr;
     }
 
-    for (auto ftui : ftuiMap) {
-        ftui.second->Destroy();
-        ftui.second = nullptr;
-    }
     for (auto square : mPanels) {
         delete square.second;
         square.second = nullptr;
     }
 
     uiMap.clear();
-    ftuiMap.clear();
     mPanels.clear();
 }
 
@@ -311,15 +254,15 @@ void UIManager::LoadMapToolTip(Map* map, int tileId)
     TextUI* tui = mToolTip->mTui;
 
     SDL_Color tc {0x00, 0xB0, 0x00, 0xFF};
-    tui->mTexts.push_back(TTFWord("타일 id:", tc, System::sFont));
-    tui->mTexts.push_back(TTFWord(System::sFont, TextType::Space));
-    tui->mTexts.push_back(TTFWord(std::to_string(tileId), tc, System::sFont));
-    tui->mTexts.push_back(TTFWord(System::sFont, TextType::NewLine));
+    tui->AddWord(TTFWord("타일 id:", tc, System::sFont));
+    tui->AddWord(TTFWord(System::sFont, TextType::Space));
+    tui->AddWord(TTFWord(std::to_string(tileId), tc, System::sFont));
+    tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
 
     //타일 객체를 구함
     MapTile* tile = map->mMapTiles[tileId];
     for (TTFWord* word : tile->mInfos) {
-        tui->mTexts.push_back(*word);
+        tui->AddWord(*word);
     }
 }
 
@@ -328,20 +271,17 @@ void UIManager::UpdateMapToolTip(Map* map)
     mToolTip->CheckUpdate();
 
     // 툴팁 내부 텍스트, 툴팁이 업데이트 되었을때 로드
-    if (mToolTip->mIsUIUpdate) {
+    if (mToolTip->mIsRenderUpdate) {
 
         TextUI* tui = mToolTip->mTui;
-        tui->mIsUIUpdate = true;
 
         tui->mTexts.clear();
         tui->mTotalWidth = 0; tui->mTotalHeight = 0;
 
-        MapManager mm;
-        int id = mm.WhatTileOnPoint(mToolTip->mRefX, mToolTip->mRefY, map);
+        MapHelper mh;
+        int id = mh.WhatTileOnPoint(mToolTip->mRefX, mToolTip->mRefY, map);
 
         LoadMapToolTip(map, id);
-
-        tui->mIsUIUpdate = false; //플래그 초기화
     }
 }
 
@@ -363,7 +303,7 @@ void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, Map* 
         
         if (!mWasMouseOnMap) {
             SDL_Log("mouse in map");
-            mToolTip->mIsUIUpdate = true;
+            mToolTip->mIsRenderUpdate = true;
             mWasMouseOnMap = true;
         }
     }
@@ -373,8 +313,8 @@ void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, Map* 
     } 
 
     //mouseover 중인 타일의 id를 구함
-    MapManager mm;
-    int id = mm.WhatTileOnPoint(mouseX, mouseY, map);
+    MapHelper mh;
+    int id = mh.WhatTileOnPoint(mouseX, mouseY, map);
 
     MapTile* tile = map->mMapTiles[id];
     //타일 좌표를 툴팁의 참조 좌표에 할당해줌
@@ -412,9 +352,9 @@ void ToolTip::SetToolTipFrame()
     float maxW = 0.f, maxH = 0.f;
     bool firstWord = true; //첫 단어에서 사용되고 거짓으로 바뀜
 
-    for (TTFWord word : mTui->mTexts) {
+    for (auto pair : mTui->mTexts) {
         //폰트 높이 캐싱
-        int fontH = TTF_GetFontHeight(word.mFont);
+        int fontH = TTF_GetFontHeight(pair.second.mFont);
         //단어가 있으면 높이 추가
         if (firstWord) {
             maxH += fontH;
@@ -422,11 +362,11 @@ void ToolTip::SetToolTipFrame()
         }
 
         //띄어쓰기일때
-        if (word.mType == TextType::Space) {
+        if (pair.second.mType == TextType::Space) {
             currentW += fontH * 0.5; 
         }
         //줄바꿈일때
-        if (word.mType == TextType::NewLine) {
+        if (pair.second.mType == TextType::NewLine) {
 
             if (maxW <= currentW) maxW = currentW; //최대값 캐싱
             currentW = 0; //초기화
@@ -435,7 +375,7 @@ void ToolTip::SetToolTipFrame()
         }
         //문자일때
         else {
-            currentW += word.GetWordWidth();
+            currentW += pair.second.GetWordWidth();
         }
     }
     if (maxW <= currentW) maxW = currentW; //최대값 캐싱
@@ -456,7 +396,7 @@ void ToolTip::SetRefInfo(int x, int y, int w, int h)
 void ToolTip::CheckUpdate()
 {
     //이미 업데이트 플래그가 참이면 검사하지 않는다.
-    if (mIsUIUpdate) {
+    if (mIsRenderUpdate) {
         return;
     }
 
@@ -466,7 +406,7 @@ void ToolTip::CheckUpdate()
     }
     //새로운 좌표로 이동했음
     else {
-        mIsUIUpdate = true;
+        mIsRenderUpdate = true;
         SDL_Log("update tooltip");
         mX = mRefX + mRefW * 0.5; //가운데쯤에 생성
         mY = mRefY + mRefH * 0.5;
@@ -490,28 +430,13 @@ void ToolTip::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, floa
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
 }
 
-void ToolTip::RenderOnUpdate()
+void ToolTip::StoreTexture()
 {
-    //렌더링 할지말지 정한다.
-    if (mIsRender == false) {
-        return;
-    }
-
-    //업데이트 플래그가 거짓이면 저장된 텍스처를 렌더링한다.
-    if (mIsUIUpdate == false) {
-        //위치 정보에 따라 사각형 생성
-        SDL_FRect fr = {mX, mY, static_cast<float>(System::sWindowWidth), static_cast<float>(System::sWindowHeight)};
-        SDL_RenderTexture(System::sRenderer ,mTempTex, nullptr, &fr);
-        return;
-    }
-    //업데이트 플래그가 참이면
-    SDL_Log("tooltip render update");
-
-    //렌더러 타겟팅
+    if (!mIsRenderUpdate) return;
     RenderManager rm;
     rm.SetRenderTarget(System::sRenderer, mTempTex);
 
-    //실제 로직
+    //실제 텍스처 렌더링 동작
     mUIFrame->SetX(0.f); mUIFrame->SetY(0.f); //위치 설정
     SetToolTipFrame(); //동적 크기 설정
     mTui->mX = 0.f; mTui->mY = 0.f;
@@ -519,30 +444,27 @@ void ToolTip::RenderOnUpdate()
     mUIFrame->Render(0x00, 0xB0, 0x00, 0xFF, 0x08, 0x08, 0x08, 0xD0);
     mTui->RenderWords();
 
-    //렌더러 타겟 해제
-    SDL_SetRenderTarget(System::sRenderer, NULL);
-    
-    //렌더링 완료하면 플래그 변수 초기화
-    mIsUIUpdate = false;
+    //타겟 해제 지점
+    SDL_SetRenderTarget(System::sRenderer, nullptr);
+    mIsRenderUpdate = false;
 }
 
-//실시간 렌더링 함수. 지금은 쓰지 않음.
+void ToolTip::RenderStoredTex()
+{
+    if (!mIsRender) return;
+    SDL_FRect fr = {mX, mY, static_cast<float>(System::sWindowWidth), static_cast<float>(System::sWindowHeight)};
+    SDL_RenderTexture(System::sRenderer ,mTempTex, nullptr, &fr);
+}
+
 void ToolTip::Render()
 {
-    if (mIsRender == false) {
-        return;
-    }
-
-    mUIFrame->SetX(mX); mUIFrame->SetY(mY);
-    mUIFrame->Render();
+    RenderStoredTex();
+    StoreTexture();
 }
 
 TextUI::TextUI(float x, float y)
 {
     mX = x; mY = y;
-
-    TextureManager tm;
-    mTempTex = tm.CreateTempTexture();
 }
 
 void TextUI::ClearTexts()
@@ -552,7 +474,13 @@ void TextUI::ClearTexts()
     mTotalHeight = 0;
 }
 
-void TextUI::ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font)
+void TextUI::AddWord(TTFWord word)
+{
+    mTexts.emplace(mWordId, word);
+    mWordId++;
+}
+
+void TextUI::ProcessAndAddText(std::string text, SDL_Color color, TTF_Font *font)
 {
     std::string message = "";
 
@@ -560,8 +488,8 @@ void TextUI::ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font
         //공백일 경우
         if (text.substr(i, 1) == " "){
             //텍스트를 푸시하고 공백도 푸시함
-            mTexts.push_back(TTFWord(message, color, font));
-            mTexts.push_back(TTFWord(font, TextType::Space));
+            AddWord(TTFWord(message, color, font));
+            AddWord(TTFWord(font, TextType::Space));
 
             message = ""; //초기화
         }
@@ -571,7 +499,7 @@ void TextUI::ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font
 
             //문장 끝에 도달함
             if (i == text.length() - 3) {
-                mTexts.push_back(TTFWord(message, color, font));
+                AddWord(TTFWord(message, color, font));
                 return;
             }
 
@@ -583,7 +511,7 @@ void TextUI::ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font
 
             //문장 끝에 도달함
             if (i == text.length() - 1) {
-                mTexts.push_back(TTFWord(message, color, font));
+                AddWord(TTFWord(message, color, font));
                 return;
             }
         }
@@ -593,10 +521,10 @@ void TextUI::ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font
 void TextUI::RenderWords()
 {
     mTotalWidth = 0; mTotalHeight = 0;
-    for (TTFWord word : mTexts) {
-        if (word.mType == TextType::NewLine) NewLine(word.mFont);
-        else if (word.mType == TextType::Space) AddSpace(word.mFont);
-        else RenderAtLine(word);
+    for (auto pair : mTexts) {
+        if (pair.second.mType == TextType::NewLine) NewLine(pair.second.mFont);
+        else if (pair.second.mType == TextType::Space) AddSpace(pair.second.mFont);
+        else RenderAtLine(pair.second);
     }
 }
 
@@ -639,71 +567,21 @@ void TextUI::AddSpace(TTF_Font *font)
     mTotalWidth += TTF_GetFontHeight(font)/2;
 }
 
-void TextUI::RenderOnUpdate()
-{
-    //업데이트 플래그가 거짓이면 저장된 텍스처를 렌더링한다.
-    if (mIsUIUpdate == false) {
-        SDL_RenderTexture(System::sRenderer ,mTempTex, nullptr, nullptr);
-        return;
-    }
-    //업데이트 플래그가 참이면
-    SDL_Log("updating text ui on update flag");
-
-    //렌더러 타겟팅
-    RenderManager rm;
-    rm.SetRenderTarget(System::sRenderer, mTempTex);
-
-    //렌더링 실제 동작
-    RenderWords();
-
-    //렌더러 타겟 해제
-    SDL_SetRenderTarget(System::sRenderer, NULL);
-    //렌더링 완료하면 플래그 변수 초기화
-    mIsUIUpdate = false;
-}
-
-
 FramedTUI::FramedTUI(int x, int y, int w, int h)
 {
     mX = x; mY = y; mW = w; mH = h;
 
-    mUIFrame = new Square(x, y, w, h);
     mTui = new TextUI(x, y);
-
-    TextureManager tm;
-    mTempTex = tm.CreateTempTexture();
 }
 
 void FramedTUI::AddWord(TTFWord word)
 {
-    mTui->mTexts.push_back(word);
+    mTui->AddWord(word);
 }
 
 void FramedTUI::ClearText()
 {
     mTui->mTexts.clear();
-}
-
-//공사중
-void FramedTUI::RenderOnUpdate()
-{
-    if (mIsRender == false) return;
-
-    if (mIsUIUpdate == false) {
-        SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, nullptr);
-        return;
-    }
-    SDL_Log("ftui render update");
-
-    RenderManager rm;
-    rm.SetRenderTarget(System::sRenderer, mTempTex);
-
-    //실제 로직
-    Render();
-
-    //렌더러 타겟 해제 및 초기화
-    SDL_SetRenderTarget(System::sRenderer, NULL);
-    mIsUIUpdate = false;
 }
 
 void FramedTUI::Render()
@@ -714,8 +592,9 @@ void FramedTUI::Render()
     mTui->mTotalWidth = 0;
     mTotalW = 0;
     mTotalH = 0;
-    for (TTFWord word: mTui->mTexts) {
-        if (word.mType == TextType::NewLine) {
+    for (auto pair : mTui->mTexts) {
+        TTFWord word = pair.second;
+        if (pair.second.mType == TextType::NewLine) {
             mTotalW = 0;
             mTotalH += word.GetWordHeight();
             mTotalH += mTui->mLineSpacing;
@@ -819,7 +698,6 @@ DialogueUI::DialogueUI(float x, float y)
    
     mDialogueBodyBg = new Texture("images/black.png");
     mDialogueBody = new FramedTUI(mX + 200, mY + 20,  500, 160);
-    mDialogueBody->SetFrameColor(black, black);
     mDialogueBody->mIsRender = true;
 
     mDialogueBodyFrame = new Texture("images/ui/dialogue_frame.png");
@@ -900,9 +778,9 @@ void DialogueUI::SetUI(Texture* pic, TTFWord name, std::string text)
 
     TextUI* tui = mDialogueBody->mTui;
     //이름 설정
-    tui->mTexts.push_back(name);
-    tui->mTexts.push_back(TTFWord(":", name.mColor, System::sFont));
-    tui->mTexts.push_back(TTFWord(System::sFont, TextType::Space));
+    tui->AddWord(name);
+    tui->AddWord(TTFWord(":", name.mColor, System::sFont));
+    tui->AddWord(TTFWord(System::sFont, TextType::Space));
     //본문
     SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
     tui->ProcessAndAddText(text, tc, System::sFont);
@@ -955,7 +833,7 @@ void TileHLUI::RenderBetweenTiles(Map* map)
 {
     if (!mIsRenderBetweenTiles) return;
 
-    MapManager mm;
+    MapHelper mh;
     
     for (int id : mTIds) {
         MapTile* tile = map->mMapTiles[id];
@@ -988,6 +866,7 @@ void CharacterSheetUI::StoreTexture()
     RenderManager rm;
     rm.SetRenderTarget(System::sRenderer, mTempTex);
 
+    Texture t;
     mTex->Render(0.f, 0.f, nullptr,(float) mW,(float) mH);
 
     SDL_SetRenderTarget(System::sRenderer, nullptr);
@@ -999,12 +878,6 @@ void CharacterSheetUI::RenderStoredTex()
     if (!mIsRender) return;
     SDL_FRect fr = {(float) mX, (float) mY, (float) mW, (float) mH};
     SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, &fr);
-}
-
-void CharacterSheetUI::Render()
-{
-    RenderStoredTex();
-    StoreTexture();
 }
 
 CharacterSkillUI::CharacterSkillUI()
@@ -1067,15 +940,9 @@ void QuickSkillUI::RenderStoredTex()
     SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, &fr);
 }
 
-void QuickSkillUI::Render()
-{
-    RenderStoredTex();
-    StoreTexture();
-}
-
 void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mouseX, float mouseY)
 {
-    if (!map->mFocusedEnt) return;
+    if (!gc.mObjm->mEntm->mFocusedEnt) return;
     
     Math mth;
     bool mouseIn = mth.IsPointInSquare(mouseX, mouseY, (float) mX, (float) mY, (float) mW, (float) mH);
@@ -1084,7 +951,10 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
         map->mCanHandleEvent = true;
         return;
     }
-    else map->mCanHandleEvent = false;
+    else {
+        map->mCanHandleEvent = false;
+        gc.mUim->mTileHLUI->mIsRenderBetweenTiles = false;
+    }
 
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
 
@@ -1100,7 +970,7 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
         std::string skillCode = mSkillList[xPos];
         //TODO: 여기부터는 따로 함수로 래핑하는게 좋을듯
         //엔티티에 저장된 실제 스킬 객체를 찾아온다.
-        Skill* skill = map->mFocusedEnt->mSkills[skillCode];
+        Skill* skill = gc.mObjm->mEntm->mFocusedEnt->mSkills[skillCode];
 
         //현재 스킬에 따라서 맵 타일 하이라이트 색을 바꿔준다.
         json skillTable = gc.mSkm->mSkillDb["items"];
@@ -1119,7 +989,7 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
         }
 
         mGc->mSkm->SetSkill(skill); //스킬 객체 캐싱
-        mGc->mSkm->SetActor(map->mFocusedEnt); //액터 캐싱
+        mGc->mSkm->SetActor(gc.mObjm->mEntm->mFocusedEnt); //액터 캐싱
 
         map->mCanHandleEvent = true;
     }
@@ -1136,7 +1006,6 @@ void QuickSkillUI::Activate(GameContext& gc, Map *map, Pawn *pawn)
         i++;
     }
     mFocusedPawn = pawn;
-    map->mCanHandleEvent = false;
 }
 
 void QuickSkillUI::Deactivate(GameContext& gc, Map* map)
@@ -1144,4 +1013,82 @@ void QuickSkillUI::Deactivate(GameContext& gc, Map* map)
     mIsRender = false; //스킬 퀵슬롯 렌더링 안함
     mFocusedPawn = nullptr;
     map->mCanHandleEvent = true;
+}
+
+BottomCharacterUI::BottomCharacterUI(int x, int y, int w, int h)
+{
+    mX = x; mY = y; mW = w; mH = h;
+
+    mMainStat = new FramedTUI(0, 0, w * 0.5, h);
+    mStatEffect = new FramedTUI(w * 0.5, 0, w * 0.5, h);
+    SDL_Color c = {0x00, 0xB0, 0x00, 0xFF};
+    SDL_Color r = {0xB0, 0x40, 0x40, 0xFF};
+    SDL_Color g = {0x40, 0xB0, 0x40, 0xFF};
+    SDL_Color b = {0x40, 0x40, 0xB0, 0xFF};
+    SDL_Color wg = {0xB0, 0xB0, 0xB0, 0xFF};
+
+    mMainStat->AddWord(TTFWord("이름", c, System::sFont));
+    mMainStat->AddWord(TTFWord(System::sFont, TextType::NewLine));
+
+    mMainStat->AddWord(TTFWord("HP:", r, System::sFont));
+    mMainStat->AddWord(TTFWord(System::sFont, TextType::Space));
+    mMainStat->AddWord(TTFWord("0", wg, System::sFont));
+    mMainStat->AddWord(TTFWord("/0", wg, System::sFont));
+    mMainStat->AddWord(TTFWord(System::sFont, TextType::NewLine));
+
+    mMainStat->AddWord(TTFWord("SP:", g, System::sFont));
+    mMainStat->AddWord(TTFWord(System::sFont, TextType::Space));
+    mMainStat->AddWord(TTFWord("0", wg, System::sFont));
+    mMainStat->AddWord(TTFWord("/0", wg, System::sFont));
+    mMainStat->AddWord(TTFWord(System::sFont, TextType::NewLine));
+
+    mMainStat->AddWord(TTFWord("AP:", b, System::sFont));
+    mMainStat->AddWord(TTFWord(System::sFont, TextType::Space));
+    mMainStat->AddWord(TTFWord("0", wg, System::sFont));
+    mMainStat->AddWord(TTFWord("/0", wg, System::sFont));
+
+    mStatEffect->AddWord(TTFWord("건강한 아이입니다.", wg, System::sFont));
+
+    TextureManager tm;
+    mTempTex = tm.CreateTempTexture(System::sRenderer, mW, mH);
+}
+
+void BottomCharacterUI::UpdateUI(Entity *ent)
+{
+    if (!ent) return;
+    StatHelper sh;
+
+    std::map<int, TTFWord> &words = mMainStat->mTui->mTexts;
+    words[static_cast<int>(BCUIMainStatIdx::Name)].mMessage = ent->mName;
+    words[static_cast<int>(BCUIMainStatIdx::CurHp)].mMessage = std::to_string(ent->mCurHp);
+    words[static_cast<int>(BCUIMainStatIdx::MaxHp)].mMessage = "/" + std::to_string(sh.GetMaxHp(ent));
+    words[static_cast<int>(BCUIMainStatIdx::CurSp)].mMessage = std::to_string(ent->mCurSp);
+    words[static_cast<int>(BCUIMainStatIdx::MaxSp)].mMessage = "/" + std::to_string(sh.GetMaxSp(ent));
+    words[static_cast<int>(BCUIMainStatIdx::CurAp)].mMessage = std::to_string(ent->mCurAp);
+    words[static_cast<int>(BCUIMainStatIdx::MaxAp)].mMessage = "/" + std::to_string(sh.GetMaxAp(ent));
+
+    mIsRenderUpdate = true;
+}
+
+void BottomCharacterUI::StoreTexture()
+{
+    if (!mIsRenderUpdate) return;
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTempTex);
+
+    Texture t;
+    t.LoadFromFile("images/ui/bottom_char_ui.png");
+    t.Render(0.f, 0.f, nullptr, (float) mW, (float) mH);
+    mMainStat->Render();
+    mStatEffect->Render();
+
+    SDL_SetRenderTarget(System::sRenderer, nullptr);
+    mIsRenderUpdate = false;
+}
+
+void BottomCharacterUI::RenderStoredTex()
+{
+    if (!mIsRender) return;
+    SDL_FRect fr = {(float) mX, (float) mY, (float) mW, (float) mH};
+    SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, &fr);
 }

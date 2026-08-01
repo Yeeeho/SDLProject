@@ -13,11 +13,7 @@ class Skill {
     std::string mCode; //스킬이 가지는 코드
 
     //스킬을 사용하는 주체나 방법에 따라 메서드를 오버로딩 시킬 수 있다.
-    virtual void Activate(
-        GameContext& gc,
-        json skillData, Entity* actor, std::vector<Entity*> targets,
-        Map* map, int targetTileId
-    );
+    void Activate(SkillManager* skm);
 };
 
 
@@ -26,39 +22,47 @@ class SkillManager {
     SkillManager(GameContext& gc);
     //데이터 로드
     void LoadJsonData();
-    
+    //스킬 활성화
+    void ActivateSkill();
+
     //세터 함수
     void SetSkill(Skill* skill); //실제 스킬 객체 설정
     void SetSkillData(json skilldata); //데이터베이스 상의 스킬 데이터 설정
-    void SetActor(Entity* actor);
     void SetTargets(std::vector<Entity*> targets);
+    void SetTileIds(std::vector<int> tileIds);
+    void SetActor(Entity* actor);
     void SetMap(Map* map);
-    void SetTargetTileId(int tid);
     //이벤트 핸들링
     void HandleEvent(SDL_Event& e, GameContext& gc);
-
 
     //스킬 사용을 위해 필요한 데이터들
     json mSkillDb;
     json mSkillData;
+    std::vector<Entity*> mTargets;
+    std::vector<int> mTileIds;
     Skill* mSkill {nullptr};
     Entity* mActor {nullptr};
-    std::vector<Entity*> mTargets;
     Map* mMap {nullptr};
-    int mTid {0}; 
 
     //참조용 컨텍스트
     GameContext* mGc {nullptr};
 
     //제어용 변수
     bool mIsSkillReady {false};
-    void ActivateSkill();
 };
 
 class SkillHelper {
     public:
-    int GetSkillRange(json skillData, Skill* skill);
+    //타겟팅 관련
     std::string GetSkillTargetType(json skillData, Skill* skill);
     int GetSkillTargetNum(json skillData, Skill* skill); //멀티타겟의 경우는 아직 안만듬
+
+    //스킬 범위
+    int GetSkillRange(json skillData, Skill* skill);
+    //스킬 데미지 
     int GetSkillDamage(json skillData, Skill* skill, Entity* ent);
+    //스킬 코스트
+    int GetHpUse(json skillData, Skill* skill, Entity* ent);
+    int GetSpUse(json skillData, Skill* skill, Entity* ent);
+    int GetApUse(json skillData, Skill* skill, Entity* ent);
 };

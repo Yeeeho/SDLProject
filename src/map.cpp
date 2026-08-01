@@ -2,6 +2,7 @@
 
 #include "game_context.h"
 #include "game_object.h"
+#include "turn.h"
 #include "map.h"
 #include "ui.h"
 #include "math.h"
@@ -47,6 +48,7 @@ void Map::Destroy()
     }
 
     mMapTiles.clear();
+    mCurrentTurn = 0;
 
     delete this;
 }
@@ -60,7 +62,7 @@ void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
     //맵 이벤트 핸들러는 맵상에서의 범위 표시 등을 제어한다.
     //엔티티 자체의 포커스 여부 등은 제어하지 않는다.
 
-    MapManager mm;
+    MapHelper mh;
     mouseX += mCam->mSight.x; //카메라 보정
     mouseY += mCam->mSight.y;
 
@@ -71,21 +73,16 @@ void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
         return;
     }
 
-    int tid = mm.WhatTileOnPoint(mouseX, mouseY, this);
+    int tid = mh.WhatTileOnPoint(mouseX, mouseY, this);
     MapTile* tile = mMapTiles[tid];
 
-    Entity* target {nullptr};
-    //턴을 잡은 아군이 있을 경우 타겟을 금마로 설정
-    for (Entity* ent : mPawns) {
-        if (ent->mIsTakingTurn) {
-            target = ent;
-        }
-    }    
-    if (!target) return; //턴을 잡은 아군이 없으면 반환
+    //턴을 잡은 엔티티가 있을 경우 타겟을 금마로 설정
+    Entity* target = gc.mTurnm->mCurrentTarget;
+    if (!target) return; //턴을 잡은 엔티티가 없으면 반환
 
     //아군 엔티티 이동 동작 
     //타겟이 포커스 상태고 아군일때 이동 타일 범위 렌더링
-    if (target != mFocusedEnt || !target->mIsPawn) {
+    if (target != gc.mObjm->mEntm->mFocusedEnt || !target->mIsPawn) {
         //둘중 하나라도 만족하지 않으면 렌더링 안함
         gc.mUim->mTileHLUI->mIsRenderBetweenTiles = false;
         return;
@@ -95,11 +92,10 @@ void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
     }
 
     //타일 범위 구하는 로직
-    
     //두 타일 사이의 아이디가 담긴 컨테이너를 구한다.
     MapTile* tile1 = mMapTiles[target->mTileId];
     MapTile* tile2 = tile;
-    std::vector<int> tids = mm.GetTilesIdBetween(this, tile1, tile2);
+    std::vector<int> tids = mh.GetTilesIdBetween(this, tile1, tile2);
     
     //타일 ui 관련 세팅
     if (gc.mSkm->mIsSkillReady) { //스킬매니저가 스킬을 사용할 준비가 되었다면
@@ -119,17 +115,16 @@ void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
                 tids.push_back(tidsCpy[i]); //복사된 친구에게서 다시 원소를 받는다. 범위만큼만.
             }
         }
-    }
 
-    gc.mUim->mTileHLUI->SetTileIds(tids);
-    
-    //마우스 왼쪽 클릭시
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
-    if (e.button.button != SDL_BUTTON_LEFT) return; 
-    //기술 발현데스
-    gc.mSkm->mMap = this; //이 단계에서 스킬 발동에 필수적인 멤버 변수들이 모두 설정된다.
-    gc.mSkm->SetTargetTileId(tid);
-    gc.mSkm->ActivateSkill();
+        gc.mUim->mTileHLUI->SetTileIds(tids);
+        //마우스 왼쪽 클릭시
+        if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+        if (e.button.button != SDL_BUTTON_LEFT) return; 
+        //기술 발현데스
+        gc.mSkm->mMap = this; //이 단계에서 스킬 발동에 필수적인 멤버 변수들이 모두 설정된다.
+        gc.mSkm->SetTileIds(tids);
+        gc.mSkm->ActivateSkill();
+    }
 }
 
 void Map::GenerateMapTiles()
@@ -233,7 +228,7 @@ void MapTile::DestroyInfos()
     mInfos.clear();
 }
 
-int MapManager::WhatTileOnPoint(float x, float y, Map *map)
+int MapHelper::WhatTileOnPoint(float x, float y, Map *map)
 {
     float xDis = x - static_cast<float>(map->mX);
     float yDis = y - static_cast<float>(map->mY);
@@ -251,7 +246,7 @@ int MapManager::WhatTileOnPoint(float x, float y, Map *map)
     return id;
 }
 
-std::vector<int> MapManager::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile *tile2)
+std::vector<int> MapHelper::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile *tile2)
 {
     std::vector<int> ret;
 
@@ -288,7 +283,7 @@ std::vector<int> MapManager::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile
     return ret;
 }   
 
-std::unordered_map<std::string, int> MapManager::PosXYByTileId(int id, Map *map)
+std::unordered_map<std::string, int> MapHelper::PosXYByTileId(int id, Map *map)
 {
     int posY = id / map->mXTiles;
     int posX = id - posY * map->mXTiles;
@@ -298,4 +293,25 @@ std::unordered_map<std::string, int> MapManager::PosXYByTileId(int id, Map *map)
     ret.insert({"y", posY});
 
     return ret;
+}
+
+MapManager::MapManager()
+{
+    //오버맵에 도시 생성
+    mOverMap = new Map(System::sWindowWidth/2 - 6 * 50 , 100, 6 ,6, 100); //월드 맵 객체 생성
+    mOverMap->GenerateMapTiles();
+    
+    int cityIdx = mOverMap->mXTiles * mOverMap->mYTiles * 0.5 - mOverMap->mXTiles * 0.5;
+    mOverMap->mMapTiles[cityIdx]->ChangeTexture("images/map/city.png");
+
+    SDL_Color tc = {0xE0, 0xE0, 0xE0, 0xFF};
+    mOverMap->mMapTiles[cityIdx]->mInfos.push_back(new TTFWord("당신의 도시", tc, System::sFont));
+    mOverMap->mMapTiles[cityIdx]->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
+
+
+    mSubMap = new Map(System::sWindowWidth*0.5 - 6*40, 100, 16, 16, 80); //서브맵 객체 생성
+    mSubMap->GenerateMapTiles();
+
+    mCityMap = new Map(System::sWindowWidth*0.5 - 6*40, 100, 32, 32, 80);
+    mCityMap->GenerateCityTiles();
 }

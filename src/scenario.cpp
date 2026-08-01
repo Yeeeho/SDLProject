@@ -14,19 +14,19 @@
 #include "ui.h"
 #include "entity.h"
 
-void Scenario::LoadScenarioData(ObjectManager &objm)
+void Scenario::LoadScenarioData(GameContext& gc)
 {
 }
 
-void Scenario::LoadSubMap(ObjectManager &objm)
+void Scenario::LoadSubMap(GameContext& gc)
 {
 }
 
-void Scenario::LoadOverMap(ObjectManager &objm)
+void Scenario::LoadOverMap(GameContext& gc)
 {
 }
 
-void Scenario::LoadCityMap(ObjectManager &objm)
+void Scenario::LoadCityMap(GameContext& gc)
 {
 }
 
@@ -66,18 +66,14 @@ void Scenario::UpdateScenario(GameContext& gc)
         Map* map {nullptr};
         std::string where = section["where"].get<std::string>();
         //어떤 맵에 스폰할지 결정한다.
-        TurnManager* turnM;
         if (where == "submap") {
-            map = gc.mObjm->mSubMap;
-            turnM = &gc.mTms->mSmtm;
+            map = gc.mMapm->mSubMap;
         } 
         else if (where == "overmap") {
-            map = gc.mObjm->mMap;
-            turnM = &gc.mTms->mOmtm; 
+            map = gc.mMapm->mOverMap;
         } 
         else if (where == "citymap") {
-            map = gc.mObjm->mCity->mCityMap;
-            turnM = &gc.mTms->mCmtm;
+            map = gc.mMapm->mCityMap;
         }  
 
         json items = section["items"];
@@ -97,7 +93,6 @@ void Scenario::UpdateScenario(GameContext& gc)
                 else if (demeanor == "neutral") ent->mDemeanor = Demeanor::Neutral;
 
                 gc.mObjm->mEntm->SpawnEntityOnMap(*gc.mObjm, map, ent, tileId);
-                turnM->mIsQueueUpdate = true;
             }
         }
         mScProgress += 1; //시나리오를 자동으로 진행시키고,
@@ -199,27 +194,27 @@ void Scenario::UpdateDialogue(GameContext& gc, json data)
     mIsDialogueUpdate = false; //플래그 초기화
 }
 
-void NGScenario::LoadScenarioData(ObjectManager &objm)
+void NGScenario::LoadScenarioData(GameContext& gc)
 {
     JsonHelper jh;
     jh.LoadJsonFile(mData, "data/scenario/main.json");
 }
 
-void NGScenario::LoadSubMap(ObjectManager &objm)
+void NGScenario::LoadSubMap(GameContext& gc)
 {
     SDL_Log("load entities for new game scenario at submap");
-    objm.mEntm->AllocPawnOnTable(objm, "nameless_girl", PawnType::Unique, 0);
+    gc.mObjm->mEntm->AllocPawnOnTable(*gc.mObjm, "nameless_girl", PawnType::Unique, 0);
     SDL_Log("entities loaded");
 
-    objm.mEntm->SpawnEntityOnMap(objm, objm.mSubMap, objm.mEntm->mPawnTable[0], 34);
+    gc.mObjm->mEntm->SpawnEntityOnMap(*gc.mObjm, gc.mMapm->mSubMap, gc.mObjm->mEntm->mPawnTable[0], 34);
     SDL_Log("entities spawned at submap");
 }
 
-void NGScenario::LoadOverMap(ObjectManager& objm)
+void NGScenario::LoadOverMap(GameContext& gc)
 {
 }
 
-void NGScenario::LoadCityMap(ObjectManager& objm)
+void NGScenario::LoadCityMap(GameContext& gc)
 {
 }
 
@@ -229,17 +224,17 @@ void NGScenario::Update(GameContext& gc)
     UpdateDialogue(gc, mDialogueSection);
 }
 
-void DefScenario::LoadScenarioData(ObjectManager &objm)
+void DefScenario::LoadScenarioData(GameContext& gc)
 {
 }
 
-void DefScenario::LoadSubMap(ObjectManager &objm)
+void DefScenario::LoadSubMap(GameContext& gc)
 {
 }
-void DefScenario::LoadOverMap(ObjectManager& objm)
+void DefScenario::LoadOverMap(GameContext& gc)
 {
 }
-void DefScenario::LoadCityMap(ObjectManager& objm)
+void DefScenario::LoadCityMap(GameContext& gc)
 {
 }
 
@@ -252,11 +247,11 @@ ScenarioManager::ScenarioManager()
     mCurrentSc = new DefScenario();
 }
 
-void ScenarioManager::SetCurrentScenario(Scenario *sc, ObjectManager& objm)
+void ScenarioManager::SetCurrentScenario(Scenario *sc, GameContext& gc)
 {
     DestroyCurrentScenario();
     mCurrentSc = sc;
-    LoadThings(objm);
+    LoadThings(gc);
 }
 
 void ScenarioManager::DestroyCurrentScenario()
@@ -274,15 +269,15 @@ void ScenarioManager::Update(GameContext& gc)
     mCurrentSc->Update(gc);
 }
 
-void ScenarioManager::LoadThings(ObjectManager& objm)
+void ScenarioManager::LoadThings(GameContext& gc)
 {
-    mCurrentSc->LoadScenarioData(objm);
-    mCurrentSc->LoadSubMap(objm);
-    mCurrentSc->LoadOverMap(objm);
-    mCurrentSc->LoadCityMap(objm);
+    mCurrentSc->LoadScenarioData(gc);
+    mCurrentSc->LoadSubMap(gc);
+    mCurrentSc->LoadOverMap(gc);
+    mCurrentSc->LoadCityMap(gc);
 }
 
-void ScenarioManager::ClearThings(ObjectManager& objm)
+void ScenarioManager::ClearThings(GameContext& gc)
 {
 }
 

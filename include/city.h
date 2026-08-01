@@ -16,7 +16,5 @@ class City {
     City(int x, int y);
 
     std::unordered_map<int, Facility*> mFacs;
-
-    Map* mCityMap {nullptr};
 };
 
