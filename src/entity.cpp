@@ -425,9 +425,8 @@ void EntityManager::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float m
 void EntityManager::HandleEntityEvent(SDL_Event &e, GameContext &gc, Map *map, Entity *ent, float mx, float my)
 {
     //엔티티 이벤트 핸들러는 포커스 상태만 제어함
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return; //마우스 왼쪽 클릭
-    if (e.button.button != SDL_BUTTON_LEFT) return;
-    
+    if (!System::sIsLeftMouseClicked || e.type != SDL_EVENT_MOUSE_BUTTON_UP) return; //마우스가 올라갔을때 감지
+
     MapTile* tile = map->mMapTiles[ent->mTileId]; //타일 기준으로 이벤트 핸들링
     Math ph;
     bool mouseIn = ph.IsPointInSquare(mx, my, tile->mX, tile->mY, tile->mW, tile->mH);
@@ -445,7 +444,6 @@ void EntityManager::HandleEntityEvent(SDL_Event &e, GameContext &gc, Map *map, E
             return; 
         }
 
-        //타겟 개수에 따라 동작을 변경해야 한다.
         gc.mSkm->mTargets.push_back(ent);
         SDL_Log("스킬의 타겟이 설정됨");
         return;
@@ -482,8 +480,7 @@ void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
         if (!ent->mIsPawn) return; //아군이 아니면 반환함. 
 
         //스킬 ui등을 표시.
-        gc.mUim->mCharacterSheet->mIsRender = true;
-        gc.mUim->mCharacterSheet->UpdateUI(ent);
+        gc.mUim->mCharacterSheet->Activate(ent);
     }
 
     mPrevFocusedEnt = ent;
@@ -635,4 +632,15 @@ int StatHelper::GetApRegen(Entity *ent)
 {
     int ret = GetMaxAp(ent);
     return ret;
+}
+
+SDL_Color EntityUtil::GetDemeanorColor(Entity *ent)
+{
+    if (ent->mDemeanor == Demeanor::Friendly) return {0x40, 0xB0, 0x40, 0xFF};
+    else if (ent->mDemeanor == Demeanor::Hostile) return {0xB0, 0x40, 0x40, 0xFF};
+    else if (ent->mDemeanor == Demeanor::Neutral) return {0xB0, 0xB0, 0x40, 0xFF};
+    else {
+        SDL_Log("entity util: cannot find demeanor type of entity");
+        return {0xFF, 0xFF, 0xFF, 0xFF};
+    }
 }

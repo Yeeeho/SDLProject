@@ -117,9 +117,9 @@ void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
         }
 
         gc.mUim->mTileHLUI->SetTileIds(tids);
-        //마우스 왼쪽 클릭시
-        if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
-        if (e.button.button != SDL_BUTTON_LEFT) return; 
+        //마우스 왼쪽 클릭하고 놓았을 때
+        if (!System::sIsLeftMouseClicked || e.type != SDL_EVENT_MOUSE_BUTTON_UP) return;
+
         //기술 발현데스
         gc.mSkm->mMap = this; //이 단계에서 스킬 발동에 필수적인 멤버 변수들이 모두 설정된다.
         gc.mSkm->SetTileIds(tids);

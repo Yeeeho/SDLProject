@@ -232,3 +232,9 @@ class StatHelper {
     int GetSpRegen(Entity* ent);
     int GetApRegen(Entity* ent);
 };
+
+//엔티티용 유틸리티 클래스
+class EntityUtil {
+    public:
+    SDL_Color GetDemeanorColor(Entity* ent);
+};

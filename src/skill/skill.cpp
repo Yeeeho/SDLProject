@@ -27,8 +27,10 @@ void Skill::Activate(SkillManager* skm)
     CombatHelper ch;
     SkillHelper skh;
     StatHelper sh;
+    EntityUtil eu;
 
     GameContext* gc = skm->mGc;
+    LogUI* log = gc->mUim->mLogUI;
     Entity* actor = skm->mActor;
     Map* map = skm->mMap;
     std::vector<Entity*> targets = skm->mTargets;
@@ -38,7 +40,10 @@ void Skill::Activate(SkillManager* skm)
     int targetTileId = skm->mTileIds.back();
     MapTile* targetTile = skm->mMap->mMapTiles[targetTileId];
 
-    //아직 스태미너 계산은 안넣었다.
+    SDL_Color r = {0xB0, 0x40, 0x40, 0xFF};
+    SDL_Color g = {0x40, 0xB0, 0x40, 0xFF};
+    SDL_Color y = {0xB0, 0xB0, 0x40, 0xFF};
+
     //이동 스킬일 경우
     if (skillType == "movement") {
         //TODO:나중에 스킬헬퍼 만들어서 함수로 래핑해라
@@ -48,7 +53,7 @@ void Skill::Activate(SkillManager* skm)
             if (id == tids[0]) continue; //처음 아이디는 무시한다. 액터가 서있는 타일이니까..
             bool entOn = map->mMapTiles[id]->mIsEntOn;
             if (entOn) {
-                SDL_Log("경로에 뭔가 있습니다!");
+                log->AddMessage("이동 경로에 뭔가 있습니다!", y);
                 return;
             }
         }
@@ -73,7 +78,7 @@ void Skill::Activate(SkillManager* skm)
 
         int apCost = apPerTile * straightMoves + apPerTile * diaMoves * 1.5;
         if (actor->mCurAp < apCost) {
-            SDL_Log("ap가 부족합니다!");
+            log->AddMessage("AP가 부족합니다!", y);
             return;
         }        
         else {
@@ -83,8 +88,6 @@ void Skill::Activate(SkillManager* skm)
 
         //실제로 엔티티 정보를 옮기는 동작
         mvm.MoveEntityTo(map, actor, actor->mTileId, targetTileId);
-        std::string message = skm->mActor->mName + " 이 이동합니다!";
-        SDL_Log(message.c_str());
     }
 
     //공격 스킬일 경우
@@ -97,20 +100,20 @@ void Skill::Activate(SkillManager* skm)
 
         //액터의 스태미너와 ap가 충분한지 확인한다.
         if (hpUse > actor->mCurHp) {
-            SDL_Log("hp가 부족합니다!");
+            log->AddMessage("HP가 부족합니다!", y);
             return;            
         }
         if (spUse > actor->mCurSp) {
-            SDL_Log("sp가 부족합니다!");
+            log->AddMessage("SP가 부족합니다!", y);
             return;            
         }
         if (apUse > actor->mCurAp) {
-            SDL_Log("ap가 부족합니다!");
+            log->AddMessage("AP가 부족합니다!", y);
             return;
         }
 
         std::string message = actor->mName + "이(가) " + skillName + "을(를) 사용합니다!";
-        SDL_Log(message.c_str());
+        log->AddMessage(message, eu.GetDemeanorColor(actor));
 
         //액터의 스탯에서 소모량만큼 깐다.
         actor->mCurHp -= hpUse;

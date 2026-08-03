@@ -14,20 +14,24 @@ using json = nlohmann::json;
 class System {
     public:
 
-    inline static int sWindowWidth{1920};
-    inline static int sWindowHeight{1080};
+    inline static int sWindowWidth {1920};
+    inline static int sWindowHeight {1080};
 
     inline static int sQuickSlotCap {8};
+    inline static int sSkillMemCap {16};
 
     //윈도우
-    inline static SDL_Window* sWindow{nullptr};
+    inline static SDL_Window* sWindow {nullptr};
     //렌더러
-    inline static SDL_Renderer* sRenderer{nullptr};
+    inline static SDL_Renderer* sRenderer {nullptr};
     //믹서
     inline static MIX_Mixer* sMixer{nullptr};
     //폰트
-    inline static TTF_Font* sFont{nullptr};
-    inline static TTF_Font* sFont40{nullptr};
+    inline static TTF_Font* sFont {nullptr};
+    inline static TTF_Font* sFont10 {nullptr};
+    inline static TTF_Font* sFont40 {nullptr};
+    //이벤트 핸들링 관련
+    inline static bool sIsLeftMouseClicked {false};
 
     /*함수 선언*/
 

@@ -72,6 +72,8 @@ bool System::LoadMedia()
     bool success = true;
 
     std::string fontPath{"fonts/MaruMinyaHangul.ttf"};
+    sFont10 = TTF_OpenFont(fontPath.c_str(), 10);
+
     sFont = TTF_OpenFont(fontPath.c_str(), 20);
     sFont40 = TTF_OpenFont(fontPath.c_str(), 40);
     if (sFont == nullptr) {
@@ -131,7 +133,11 @@ bool System::HandleEvents(SDL_Event& e, GameContext& gc)
         if (e.type == SDL_EVENT_QUIT) quit = true;
 
         //현재 상태에 있는 매니저들의 이벤트 핸들링
+        //왼쪽 마우스 클릭
+        if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_LEFT) sIsLeftMouseClicked = true;
         gc.mGsm->mCurrentState->HandleEvent(e, gc, mouseX, mouseY);
+        //플래그 복구
+        if (sIsLeftMouseClicked && e.type == SDL_EVENT_MOUSE_BUTTON_UP) sIsLeftMouseClicked = false;
     }
 
     return quit;

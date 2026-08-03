@@ -27,8 +27,8 @@ class UI {
 
     virtual void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY);
 
-    virtual void StoreTexture();
-    virtual void RenderStoredTex();
+    virtual void StoreTexture(); //텍스처 캐싱
+    virtual void RenderStoredTex(); //캐시 텍스처 렌더링
     void Render();
 
     SDL_Texture* mTempTex {nullptr}; //여기다 저장해놓고 업데이트시에 이걸 렌더링
@@ -37,6 +37,10 @@ class UI {
 
     bool mIsRender{false}; //렌더링 자체를 제어하는 플래그
     bool mIsRenderUpdate{true}; //ui 업데이트 플래그 변수, 생성될 때 참이면 한번 업데이트 하고 거짓으로 바뀐다.
+    bool mCanHandleEvent {false}; //이벤트 핸들링 가능?
+
+    int mX {0}, mY {0}, mW {0}, mH {0};
+
     private:
 };
 
@@ -70,6 +74,7 @@ class FramedTUI {
     public:
     FramedTUI(int x, int y, int w, int h);
 
+    void AddWordAndProcess(TTFWord word);
     void AddWord(TTFWord word);
     void ClearText();
     //렌더링
@@ -106,12 +111,10 @@ class Button : public UI {
     void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY) override;
 
     void StoreTexture() override;
-    void RenderStoredTex() override;
 
     Square* mUIFrame {nullptr};
     TextUI* mTui {nullptr};
 
-    int mX {0}, mY {0}, mW {0}, mH {0};
     BtnType mType;
 };
 
@@ -140,7 +143,7 @@ class ToolTip : public UI {
     Square* mUIFrame {nullptr}; //프레임
 
     float mX {0}, mY {0}; //위치
-    int mW, mH; //크기
+    int mW {0}, mH {0}; //크기
     int mRefX {-1}, mRefY {-1}, mRefW {-1}, mRefH {-1}; //참조용 좌표(실제 오브젝트 위치)
     int mPrevX {-1}, mPrevY {-1}, mPrevW {-1}, mPrevH {-1}; //저장할 이전 좌표
 };
@@ -161,7 +164,7 @@ class IconUI {
     bool mIsRender {false};
 
     private:
-    int mX, mY, mW, mH;
+    int mX {0}, mY {0}, mW {0}, mH {0};
 };
 
 class ScenarioManager;
@@ -239,6 +242,9 @@ class CharacterSheetUI : public UI{
     public:
     CharacterSheetUI(int x, int y, int w, int h);
 
+    void Activate(Entity* ent);
+    void Deactivate();
+
     void HandleEvent(SDL_Event& e, GameContext* gc, float mx, float my);
     void HandleSkillListEvent(SDL_Event& e, GameContext* gc, float mx, float my);
 
@@ -246,15 +252,11 @@ class CharacterSheetUI : public UI{
     void UpdateSkillDesc(int idx, GameContext* gc);
 
     void StoreTexture() override;
-    void RenderStoredTex() override;
 
     std::vector<FramedTUI*> mSkillList; //스킬 리스트
     FramedTUI* mSkillDesc {nullptr}; //스킬 설명
 
     Texture* mTex {nullptr}; //배경용 텍스처
-
-    private:
-    int mX {0}, mY {0}, mW {0}, mH {0};
 };
 
 class QuickSkillUI : public UI{
@@ -264,16 +266,12 @@ class QuickSkillUI : public UI{
     void AddSkill(Skill* skill);
 
     void StoreTexture() override;
-    void RenderStoredTex() override;
 
     void HandleEvent(SDL_Event& e, GameContext& gc, Map* map, float mouseX, float mouseY);
     void Activate(GameContext& gc, Map* map, Pawn* pawn);
     void Deactivate(GameContext& gc, Map* map);
 
     GameContext* mGc {nullptr};
-
-    int mX {0}, mY {0};
-    int mW {0}, mH {0};
 };
 
 enum class BCUIMainStatIdx {
@@ -287,12 +285,20 @@ class BottomCharacterUI : public UI{
     void UpdateUI(Entity* ent);
 
     void StoreTexture() override;
-    void RenderStoredTex() override;
 
     FramedTUI* mMainStat {nullptr}; //hp 등을 보여주는 ui컴포넌트
     FramedTUI* mStatEffect {nullptr}; //상태이상들을 보여주는 ui 컴포넌트
+};
 
-    int mX {0}, mY {0}, mW {0}, mH {0};
+class LogUI : public UI {
+    public:
+    LogUI(int x, int y, int w, int h);
+
+    void AddMessage(std::string message, SDL_Color c);
+
+    void StoreTexture() override;
+
+    FramedTUI* mBody {nullptr};
 };
 
 class UIManager {
@@ -335,6 +341,8 @@ class UIManager {
     IconUI* mFocusIcon {nullptr}; //맵 타일 포커스 아이콘
     TileHLUI* mTileHLUI {nullptr}; //맵 타일 강조 ui
 
+    //로그
+    LogUI* mLogUI {nullptr};
     //대화창
     DialogueUI* mDialogueUI {nullptr};
     //스킬 퀵슬롯

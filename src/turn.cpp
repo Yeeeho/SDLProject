@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "game_context.h"
+#include "ui.h"
 #include "turn.h"
 #include "combat.h"
 #include "map.h"
@@ -59,8 +61,13 @@ void TurnManager::TakeTurn(Entity *ent)
     mCurrentTarget = ent;
     mPrevTarget = ent;
 
-    std::string message = ent->mName + " 가 행동할 차례입니다!";
-    SDL_Log(message.c_str());
+    SDL_Color tc;
+    if (ent->mDemeanor == Demeanor::Friendly) tc = {0x40, 0xB0, 0x40, 0xFF};
+    else if (ent->mDemeanor == Demeanor::Hostile) tc = {0xB0, 0x40, 0x40, 0xFF};
+    else if (ent->mDemeanor == Demeanor::Neutral) tc = {0xB0, 0xB0, 0x40, 0xFF};
+
+    std::string message = ent->mName + "의 차례입니다!";
+    mGc->mUim->mLogUI->AddMessage(message, tc);
 
     //턴당 회복
     CombatHelper ch;
