@@ -3,8 +3,14 @@
 #include <string>
 
 #include "turn.h"
+#include "combat.h"
 #include "map.h"
 #include "entity.h"
+
+TurnManager::TurnManager(GameContext *gc)
+{
+    mGc = gc;
+}
 
 void TurnManager::Enter(Map *map)
 {
@@ -50,6 +56,21 @@ int TurnManager::GetGlobalTurn()
 
 void TurnManager::TakeTurn(Entity *ent)
 {
+    mCurrentTarget = ent;
+    mPrevTarget = ent;
+
+    std::string message = ent->mName + " 가 행동할 차례입니다!";
+    SDL_Log(message.c_str());
+
+    //턴당 회복
+    CombatHelper ch;
+    ch.RegenEntity(ent, *mGc);
+}
+
+void TurnManager::ClearTargets()
+{
+    mCurrentTarget = nullptr;
+    mPrevTarget = nullptr;
 }
 
 void TurnManager::UpdateEntityQueue()
@@ -63,37 +84,38 @@ void TurnManager::UpdateEntityQueue()
 
 void TurnManager::UpdateTurn()
 {
+    //맵에 아무도 없는 경우
+    if (mCurrentMap->mPawns.empty() && mCurrentMap->mNpcs.empty()) {
+        SDL_Log("nobody's existing on map!");
+        return;
+    }
+
     Entity* target {nullptr};
     //pc가 턴을 모두 잡은 뒤에야 적이 턴을 잡는다.
-    if (mPawnIdx < mCurrentMap->mPawns.size()) {
-        //pc가 턴을 잡음
-        IncTurn();
-        SDL_Log("turn manager: target set to pawn");
-        target = mCurrentMap->mPawns[mPawnIdx];
-        mCurrentTarget = target;
-        mPrevTarget = target; //캐싱
-        mPawnIdx += 1;
-    }
-    else if (mNpcIdx < mCurrentMap->mNpcs.size()) {
-        //npc가 턴을 잡음
-        IncTurn();
-        SDL_Log("turn manager: target set to npc");
-        target = mCurrentMap->mNpcs[mNpcIdx];
-        mCurrentTarget = target;
-        mPrevTarget = target;
-        mNpcIdx += 1;
-    } 
-    else {
-        //모두가 턴을 잡음
-        mPawnIdx = 0;
-        mNpcIdx = 0;
-        //맵에 아무도 없는 경우
-        if (mCurrentMap->mPawns.empty() && mCurrentMap->mNpcs.empty()) {
-            SDL_Log("nobody's existing on map!");
-            return;
+    //TODO: 플레이어가 임의로 큐를 설정할 수 있게 만들어야함
+    while (true) {
+        if (mPawnIdx < (int) mCurrentMap->mPawns.size()) {
+            //pc가 턴을 잡음
+            IncTurn();
+            SDL_Log("turn manager: target set to pawn");
+            target = mCurrentMap->mPawns[mPawnIdx];
+            mPawnIdx += 1;
+            TakeTurn(target);
+            break;
         }
-        //아직 누가 살아있는경우
-        UpdateTurn(); //재귀모띠
+        else if (mNpcIdx < (int) mCurrentMap->mNpcs.size()) {
+            //npc가 턴을 잡음
+            IncTurn();
+            SDL_Log("turn manager: target set to npc");
+            target = mCurrentMap->mNpcs[mNpcIdx];
+            mNpcIdx += 1;
+            TakeTurn(target);
+            break;
+        } 
+        else {
+            //모두가 턴을 잡음
+            mPawnIdx = 0;
+            mNpcIdx = 0;
+        }
     }
-    TakeTurn(target);
 }

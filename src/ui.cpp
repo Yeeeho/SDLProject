@@ -144,8 +144,8 @@ UIManager::UIManager(GameContext& gc)
     mTileHLUI = new TileHLUI();
 
     mCharacterSheet = new CharacterSheetUI(
-        System::sWindowWidth * 0.5 - 500, System::sWindowHeight * 0.5 - 300,
-        1000, 600 
+        System::sWindowWidth * 0.5 - 600, System::sWindowHeight * 0.5 - 400,
+        1200, 800 
     );
 
     mBCUI = new BottomCharacterUI(
@@ -175,6 +175,19 @@ void UIManager::InitUIs()
 
 void UIManager::HandleUIEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
+    //오른쪽 마우스 버튼 클릭시
+    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_RIGHT) {
+        //포커스 해제
+        gc.mObjm->mEntm->mFocusedEnt = nullptr;
+        gc.mObjm->mEntm->mPrevFocusedEnt = nullptr;
+        gc.mUim->mFocusIcon->mIsRender = false; //포커스 아이콘 렌더링 안함
+        gc.mUim->mCharacterSheet->mIsRender = false; //캐릭터 시트 렌더링 안함
+        gc.mUim->mQSUI->Deactivate(gc, gc.mMapm->mCurrentMap); //퀵슬롯 비활성화
+        return;
+    } 
+
+    mCharacterSheet->HandleEvent(e, &gc, mouseX, mouseY);
+
     for (auto ui : uiMap) {
         ui.second->HandleEvent(e, gc, mouseX, mouseY);
     }
@@ -184,7 +197,7 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameContext& gc, float mouseX, float
 
 void UIManager::HandleMapUIEvent(SDL_Event &e, GameContext& gc, Map *map, float mx, float my)
 {
-    HandleMapToolTipEvent(e, *gc.mGsm, map, mx, my);
+    HandleMapToolTipEvent(e, *gc.mGsm, mx, my);
     mQSUI->HandleEvent(e, gc, map, mx, my);
 }
 
@@ -285,17 +298,26 @@ void UIManager::UpdateMapToolTip(Map* map)
     }
 }
 
-void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, Map* map, float mouseX, float mouseY)
+void UIManager::UpdateMapToolTip(Map *map, Entity *ent, int targetTileId)
+{
+    MapTile* ttile = map->mMapTiles[targetTileId];
+    ttile->DestroyInfos();
+    if (ent->mIsOnMap) mGc->mObjm->mEntm->LoadDataInTile(ttile, ent);
+    mToolTip->ClearContent();
+    mToolTip->mIsRenderUpdate = true;
+}
+
+void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
 {
     //카메라 때문에 생긴 오차 보정
-    mouseX += map->mCam->mSight.x;
-    mouseY += map->mCam->mSight.y;
+    mouseX += mToolTipMap->mCam->mSight.x;
+    mouseY += mToolTipMap->mCam->mSight.y;
 
     //마우스가 맵 안에 있는지 확인
     Math phs;
     bool mouseIn = phs.IsPointInSquare(mouseX, mouseY, 
-        static_cast<float>(map->mX), static_cast<float>(map->mY),
-        static_cast<float>(map->mW), static_cast<float>(map->mH)
+        static_cast<float>(mToolTipMap->mX), static_cast<float>(mToolTipMap->mY),
+        static_cast<float>(mToolTipMap->mW), static_cast<float>(mToolTipMap->mH)
     );
     //마우스가 맵 안에 있으면 렌더링함.
     if (mouseIn) {
@@ -314,9 +336,9 @@ void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, Map* 
 
     //mouseover 중인 타일의 id를 구함
     MapHelper mh;
-    int id = mh.WhatTileOnPoint(mouseX, mouseY, map);
+    int id = mh.WhatTileOnPoint(mouseX, mouseY, mToolTipMap);
 
-    MapTile* tile = map->mMapTiles[id];
+    MapTile* tile = mToolTipMap->mMapTiles[id];
     //타일 좌표를 툴팁의 참조 좌표에 할당해줌
     mToolTip->SetRefInfo(tile->mX, tile->mY, tile->mW, tile->mH);
     //툴팁 이벤트 핸들링
@@ -337,8 +359,7 @@ ToolTip::ToolTip()
 void ToolTip::Destroy()
 {
     if (mTui != nullptr) delete mTui;
-
-    Destroy(); //부모 클래스 파괴 메서드, 본인도 파괴함
+    if (mUIFrame) delete mUIFrame;
 }
 
 void ToolTip::ClearContent()
@@ -850,14 +871,83 @@ CharacterSheetUI::CharacterSheetUI(int x, int y, int w, int h)
 {
     mX = x; mY = y; mW = w; mH = h;
 
-    SDL_Color green = {0x00, 0xB0, 0x00, 0xFF};
-    SDL_Color fill = {0x20, 0x20, 0x20, 0xF0};
-
     mTex = new Texture("images/ui/character_sheet.png");
     SDL_SetTextureScaleMode(mTex->mTexture, SDL_SCALEMODE_NEAREST);
 
+    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+    for (int i = 0; i < (mW / 40) - 1; i ++) {
+        FramedTUI* skill = new FramedTUI(0, 40 + i * 40, mW * 0.5, 40);
+        skill->AddWord(TTFWord("-", tc, System::sFont));
+        mSkillList.push_back(skill);
+    }
+
+    mSkillDesc = new FramedTUI(mW * 0.5, 40, mW * 0.5, mH - 40);
+    mSkillDesc->AddWord(TTFWord("스킬 설명란이다.", tc, System::sFont));
+ 
     TextureManager tm;
     mTempTex = tm.CreateTempTexture(System::sRenderer, w, h);
+}
+
+void CharacterSheetUI::HandleEvent(SDL_Event &e, GameContext *gc, float mx, float my)
+{
+    Math mth;
+    bool isIn = mth.IsPointInSquare(mx, my, (float) mX, (float) mY, (float) mW, (float) mH);
+    if (!isIn) return;
+    //마우스오버
+    HandleSkillListEvent(e, gc, mx, my);
+
+    gc->mMapm->mCurrentMap->mCanHandleEvent = false;
+    gc->mUim->mToolTip->mIsRender = false;
+}
+
+void CharacterSheetUI::HandleSkillListEvent(SDL_Event &e, GameContext *gc, float mx, float my)
+{
+    Math mth;
+    Entity* focused = gc->mObjm->mEntm->mFocusedEnt;
+    if (!focused) return;
+
+    for (int i = 0; i < (int) mSkillList.size(); i++) {
+        FramedTUI* s = mSkillList[i];
+        bool isMouseIn = mth.IsPointInSquare(mx, my, (float) (mX + s->mX), (float) (mY + s->mY), (float) s->mW, (float) s->mH);
+        if (!isMouseIn) continue;
+        //마우스오버
+        UpdateSkillDesc(i, gc);
+
+        if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) continue;
+        //클릭
+        //TODO:퀵슬롯에 스킬을 넣는다.
+        std::string message = "character sheet: skill list index is " + std::to_string(i);
+        SDL_Log(message.c_str());
+        if (i >= (int) focused->mSkills.size()) continue;
+        Skill* skill = focused->mSkills[i];
+        gc->mUim->mQSUI->AddSkill(skill);
+    }
+}
+
+void CharacterSheetUI::UpdateUI(Entity *ent)
+{
+    int i = 0;
+    for (Skill* skill : ent->mSkills) {
+        mSkillList[i]->mTui->mTexts[0].mMessage = skill->mName;
+        i++;
+    }
+
+    mIsRenderUpdate = true;
+}
+
+void CharacterSheetUI::UpdateSkillDesc(int idx, GameContext* gc)
+{
+    Entity* focused = gc->mObjm->mEntm->mFocusedEnt;
+    if (!focused) return;
+    if (idx >= (int) focused->mSkills.size()) return;
+
+    Skill* tskill = focused->mSkills[idx];
+
+    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+
+    mSkillDesc->ClearText();
+    mSkillDesc->AddWord(TTFWord(tskill->mName, tc, System::sFont));
+    mIsRenderUpdate = true;
 }
 
 void CharacterSheetUI::StoreTexture()
@@ -868,6 +958,11 @@ void CharacterSheetUI::StoreTexture()
 
     Texture t;
     mTex->Render(0.f, 0.f, nullptr,(float) mW,(float) mH);
+
+    for (FramedTUI* skill : mSkillList) {
+        skill->Render();
+    }
+    mSkillDesc->Render();
 
     SDL_SetRenderTarget(System::sRenderer, nullptr);
     mIsRenderUpdate = false;
@@ -894,6 +989,35 @@ QuickSkillUI::QuickSkillUI(int x, int  y, int w, int h, GameContext& gc)
     mGc = &gc;
 }
 
+void QuickSkillUI::AddSkill(Skill* skill)
+{
+    Entity* focused = mGc->mObjm->mEntm->mFocusedEnt;
+    if (!focused) return;
+    if (!focused->mIsPawn) return;
+
+    Pawn* p = static_cast<Pawn*> (focused);
+
+    if (p->mQuickSkills.size() > System::sQuickSlotCap) {
+        SDL_Log("quick skill ui: cannot add skill, size limit hit");
+        return;
+    } 
+    for (auto iter = p->mQuickSkills.begin(); iter != p->mQuickSkills.end();) {
+        //삼입하려는 스킬 코드가 이미 퀵슬롯 ui에 있을 경우
+        if (*iter == skill->mCode) {
+            //해당 친구를 컨테이너에서 삭제하고 리턴한다.
+            p->mQuickSkills.erase(iter);
+            mIsRenderUpdate = true;
+            SDL_Log("quick skill ui: erased skill code");
+            return;
+        }
+        iter++;
+    }
+
+    p->mQuickSkills.push_back(skill->mCode);
+    mIsRenderUpdate = true;
+    SDL_Log("quick skill ui: added skill code");
+}
+
 void QuickSkillUI::StoreTexture()
 {
     if (!mIsRenderUpdate) return;
@@ -911,11 +1035,14 @@ void QuickSkillUI::StoreTexture()
     }
 
     //포커스된 pc가 있는 경우
-    if (mFocusedPawn) {
+    Entity* focused = mGc->mObjm->mEntm->mFocusedEnt;
+    if (!focused) {}
+    else if (focused->mIsPawn) {
+        Pawn* p = static_cast<Pawn*> (focused);
         json skillDb = mGc->mSkm->mSkillDb["items"];
         int i = 0;
-        for (std::string code : mFocusedPawn->mQuickSkills) {
-            if (i >= 8) break;
+        for (std::string code : p->mQuickSkills) {
+            if (i >= System::sQuickSlotCap) break;
             if (skillDb.contains(code)) {
                 std::string path = skillDb[code]["img_path"].get<std::string>();
                 t.LoadFromFile(path);
@@ -923,7 +1050,8 @@ void QuickSkillUI::StoreTexture()
                 t.Render((float) (mPadding + i * 80), (float) (mPadding), nullptr, 80.f, 80.f);
             }
             else {
-                SDL_Log("quick skill ui: cannot find skill code in skill db");
+                std::string message = "quick skill ui: cannot find skill code \"" + code + "\" in skill db";
+                SDL_Log(message.c_str());
             }
             i++;
         }
@@ -942,8 +1070,12 @@ void QuickSkillUI::RenderStoredTex()
 
 void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mouseX, float mouseY)
 {
-    if (!gc.mObjm->mEntm->mFocusedEnt) return;
-    
+    Entity* focused = gc.mObjm->mEntm->mFocusedEnt;
+    if (!focused) return;
+    if (!focused->mIsPawn) return;
+
+    Pawn* p = static_cast<Pawn*> (focused);
+
     Math mth;
     bool mouseIn = mth.IsPointInSquare(mouseX, mouseY, (float) mX, (float) mY, (float) mW, (float) mH);
     //마우스가 ui안에 있으면 맵 이벤트핸들링 안함.
@@ -962,15 +1094,15 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
     int xPos = xDis/80;
 
     if (xPos < 0) xPos = 0;
-    if (xPos > 7) xPos = 7;
+    if (xPos > System::sQuickSlotCap - 1) xPos = System::sQuickSlotCap - 1;
 
-    if (mSkillList.size() > xPos) {
+    if (p->mQuickSkills.size() > xPos) {
         //스킬 발동을 위한 준비 단계
         //인덱스에 따라서 스킬 코드를 가져온다.
-        std::string skillCode = mSkillList[xPos];
+        std::string skillCode = p->mQuickSkills[xPos];
         //TODO: 여기부터는 따로 함수로 래핑하는게 좋을듯
         //엔티티에 저장된 실제 스킬 객체를 찾아온다.
-        Skill* skill = gc.mObjm->mEntm->mFocusedEnt->mSkills[skillCode];
+        Skill* skill = gc.mObjm->mEntm->mFocusedEnt->mSkills[xPos];
 
         //현재 스킬에 따라서 맵 타일 하이라이트 색을 바꿔준다.
         json skillTable = gc.mSkm->mSkillDb["items"];
@@ -999,19 +1131,11 @@ void QuickSkillUI::Activate(GameContext& gc, Map *map, Pawn *pawn)
 {
     mIsRenderUpdate = true;
     mIsRender = true;
-    int i = 0;
-    for (std::string skillCode : pawn->mQuickSkills) {
-        if (i >= 9) break;
-        mSkillList.push_back(skillCode);
-        i++;
-    }
-    mFocusedPawn = pawn;
 }
 
 void QuickSkillUI::Deactivate(GameContext& gc, Map* map)
 {
     mIsRender = false; //스킬 퀵슬롯 렌더링 안함
-    mFocusedPawn = nullptr;
     map->mCanHandleEvent = true;
 }
 

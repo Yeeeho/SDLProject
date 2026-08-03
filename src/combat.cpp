@@ -55,3 +55,33 @@ bool CombatHelper::DeathCheck(Entity *ent)
 
     return isDead;
 }
+
+void CombatHelper::RegenEntity(Entity *ent, GameContext& gc)
+{
+    StatHelper sh;
+    int hpregen = sh.GetHpRegen(ent);
+    int spregen = sh.GetSpRegen(ent);
+    int apregen = sh.GetApRegen(ent);
+    int mxhp = sh.GetMaxHp(ent);
+    int mxsp = sh.GetMaxSp(ent);
+    int mxap = sh.GetMaxAp(ent);
+    
+    std::string message {""};
+    ent->mCurHp += hpregen;
+    message = std::to_string(hpregen) + " 만큼 HP를 회복했습니다.";
+    SDL_Log(message.c_str());
+    if (ent->mCurHp > mxhp) ent->mCurHp = mxhp; 
+
+    ent->mCurSp += spregen;
+    message = std::to_string(spregen) + " 만큼 SP를 회복했습니다.";
+    SDL_Log(message.c_str());
+    if (ent->mCurSp > mxsp) ent->mCurSp = mxsp;
+
+    ent->mCurAp += apregen;
+    message = std::to_string(apregen) + " 만큼 AP를 회복했습니다.";
+    SDL_Log(message.c_str());
+    if (ent->mCurAp > mxap) ent->mCurAp = mxap;
+    
+    gc.mUim->mBCUI->UpdateUI(ent);
+    gc.mUim->mToolTip->mIsRenderUpdate = true;
+}

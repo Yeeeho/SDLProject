@@ -1,10 +1,11 @@
 #pragma once
 
 class Entity; class Map;
+struct GameContext;
 
 class TurnManager {
     public:
-    TurnManager() = default;
+    TurnManager(GameContext* gc);
 
     void Enter(Map* map);
 
@@ -20,9 +21,13 @@ class TurnManager {
 
     void TakeTurn(Entity* ent); //지금 턴인 엔티티 타겟
 
+    void ClearTargets();
     void UpdateEntityQueue();
     bool mIsQueueUpdate {true};
+
     void UpdateTurn(); //턴 업데이트
+
+    GameContext* mGc {nullptr};
 
     int mNpcIdx {0}; //맵에 있는 엔티티의 인덱스를 저장함.
     int mPawnIdx {0};

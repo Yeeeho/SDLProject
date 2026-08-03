@@ -13,9 +13,10 @@
 #include "entity.h"
 #include "skill/skill.h"
 
-Skill::Skill(std::string code)
+Skill::Skill(std::string code, std::string name)
 {
     mCode = code;
+    mName = name;
 }
 
 void Skill::Activate(SkillManager* skm)
@@ -124,11 +125,8 @@ void Skill::Activate(SkillManager* skm)
             if (ent->mId == actor->mId && ent->mIsPawn == actor->mIsPawn) {
                 gc->mUim->mBCUI->UpdateUI(ent);
             }
-            gc->mUim->mToolTip->ClearContent();
-            MapTile* ttile = map->mMapTiles[targetTileId];
-            ttile->DestroyInfos();
-            if (ent->mIsOnMap) gc->mObjm->mEntm->LoadDataInTile(ttile, ent);
-            gc->mUim->mToolTip->mIsRenderUpdate = true;
+            //래핑?
+            gc->mUim->UpdateMapToolTip(map, ent, targetTileId);
         }
 
     }
@@ -213,12 +211,28 @@ int SkillHelper::GetSkillRange(json skillData, Skill *skill)
     int range = skillData["range"].get<int>();
     return range;
 }
+json SkillHelper::GetSkillData(const json &skillDb, std::string code)
+{
+    json ret;
+    if (skillDb["items"].contains(code)) {
+        ret = skillDb["items"][code];
+    }
+    else {
+        SDL_Log("getskilldata: cannot find code in skill db!");
+    }
+    return ret;
+}
 std::string SkillHelper::GetSkillTargetType(json skillData, Skill *skill)
 {
     std::string target = skillData["target"].get<std::string>();
     return target;
 }
 
+std::string SkillHelper::GetSkillName(json skillData, Skill *skill)
+{
+    std::string name = skillData["name"].get<std::string>();
+    return name;
+}
 int SkillHelper::GetSkillTargetNum(json skillData, Skill *skill)
 {
     std::string targetType = GetSkillTargetType(skillData, skill);

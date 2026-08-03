@@ -23,9 +23,7 @@ TTFWord::TTFWord(std::string message, SDL_Color color, TTF_Font *font)
 
 void TTFWord::Destroy()
 {
-    if (this != nullptr) {
-        delete this;
-    }
+    delete this;
 }
 
 int TTFWord::GetWordWidth()

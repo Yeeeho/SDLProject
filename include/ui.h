@@ -11,14 +11,15 @@ struct GameContext;
 class ObjectManager;
 class UIManager;
 class GameStateManager;
+class Texture;
 class Square;
 struct Point;
-class Pawn; class Entity;
+class UI;
 class TTFWord;
 class Map;
-class UI;
 class Camera;
-class Texture;
+class Pawn; class Entity;
+class Skill;
 
 class UI {
     public:
@@ -231,15 +232,24 @@ class CharacterSkillUI {
 };
 
 enum class CharacterSheetType {
-    Skill, Info
+    Skill, Info, Inv
 };
 
 class CharacterSheetUI : public UI{
     public:
     CharacterSheetUI(int x, int y, int w, int h);
 
+    void HandleEvent(SDL_Event& e, GameContext* gc, float mx, float my);
+    void HandleSkillListEvent(SDL_Event& e, GameContext* gc, float mx, float my);
+
+    void UpdateUI(Entity* ent);
+    void UpdateSkillDesc(int idx, GameContext* gc);
+
     void StoreTexture() override;
     void RenderStoredTex() override;
+
+    std::vector<FramedTUI*> mSkillList; //스킬 리스트
+    FramedTUI* mSkillDesc {nullptr}; //스킬 설명
 
     Texture* mTex {nullptr}; //배경용 텍스처
 
@@ -251,6 +261,8 @@ class QuickSkillUI : public UI{
     public:
     QuickSkillUI(int x, int y, int w, int h, GameContext& gc);
 
+    void AddSkill(Skill* skill);
+
     void StoreTexture() override;
     void RenderStoredTex() override;
 
@@ -259,10 +271,6 @@ class QuickSkillUI : public UI{
     void Deactivate(GameContext& gc, Map* map);
 
     GameContext* mGc {nullptr};
-
-    Pawn* mFocusedPawn {nullptr};
-
-    std::vector<std::string> mSkillList;
 
     int mX {0}, mY {0};
     int mW {0}, mH {0};
@@ -314,10 +322,13 @@ class UIManager {
     
     // 맵 툴팁 관련
     ToolTip* mToolTip{nullptr}; //툴팁
-    
+    Map* mToolTipMap {nullptr}; //툴팁 타겟
+
     void LoadMapToolTip(Map* map, int tileId);
     void UpdateMapToolTip(Map* map);
-    void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, Map* map, float mouseX, float mouseY);
+    void UpdateMapToolTip(Map* map, Entity* ent, int targetTileId);
+
+    void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
     void RenderMapToolTip(Map* map);
     
     //맵 관련 ui 객체

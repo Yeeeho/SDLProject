@@ -93,11 +93,13 @@ void IntroState::Render( GameContext& gc)
 void OverMapState::Enter(GameContext& gc)
 {
     SDL_Log("enter overmap");
+    Map* map = gc.mMapm->mOverMap;
 
-    gc.mTurnm->Enter(gc.mMapm->mOverMap);
-    
+    gc.mTurnm->Enter(map);
+    gc.mUim->mToolTipMap = map; 
     //시나리오 로딩
-    gc.mMapm->mCurrentMap = gc.mMapm->mOverMap;
+
+    gc.mMapm->mCurrentMap = map;
     //렌더링 플래그 일시 true
     //맵 렌더링 플래그
     gc.mMapm->mOverMap->mIsMapUpdate = true;
@@ -164,9 +166,11 @@ void OverMapState::Render(GameContext& gc)
 void SubMapState::Enter(GameContext& gc) 
 {
     SDL_Log("enter submap");
-    gc.mMapm->mCurrentMap = gc.mMapm->mSubMap;
+    Map* map = gc.mMapm->mSubMap;
+    gc.mMapm->mCurrentMap = map;
+    gc.mUim->mToolTipMap = map;
+    gc.mTurnm->Enter(map);
 
-    gc.mTurnm->Enter(gc.mMapm->mSubMap);
     gc.mMapm->mSubMap->mIsMapUpdate = true;
 
     gc.mUim->mTurnOverBtn->mType = BtnType::SubMapTurnOver;
@@ -234,8 +238,10 @@ void SubMapState::Render(GameContext& gc)
 void CityViewState::Enter(GameContext& gc)
 {
     SDL_Log("enter city view");
-    gc.mTurnm->Enter(gc.mMapm->mCityMap);
-    gc.mMapm->mCurrentMap = gc.mMapm->mCityMap;
+    Map* map = gc.mMapm->mCityMap;
+    gc.mTurnm->Enter(map);
+    gc.mUim->mToolTipMap = map;
+    gc.mMapm->mCurrentMap = map;
 
     //도시 맵 렌더링 플래그
     gc.mMapm->mCityMap->mIsMapUpdate = true;

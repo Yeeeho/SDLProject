@@ -17,6 +17,8 @@ class System {
     inline static int sWindowWidth{1920};
     inline static int sWindowHeight{1080};
 
+    inline static int sQuickSlotCap {8};
+
     //윈도우
     inline static SDL_Window* sWindow{nullptr};
     //렌더러

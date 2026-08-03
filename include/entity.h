@@ -190,7 +190,7 @@ class Entity {
     //패시브 플래그
 
     //알고 있는 기술들
-    std::map<std::string, Skill*> mSkills;
+    std::vector<Skill*> mSkills;
 
     std::unordered_map<EqType, Equipment*> mEqs; //실제로 장비한 장비들 컨테이너
     //여행용 스탯
@@ -227,4 +227,8 @@ class StatHelper {
     int GetApPerTileMove(Entity* ent); //타일당 표준 이동력을 계산한다.
     //캐릭터 최종 방어력 계산
     int GetTotalArmor(Entity* ent);
+    //캐릭터 회복 수치 계산
+    int GetHpRegen(Entity* ent);
+    int GetSpRegen(Entity* ent);
+    int GetApRegen(Entity* ent);
 };

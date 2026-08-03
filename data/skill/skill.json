@@ -33,10 +33,10 @@
             },
 
             "sp_use" : {
-                "flat" : 0
+                "flat" : 50
             },
             "ap_use" : {
-                "flat" : 0
+                "flat" : 50
             }
         },   
 

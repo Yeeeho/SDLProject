@@ -22,4 +22,5 @@ class CombatHelper {
     public:
     void TakeDamage(Entity* ent, GameContext& gc, int damageInput);
     bool DeathCheck(Entity* ent);
+    void RegenEntity(Entity* ent, GameContext& gc);
 };

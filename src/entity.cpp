@@ -278,10 +278,9 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     //텍스처 할당
     pawn->mTexture->LoadFromFile(pawnData["img_path"].get<std::string>());
 
-    pawn->mSkills.insert({"move", new Skill("move")});
-    pawn->mQuickSkills.push_back("move");
-    pawn->mSkills.insert({"punch", new Skill("punch")});
-    pawn->mQuickSkills.push_back("punch");
+    //TODO:스킬 배우는 동작도 엔티티 생성자에서 언젠가 분리시켜야 한다.
+    pawn->mSkills.push_back(new Skill("move", "이동"));
+    pawn->mSkills.push_back(new Skill("punch", "주먹질"));
 
     std::string message = "pawn id: " + std::to_string(id) + " name: " + name + " is allocated";
     SDL_Log(message.c_str());
@@ -409,17 +408,7 @@ void EntityManager::Update(ObjectManager &objm)
 }
 
 void EntityManager::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mouseX, float mouseY)
-{
-    //오른쪽 마우스 버튼 클릭시
-    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_RIGHT) {
-        //포커스 해제
-        mFocusedEnt = nullptr; mPrevFocusedEnt = nullptr;
-        gc.mUim->mFocusIcon->mIsRender = false; //포커스 아이콘 렌더링 안함
-        gc.mUim->mCharacterSheet->mIsRender = false; //캐릭터 시트 렌더링 안함
-        gc.mUim->mQSUI->Deactivate(gc, map); //퀵슬롯 비활성화
-        return;
-    } 
-    
+{   
     //카메라 오프셋 계산
     mouseX += map->mCam->mSight.x;
     mouseY += map->mCam->mSight.y;
@@ -493,8 +482,8 @@ void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
         if (!ent->mIsPawn) return; //아군이 아니면 반환함. 
 
         //스킬 ui등을 표시.
-        gc.mUim->mCharacterSheet->mIsRenderUpdate = true;
         gc.mUim->mCharacterSheet->mIsRender = true;
+        gc.mUim->mCharacterSheet->UpdateUI(ent);
     }
 
     mPrevFocusedEnt = ent;
@@ -627,4 +616,23 @@ int StatHelper::GetTotalArmor(Entity *ent)
     //종족값에 따라 방어력 추가
 
     return armor;
+}
+
+//아직 덜만듬
+int StatHelper::GetHpRegen(Entity *ent)
+{
+    return 0;
+}
+
+//아직 덜만듬
+int StatHelper::GetSpRegen(Entity *ent)
+{
+    return 50;
+}
+
+//턴 지나면 최대로 회복
+int StatHelper::GetApRegen(Entity *ent)
+{
+    int ret = GetMaxAp(ent);
+    return ret;
 }

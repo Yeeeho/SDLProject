@@ -9,8 +9,9 @@ using json = nlohmann::json;
 
 class Skill {
     public:
-    Skill(std::string code);
-    std::string mCode; //스킬이 가지는 코드
+    Skill(std::string code, std::string name);
+    std::string mCode {""}; //스킬이 가지는 코드
+    std::string mName {""}; //스킬의 실제 이름
 
     //스킬을 사용하는 주체나 방법에 따라 메서드를 오버로딩 시킬 수 있다.
     void Activate(SkillManager* skm);
@@ -54,7 +55,9 @@ class SkillManager {
 class SkillHelper {
     public:
     //타겟팅 관련
+    json GetSkillData(const json& skillDb, std::string code);
     std::string GetSkillTargetType(json skillData, Skill* skill);
+    std::string GetSkillName(json skillData, Skill* skill);
     int GetSkillTargetNum(json skillData, Skill* skill); //멀티타겟의 경우는 아직 안만듬
 
     //스킬 범위
