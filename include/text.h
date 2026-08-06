@@ -17,6 +17,7 @@ class TTFWord {
 
     void Destroy();
 
+    int GetFirstWordWidth();
     int GetWordWidth();
     int GetWordHeight();
 

@@ -17,6 +17,10 @@ class System {
     inline static int sWindowWidth {1920};
     inline static int sWindowHeight {1080};
 
+    //아이템 관련
+    const static int sMaxItemId {1024};
+
+    //스킬 관련 
     inline static int sQuickSlotCap {8};
     inline static int sSkillMemCap {16};
 

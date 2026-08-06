@@ -29,18 +29,20 @@ void CombatManager::Update(UIManager &uim, ObjectManager &objm)
 
 void CombatHelper::TakeDamage(Entity *ent, GameContext& gc, int damageInput)
 {
-    StatHelper sh;
+    StatHelper sh; EntityUtil eu;
+    LogUI* log = gc.mUim->mLogUI;
+    // SDL_Color w = {0xB0, 0xB0, 0xB0, 0xFF};
     int armor = sh.GetTotalArmor(ent);
 
     damageInput -= armor;
     ent->mCurHp -= damageInput;
 
     std::string message = ent->mName + "는 " + std::to_string(damageInput) + "체력 데미지를 받았다!";
-    SDL_Log(message.c_str());
+    log->AddMessage(message, eu.GetRDemeanorColor(ent));
 
     if (DeathCheck(ent)) {
         std::string message = ent->mName + "이(가) 죽었습니다!";
-        SDL_Log(message.c_str());
+        log->AddMessage(message, eu.GetRDemeanorColor(ent));
         gc.mObjm->mEntm->KillEntityOnMap(gc, gc.mMapm->mCurrentMap, ent);
     }
 }

@@ -26,6 +26,31 @@ void TTFWord::Destroy()
     delete this;
 }
 
+int TTFWord::GetFirstWordWidth()
+{
+    //폰트 높이 캐싱
+    int fontH = TTF_GetFontHeight(mFont);
+
+    //디폴트 타입이 아닌 다른 타입일때
+    if (mType == TextType::Space) {
+        int ret = fontH * 0.5;
+        return ret;
+    }
+    else if (mType == TextType::NewLine) {
+        return 0;
+    }
+
+    //디폴트 일때
+    //언어 감지
+    if ((mMessage[0] & 0b11110000) == 0b11100000) {
+        //한글
+        return fontH;
+    }
+    else{
+        return fontH * 0.5;
+    } 
+}
+
 int TTFWord::GetWordWidth()
 {
     //폰트 높이 캐싱

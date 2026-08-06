@@ -5,6 +5,7 @@
 #include "game_state.h"
 #include "game_json.h"
 #include "game_object.h"
+#include "item/item_manager.h"
 #include "turn.h"
 #include "map.h"
 #include "city.h"
@@ -40,7 +41,9 @@ void Scenario::UpdateScenario(GameContext& gc)
 
     SDL_Log("update scenario");
 
+    ScenarioHelper snh;
     JsonHelper jh;
+    ItemHelper ih;
     json section = mData["items"][mScProgress];
 
     std::string sType = section["type"].get<std::string>();
@@ -64,35 +67,40 @@ void Scenario::UpdateScenario(GameContext& gc)
     }
     else if (sType == "static_spawn") {
         Map* map {nullptr};
+        
         std::string where = section["where"].get<std::string>();
         //어떤 맵에 스폰할지 결정한다.
-        if (where == "submap") {
-            map = gc.mMapm->mSubMap;
-        } 
-        else if (where == "overmap") {
-            map = gc.mMapm->mOverMap;
-        } 
-        else if (where == "citymap") {
-            map = gc.mMapm->mCityMap;
-        }  
+        map = snh.GetMap(gc, where);
+        std::map<int, Item*>* itemMap = snh.GetItemMap(gc.mObjm->mItm, where);
 
         json items = section["items"];
         for (json item : items) {
             if (item["type"].get<std::string>() == "single_ent") {
                 SDL_Log("scenario: spawning single entity");
-                std::string name = item["name"].get<std::string>();
+                std::string code = item["code"].get<std::string>();
                 std::string demeanor = item["demeanor"].get<std::string>();
                 
                 int tileId = item["tile_id"].get<int>();
             
-                gc.mObjm->mEntm->AllocEntityOnTable(*gc.mObjm, name, -1, -1, 0);
+                gc.mObjm->mEntm->AllocEntityOnTable(*gc.mObjm, code, -1, -1, 0);
                 Entity* ent = gc.mObjm->mEntm->mEntTable[0];
                 //태도를 결정한다.
                 if (demeanor == "hostile") ent->mDemeanor = Demeanor::Hostile;
                 else if (demeanor == "friendly") ent->mDemeanor = Demeanor::Friendly;
                 else if (demeanor == "neutral") ent->mDemeanor = Demeanor::Neutral;
-
                 gc.mObjm->mEntm->SpawnEntityOnMap(*gc.mObjm, map, ent, tileId);
+            }
+            if (item["type"].get<std::string>() == "single_item") {
+                //시나리오 데이터에서 코드, 아이템타입, 타일 아이디를 구한다.
+                std::string code = item["code"].get<std::string>();
+                std::string itype = item["item_type"].get<std::string>();
+                ItemType itemType = ih.GetItemType(itype);
+                SDL_Log(std::to_string((int) itemType).c_str());
+                int tileId = item["tile_id"].get<int>();
+
+                //구한 데이터를 기반으로 아이템 객체를 생성하고 맵에 스폰한다.
+                Item* it = gc.mObjm->mItm->MakeItem(*gc.mObjm, code, itemType);
+                gc.mObjm->mItm->SpawnItemOnMap(it, *itemMap, tileId);
             }
         }
         mScProgress += 1; //시나리오를 자동으로 진행시키고,
@@ -281,3 +289,40 @@ void ScenarioManager::ClearThings(GameContext& gc)
 {
 }
 
+Map *ScenarioHelper::GetMap(GameContext &gc, std::string where)
+{
+    Map* map {nullptr};
+    if (where == "submap") {
+        map = gc.mMapm->mSubMap;
+    } 
+    else if (where == "overmap") {
+        map = gc.mMapm->mOverMap;
+    } 
+    else if (where == "citymap") {
+        map = gc.mMapm->mCityMap;
+    }  
+    else {
+        SDL_Log("get map: cannot find map, param : (where)");
+    }
+
+    return map;
+}
+
+std::map<int, Item *>* ScenarioHelper::GetItemMap(ItemManager *itm, std::string where)
+{
+    if (where == "submap") {
+        return &itm->mSubmapItems;
+    } 
+    else if (where == "overmap") {
+        //TODO: 수정 필요
+        SDL_Log("i'm working on it");
+        return &itm->mSubmapItems;
+    } 
+    else if (where == "citymap") {
+        return &itm->mCitymapItems;
+    }  
+    else {
+        SDL_Log("get map: cannot find map, param : (where)");
+        return &itm->mSubmapItems;
+    }    
+}

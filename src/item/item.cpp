@@ -5,13 +5,11 @@
 #include "game_json.h"
 #include "game_object.h"
 
-Item::Item(std::string name)
-{
-    SDL_Log("instantiated item interface class, which is not likely");
-}
-
 Equipment::Equipment(const ObjectManager& objm, std::string code)
 {
+    mId = objm.mItm->GetValidId();
+    mType = ItemType::Equipment;
+
     ItemHelper ith;
     json* db = ith.GetEqDb(objm.mItm , code);
 
@@ -40,3 +38,31 @@ Equipment::Equipment(const ObjectManager& objm, std::string code)
     mArmor = ith.GetEqArmor(eq);
 }
 
+void Equipment::Destroy(const ObjectManager &objm)
+{
+    objm.mItm->ReturnId(mId);
+}
+
+Consumable::Consumable(const ObjectManager &objm, std::string code)
+{
+    mId = objm.mItm->GetValidId(); //아이디 테이블을 조회해서 유효한 아이디를 가져온다.
+    mType = ItemType::Consumable;
+    
+    json consumTb = objm.mItm->mConsumItDb["items"];
+    
+    if (!consumTb.contains(code)) {
+        SDL_Log("consumable: item code not found in db");
+        code = "error_item";
+    }
+    
+    mCode = code;
+    
+    json item = consumTb[code];
+    mValue = item["val"].get<int>();
+    mName = item["name"].get<std::string>();
+}
+
+void Consumable::Destroy(const ObjectManager &objm)
+{
+    objm.mItm->ReturnId(mId);
+}

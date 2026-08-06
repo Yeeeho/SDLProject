@@ -5,6 +5,8 @@
 using json = nlohmann::json;
 
 struct GameContext;
+class Map;
+class Item; class ItemManager;
 class UIManager;
 class ObjectManager;
 
@@ -83,4 +85,10 @@ class ScenarioManager {
     Scenario* mCurrentSc {nullptr};
     private:
     Scenario* mNextSc {nullptr};
+};
+
+class ScenarioHelper {
+    public:
+    Map* GetMap(GameContext& gc, std::string where);
+    std::map<int, Item*>* GetItemMap(ItemManager* itm, std::string where);
 };

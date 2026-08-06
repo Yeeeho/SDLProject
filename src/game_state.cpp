@@ -11,6 +11,7 @@
 #include "map.h"
 #include "entity.h"
 #include "item/item.h"
+#include "item/item_manager.h"
 #include "city.h"
 #include "render.h"
 #include "square.h"
@@ -148,6 +149,8 @@ void OverMapState::Render(GameContext& gc)
 
     //맵 렌더링
     gc.mMapm->mOverMap->RenderOnUpdate();
+    //아이템 렌더링
+    gc.mObjm->mItm->Render();
     //팀 렌더링
     gc.mObjm->mTeamm->RenderOnUpdate(gc.mMapm->mOverMap);
 
@@ -221,6 +224,8 @@ void SubMapState::Render(GameContext& gc)
     
     //맵 렌더링
     gc.mMapm->mSubMap->RenderOnUpdate();
+    //아이템 렌더링
+    gc.mObjm->mItm->Render();
     //엔티티 렌더링
     gc.mObjm->mEntm->RenderEntities(gc.mMapm->mSubMap);
     
@@ -284,6 +289,8 @@ void CityViewState::Render(GameContext& gc)
 
     //도시 맵 렌더링
     gc.mMapm->mCityMap->RenderOnUpdate();
+    //아이템 렌더링
+    gc.mObjm->mItm->Render();
     //툴팁 렌더링
     gc.mUim->mToolTip->Render();
     gc.mUim->RenderUIs();    //ui렌더링

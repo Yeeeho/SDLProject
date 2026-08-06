@@ -1,0 +1,40 @@
+{
+    "spritesheet_width": 384,
+    "spritesheet_height": 96,
+    "cell_width": 96,
+    "cell_height": 96,
+    "sprites": [
+        {
+            "filename": "sword.png",
+            "order": 0,
+            "width": 96,
+            "height": 96,
+            "x": 0,
+            "y": 0
+        },
+        {
+            "filename": "sword_chain.png",
+            "order": 1,
+            "width": 96,
+            "height": 96,
+            "x": 96,
+            "y": 0
+        },
+        {
+            "filename": "dagger.png",
+            "order": 2,
+            "width": 96,
+            "height": 96,
+            "x": 192,
+            "y": 0
+        },
+        {
+            "filename": "pistol.png",
+            "order": 3,
+            "width": 96,
+            "height": 96,
+            "x": 288,
+            "y": 0
+        }
+    ]
+}

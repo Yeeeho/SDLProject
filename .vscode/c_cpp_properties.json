@@ -3,15 +3,20 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/lib",
+                "${workspaceFolder}/lib/SDL3/include",
+                "${workspaceFolder}/lib/SDL3_ttf/include",
+                "${workspaceFolder}/lib/SDL3_image/include",
+                "${workspaceFolder}/lib/SDL3_mixer/include"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "C:\\Users\\yiho\\mingw64\\bin\\gcc.exe",
+            "compilerPath": "C:/Program Files/mingw64/bin/g++.exe",
             "cStandard": "c17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "windows-gcc-x64"

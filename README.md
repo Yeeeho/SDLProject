@@ -14,6 +14,8 @@ cmake version 4.3.4
 
 픽셀 에디터
 pixilart.com
+스프라이트 시트
+sprite sheet maker by kevax
 
 - 사용된 외부 소스 목록
 

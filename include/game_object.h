@@ -3,6 +3,7 @@
 //무거운 객체가 되지 않게 최대한 포인터를 이용한다.
 
 //전방 선언
+struct GameContext;
 class Map;
 class City;
 class CityMap;
@@ -15,9 +16,8 @@ class SkillManager;
 //클래스 선언
 class ObjectManager {
     public:
-    ObjectManager();
+    ObjectManager(GameContext* gc);
 
-    void RenderObjects();
     void DestroyObjects();
 
     //아이템 매니저

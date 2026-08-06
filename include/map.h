@@ -6,6 +6,7 @@
 
 //전방 선언
 struct GameContext;
+class Item;
 class GameStateManager;
 class UIManager;
 class ObjectManager;
@@ -53,7 +54,6 @@ class Map {
     //엔티티
     std::vector<Entity*> mNpcs; //맵에 있는 npc들 담는 컨테이너
     std::vector<Entity*> mPawns; //맵에 있는 폰들을 담는 컨테이너
-
     //지형지물(추가 예정)
 
     SDL_Texture* mTempTex{nullptr}; //베이킹용 임시 텍스처

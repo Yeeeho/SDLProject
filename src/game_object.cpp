@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include "game_context.h"
 #include "game_object.h"
 #include "game_json.h"
 #include "item/item.h"
@@ -13,15 +14,10 @@
 #include "map.h"
 #include "system.h"
 
-ObjectManager::ObjectManager()
+ObjectManager::ObjectManager(GameContext* gc)
 {
     mJsm = new JsonManager();
-    mItm = new ItemManager();
-}
-
-void ObjectManager::RenderObjects()
-{
-    SDL_SetRenderLogicalPresentation(System::sRenderer, 1280, 720, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    mItm = new ItemManager(gc);
 }
 
 void ObjectManager::DestroyObjects()

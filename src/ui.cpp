@@ -615,7 +615,7 @@ void FramedTUI::Render()
     mTotalH = 0;
     for (auto pair : mTui->mTexts) {
         TTFWord word = pair.second;
-        if (pair.second.mType == TextType::NewLine) {
+        if (word.mType == TextType::NewLine) {
             mTotalW = 0;
             mTotalH += word.GetWordHeight();
             mTotalH += mTui->mLineSpacing;
@@ -632,11 +632,31 @@ void FramedTUI::Render()
             }
             else mTui->AddSpace(word.mFont); 
         }
+        //디폴트 타입일 경우
         else {
             mTotalW += word.GetWordWidth();
             //넓이 검사
+            //텍스트 길이가 너비를 넘어감
             if (mTotalW + mPadding * 2 > mW) {
-                //줄바꿈후 원문 렌더링
+                //너비를 초과할 때까지 렌더링 후 줄바꿈
+                int diff = (mTotalW + mPadding * 2) - mW; //초과된 길이만큼 구함
+                int remain = word.GetWordWidth() - diff; //이번 줄에 남은 길이를 구함
+                while (true) {
+                    int firstW = word.GetFirstWordWidth(); //맨 앞 글자의 길이를 가져옴
+                    if (remain - firstW < 0) break; //remain이 음수가 되기전에 탈출함
+                    if (firstW == TTF_GetFontHeight(word.mFont)) {
+                        //3바이트 문자일 경우
+                        mTui->RenderAtLine(TTFWord(word.mMessage.substr(0, 3), word.mColor, word.mFont));
+                        word.mMessage = word.mMessage.erase(0, 3);
+                    }
+                    else if (firstW == TTF_GetFontHeight(word.mFont) * 0.5) {
+                        //1바이트 문자
+                        mTui->RenderAtLine(TTFWord(word.mMessage.substr(0, 1), word.mColor, word.mFont));
+                        word.mMessage = word.mMessage.erase(0, 1);
+                    }
+
+                    remain -= firstW;
+                }
 
                 mTotalW = 0; //초기화 후 길이 더하기 
                 mTotalW += word.GetWordWidth();

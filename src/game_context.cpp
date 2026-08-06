@@ -16,7 +16,7 @@ GameContext::GameContext()
     mScm = new ScenarioManager();
     mTurnm = new TurnManager(this);
     mMapm = new MapManager();
-    mObjm = new ObjectManager();
+    mObjm = new ObjectManager(this);
     mUim = new UIManager(*this);
     mSkm = new SkillManager(*this);
     mGsm = new GameStateManager();

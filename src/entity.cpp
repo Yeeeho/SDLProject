@@ -644,3 +644,14 @@ SDL_Color EntityUtil::GetDemeanorColor(Entity *ent)
         return {0xFF, 0xFF, 0xFF, 0xFF};
     }
 }
+
+SDL_Color EntityUtil::GetRDemeanorColor(Entity *ent)
+{
+    if (ent->mDemeanor == Demeanor::Friendly) return {0xB0, 0x40, 0x40, 0xFF};
+    else if (ent->mDemeanor == Demeanor::Hostile) return {0x40, 0xB0, 0x40, 0xFF};
+    else if (ent->mDemeanor == Demeanor::Neutral) return {0xB0, 0xB0, 0x40, 0xFF};
+    else {
+        SDL_Log("entity util: cannot find demeanor type of entity");
+        return {0xFF, 0xFF, 0xFF, 0xFF};
+    }
+}

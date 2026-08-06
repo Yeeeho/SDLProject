@@ -237,4 +237,5 @@ class StatHelper {
 class EntityUtil {
     public:
     SDL_Color GetDemeanorColor(Entity* ent);
+    SDL_Color GetRDemeanorColor(Entity* ent);
 };
