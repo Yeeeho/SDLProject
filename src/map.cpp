@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include "render.h"
 #include "game_context.h"
 #include "game_object.h"
 #include "turn.h"
@@ -14,6 +15,31 @@
 #include "entity.h"
 #include "skill/skill.h"
 #include "move.h"
+
+Grid::Grid(int x, int y, int xTiles, int yTiles, int tileLen)
+{
+    mTileLen = tileLen;
+    mXTiles = xTiles; mYTiles = yTiles;
+
+    mW = mTileLen*mXTiles;
+    mH = mTileLen*mYTiles;
+
+    mX = x; mY = y;
+    mInitX = x; mInitY = y;
+}
+
+void Grid::RenderTiles()
+{
+    Texture t;
+    t.LoadFromFile("images/ui/frame.png");
+    SDL_SetTextureScaleMode(t.mTexture, SDL_SCALEMODE_NEAREST);
+
+    for (int i = 0; i < mYTiles; i++) {
+        for (int j = 0; j < mXTiles; j++) {
+            t.Render((float) mX + j*mTileLen,(float) mY + i*mTileLen, nullptr,(float) mTileLen,(float) mTileLen);
+        }
+    }
+}
 
 Map::Map(int x, int y, int xTiles, int yTiles, int tileLen)
 {
@@ -315,3 +341,4 @@ MapManager::MapManager()
     mCityMap = new Map(System::sWindowWidth*0.5 - 6*40, 100, 32, 32, 80);
     mCityMap->GenerateCityTiles();
 }
+

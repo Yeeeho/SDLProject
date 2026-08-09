@@ -14,6 +14,8 @@ using json = nlohmann::json;
 class System {
     public:
 
+    inline const static SDL_Color sTc {0x00, 0xB0, 0x00, 0xFF};
+
     inline static int sWindowWidth {1920};
     inline static int sWindowHeight {1080};
 

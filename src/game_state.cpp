@@ -169,6 +169,7 @@ void OverMapState::Render(GameContext& gc)
 void SubMapState::Enter(GameContext& gc) 
 {
     SDL_Log("enter submap");
+
     Map* map = gc.mMapm->mSubMap;
     gc.mMapm->mCurrentMap = map;
     gc.mUim->mToolTipMap = map;

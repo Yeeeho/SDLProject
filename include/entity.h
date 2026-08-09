@@ -209,6 +209,8 @@ class Pawn : public Entity {
 
     PawnType mType;
 
+    std::map<int, Item*> mInventory;
+
     std::vector<std::string> mQuickSkills;
 };
 

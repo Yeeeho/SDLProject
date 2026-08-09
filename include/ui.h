@@ -16,6 +16,7 @@ class Square;
 struct Point;
 class UI;
 class TTFWord;
+class Grid;
 class Map;
 class Camera;
 class Pawn; class Entity;
@@ -97,6 +98,7 @@ class FramedTUI {
 
 //버튼 기능 타입
 enum class BtnType {
+    Default,
     Title, 
     NewGame, LoadGame,
     OverMap, SubMap, City,
@@ -109,10 +111,11 @@ class Button : public UI {
     Button(int x, int y, int w, int h, std::string text, BtnType BtnType);
 
     void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY) override;
+    bool IsMouseIn(float mx, float my);
 
+    void RenderThings();
     void StoreTexture() override;
 
-    Square* mUIFrame {nullptr};
     TextUI* mTui {nullptr};
 
     BtnType mType;
@@ -225,52 +228,73 @@ class TileHLUI {
 };
 
 //캐릭터 시트용 ui
-class CharacterSkillUI {
-    public:
-    CharacterSkillUI();
 
-    std::vector<FramedTUI*> mSkill;
-    FramedTUI* mSkillDesc {nullptr};
-    IconUI* mSkillIcon {nullptr};
+class InventoryUI : public UI {
+    public:
+    InventoryUI(int x, int y, int w, int h, int tileLen);
+
+    void Activate(Pawn* p);
+    void Deactivate();
+
+    void RenderThings();
+
+    Grid* mGrid {nullptr};
 };
 
-enum class CharacterSheetType {
+class CharacterSkillUI : public UI {
+    public:
+    CharacterSkillUI(int x, int y, int w, int h);
+    
+    void Activate(Entity* ent);
+    void Deactivate();
+    
+    void HandleEvent(SDL_Event& e, GameContext* gc, float mx, float my);
+    void HandleSkillListEvent(SDL_Event& e, GameContext* gc, float mx, float my);
+    
+    void UpdateUI(Entity* ent);
+    void UpdateSkillDesc(int idx, GameContext* gc);
+    
+    void RenderThings();
+    
+    std::vector<FramedTUI*> mSkillList; //스킬 리스트
+    FramedTUI* mSkillDesc {nullptr}; //스킬 설명
+};
+
+enum class CharacterSheetIdx {
     Skill, Info, Inv
 };
 
-class CharacterSheetUI : public UI{
+class CharacterSheetUI : public UI {
     public:
     CharacterSheetUI(int x, int y, int w, int h);
 
-    void Activate(Entity* ent);
+    void Activate(Pawn* pc);
     void Deactivate();
 
-    void HandleEvent(SDL_Event& e, GameContext* gc, float mx, float my);
-    void HandleSkillListEvent(SDL_Event& e, GameContext* gc, float mx, float my);
-
-    void UpdateUI(Entity* ent);
-    void UpdateSkillDesc(int idx, GameContext* gc);
+    void HandleEvent(SDL_Event& e, GameContext& gc, float mx, float my);
 
     void StoreTexture() override;
 
-    std::vector<FramedTUI*> mSkillList; //스킬 리스트
-    FramedTUI* mSkillDesc {nullptr}; //스킬 설명
+    Button* mInvTab {nullptr};
+    Button* mSkillTab {nullptr};
 
-    Texture* mTex {nullptr}; //배경용 텍스처
+    CharacterSkillUI* mCsUI {nullptr};
+    InventoryUI* mInvUI {nullptr};
+    CharacterSheetIdx mTabIdx {CharacterSheetIdx::Inv};
 };
 
 class QuickSkillUI : public UI{
     public:
     QuickSkillUI(int x, int y, int w, int h, GameContext& gc);
-
+    
     void AddSkill(Skill* skill);
-
+    
     void StoreTexture() override;
-
+    
     void HandleEvent(SDL_Event& e, GameContext& gc, Map* map, float mouseX, float mouseY);
     void Activate(GameContext& gc, Map* map, Pawn* pawn);
     void Deactivate(GameContext& gc, Map* map);
-
+    
     GameContext* mGc {nullptr};
 };
 

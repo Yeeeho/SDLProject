@@ -43,12 +43,23 @@ void UI::Render()
 Button::Button(int x, int y, int w, int h, std::string uiText, BtnType type)
 {
     mX = x; mY = y; mW = w; mH = h;
-    mUIFrame = new Square(0, 0, w, h);
 
     mTui = new TextUI(0.f, 0.f);
-    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
-    mTui->AddWord(TTFWord(uiText, tc, System::sFont));
-    
+    TTFWord word = TTFWord(uiText, System::sTc, System::sFont);
+    mTui->AddWord(word);
+    //가운데 위치에 정렬하는 작업
+    //가로 정렬
+    int len = word.GetWordWidth();
+    int diff = w - len;
+    if (diff < 0) diff = 0;
+    mTui->mX = diff * 0.5 - mPadding;
+    if (mTui->mX < 0) mTui->mX = 0;
+    //세로 정렬
+    diff = h - TTF_GetFontHeight(word.mFont);
+    if (diff < 0) diff = 0;
+    mTui->mY = diff * 0.5 - mPadding;
+    if (mTui->mY < 0) mTui->mY = 0;
+
     mType = type;
 
     TextureManager tm;
@@ -108,14 +119,26 @@ void Button::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mous
     }
 }
 
+bool Button::IsMouseIn(float mx, float my)
+{
+    Math mth;
+    bool isIn = mth.IsPointInSquare(mx, my,(float) mX,(float) mY,(float) mW,(float) mH);
+
+    return isIn;
+}
+
+void Button::RenderThings()
+{
+    mTui->RenderWords();
+}
+
 void Button::StoreTexture()
 {
     if (!mIsRenderUpdate) return;
     RenderManager rm;
     rm.SetRenderTarget(System::sRenderer, mTempTex);
 
-    mUIFrame->Render();
-    mTui->RenderWords();
+    RenderThings();
 
     SDL_SetRenderTarget(System::sRenderer, nullptr);
     mIsRenderUpdate = false;
@@ -176,13 +199,13 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameContext& gc, float mouseX, float
         //포커스 해제
         gc.mObjm->mEntm->mFocusedEnt = nullptr;
         gc.mObjm->mEntm->mPrevFocusedEnt = nullptr;
-        gc.mUim->mFocusIcon->mIsRender = false; //포커스 아이콘 렌더링 안함
-        gc.mUim->mCharacterSheet->Deactivate();
-        gc.mUim->mQSUI->Deactivate(gc, gc.mMapm->mCurrentMap); //퀵슬롯 비활성화
+        mFocusIcon->mIsRender = false; //포커스 아이콘 렌더링 안함
+        mCharacterSheet->Deactivate();
+        mQSUI->Deactivate(gc, gc.mMapm->mCurrentMap); //퀵슬롯 비활성화
         return;
     } 
 
-    mCharacterSheet->HandleEvent(e, &gc, mouseX, mouseY);
+    mCharacterSheet->HandleEvent(e, gc, mouseX, mouseY);
 
     for (auto ui : uiMap) {
         ui.second->HandleEvent(e, gc, mouseX, mouseY);
@@ -887,41 +910,65 @@ void TileHLUI::RenderBetweenTiles(Map* map)
     }
 }
 
-CharacterSheetUI::CharacterSheetUI(int x, int y, int w, int h)
+InventoryUI::InventoryUI(int x, int y, int w, int h, int tileLen)
 {
     mX = x; mY = y; mW = w; mH = h;
 
-    mTex = new Texture("images/ui/character_sheet.png");
-    SDL_SetTextureScaleMode(mTex->mTexture, SDL_SCALEMODE_NEAREST);
+    int remain = w % tileLen;
+    
+    mGrid = new Grid(x + remain * 0.5 + 6 * tileLen, y, 12, 10, tileLen);
 
-    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
-    for (int i = 0; i < 16; i ++) {
-        FramedTUI* skill = new FramedTUI(0, 40 + i * 40, mW * 0.5, 40);
-        skill->AddWord(TTFWord("-", tc, System::sFont));
-        mSkillList.push_back(skill);
-    }
-
-    mSkillDesc = new FramedTUI(mW * 0.5, 40, mW * 0.5, mH - 40);
-    mSkillDesc->AddWord(TTFWord("스킬 설명란이다.", tc, System::sFont));
- 
     TextureManager tm;
     mTempTex = tm.CreateTempTexture(System::sRenderer, w, h);
 }
 
-void CharacterSheetUI::Activate(Entity* ent)
+void InventoryUI::Activate(Pawn *p)
+{
+    mCanHandleEvent = true;
+    mIsRender = true;
+    mIsRenderUpdate = true;
+}
+
+void InventoryUI::Deactivate()
+{
+    mCanHandleEvent = false;
+    mIsRender = false;
+}
+
+void InventoryUI::RenderThings()
+{
+    mGrid->RenderTiles();
+}
+
+CharacterSkillUI::CharacterSkillUI(int x, int y, int w, int h)
+{
+    mX = x; mY = y; mW = w; mH = h;
+
+    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+    for (int i = 0; i < h / 40; i ++) {
+        FramedTUI* skill = new FramedTUI(x, y + i * 40, mW * 0.5, 40);
+        skill->AddWord(TTFWord("-", tc, System::sFont));
+        mSkillList.push_back(skill);
+    }
+
+    mSkillDesc = new FramedTUI(x + mW * 0.5, y, mW * 0.5, mH);
+    mSkillDesc->AddWord(TTFWord("스킬 설명란이다.", tc, System::sFont));
+}
+
+void CharacterSkillUI::Activate(Entity* ent)
 {
     mCanHandleEvent = true;
     mIsRender = true;
     UpdateUI(ent);
 }
 
-void CharacterSheetUI::Deactivate()
+void CharacterSkillUI::Deactivate()
 {
     mCanHandleEvent = false;
     mIsRender = false;
 }
 
-void CharacterSheetUI::HandleEvent(SDL_Event &e, GameContext *gc, float mx, float my)
+void CharacterSkillUI::HandleEvent(SDL_Event &e, GameContext *gc, float mx, float my)
 {
     if (!mCanHandleEvent) return;
 
@@ -935,7 +982,7 @@ void CharacterSheetUI::HandleEvent(SDL_Event &e, GameContext *gc, float mx, floa
     gc->mUim->mToolTip->mIsRender = false;
 }
 
-void CharacterSheetUI::HandleSkillListEvent(SDL_Event &e, GameContext *gc, float mx, float my)
+void CharacterSkillUI::HandleSkillListEvent(SDL_Event &e, GameContext *gc, float mx, float my)
 {
     Math mth;
     Entity* focused = gc->mObjm->mEntm->mFocusedEnt;
@@ -943,14 +990,13 @@ void CharacterSheetUI::HandleSkillListEvent(SDL_Event &e, GameContext *gc, float
 
     for (int i = 0; i < (int) mSkillList.size(); i++) {
         FramedTUI* s = mSkillList[i];
-        bool isMouseIn = mth.IsPointInSquare(mx, my, (float) (mX + s->mX), (float) (mY + s->mY), (float) s->mW, (float) s->mH);
+        bool isMouseIn = mth.IsPointInSquare(mx, my, (float) (s->mX), (float) (s->mY), (float) s->mW, (float) s->mH);
         if (!isMouseIn) continue;
         //마우스오버
         UpdateSkillDesc(i, gc);
 
         if (e.type != SDL_EVENT_MOUSE_BUTTON_UP || !System::sIsLeftMouseClicked) return;
         //클릭
-        //TODO:퀵슬롯에 스킬을 넣는다.
         std::string message = "character sheet: skill list index is " + std::to_string(i);
         SDL_Log(message.c_str());
         if (i >= (int) focused->mSkills.size()) continue;
@@ -959,18 +1005,16 @@ void CharacterSheetUI::HandleSkillListEvent(SDL_Event &e, GameContext *gc, float
     }
 }
 
-void CharacterSheetUI::UpdateUI(Entity *ent)
+void CharacterSkillUI::UpdateUI(Entity *ent)
 {
     int i = 0;
     for (Skill* skill : ent->mSkills) {
         mSkillList[i]->mTui->mTexts[0].mMessage = skill->mName;
         i++;
     }
-
-    mIsRenderUpdate = true;
 }
 
-void CharacterSheetUI::UpdateSkillDesc(int idx, GameContext* gc)
+void CharacterSkillUI::UpdateSkillDesc(int idx, GameContext* gc)
 {
     Entity* focused = gc->mObjm->mEntm->mFocusedEnt;
     if (!focused) return;
@@ -980,31 +1024,101 @@ void CharacterSheetUI::UpdateSkillDesc(int idx, GameContext* gc)
 
     SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
 
+    gc->mUim->mCharacterSheet->mIsRenderUpdate = true;
+    mIsRenderUpdate = true;
+
     mSkillDesc->ClearText();
     mSkillDesc->AddWord(TTFWord(tskill->mName, tc, System::sFont));
+}
+
+void CharacterSkillUI::RenderThings()
+{
+    for (FramedTUI* skill : mSkillList) {
+        skill->Render();
+    }
+    mSkillDesc->Render();
+}
+
+CharacterSheetUI::CharacterSheetUI(int x, int y, int w, int h)
+{
+    mX = x; mY = y; mW = w; mH = h;
+
+    mInvTab = new Button(0, 0, 120, 60, "인벤토리", BtnType::Default);
+    mSkillTab = new Button(120, 0, 120, 60, "스킬", BtnType::Default);
+
+    mInvUI = new InventoryUI(0, 60, w, h - 60, 64);
+    mCsUI = new CharacterSkillUI(0, 60, w, h - 60);
+
+    TextureManager tm;
+    mTempTex = tm.CreateTempTexture(System::sRenderer, w, h);
+}
+
+void CharacterSheetUI::Activate(Pawn *pc)
+{
+    SDL_Log("activated character sheet");
+
+    Deactivate();
+    mCanHandleEvent = true;
+    mIsRender = true;
     mIsRenderUpdate = true;
+    if (mTabIdx == CharacterSheetIdx::Skill) mCsUI->Activate(pc);
+    if (mTabIdx == CharacterSheetIdx::Inv) mInvUI->Activate(pc);
+}
+
+void CharacterSheetUI::Deactivate()
+{
+    mCanHandleEvent = false;
+    mIsRender = false;
+    mCsUI->Deactivate();
+    mInvUI->Deactivate();
+}
+
+void CharacterSheetUI::HandleEvent(SDL_Event &e, GameContext &gc, float mx, float my)
+{
+    if (!mCanHandleEvent) return;
+    mx -= (float) mX; my -= (float) mY; //오프셋
+
+    mCsUI->HandleEvent(e, &gc, mx, my);
+
+    Entity* ent = gc.mObjm->mEntm->mFocusedEnt;
+    if (!ent) {
+        SDL_Log("character sheet: null focused entity!");
+        return;
+    }
+
+    Pawn* p = static_cast<Pawn*>(ent);
+    if (mInvTab->IsMouseIn(mx, my)) {
+        if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            mTabIdx = CharacterSheetIdx::Inv;
+            Activate(p);
+        }
+    }
+    if (mSkillTab->IsMouseIn(mx, my)) {
+        if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            mTabIdx = CharacterSheetIdx::Skill;
+            Activate(p);
+        }
+    }
 }
 
 void CharacterSheetUI::StoreTexture()
 {
     if (mIsRenderUpdate == false) return;
-    RenderManager rm;
+    RenderManager rm;    
     rm.SetRenderTarget(System::sRenderer, mTempTex);
-
+    
     Texture t;
-    mTex->Render(0.f, 0.f, nullptr,(float) mW,(float) mH);
+    t.LoadFromFile("images/ui/character_sheet.png");
+    t.Render(0.f, 0.f, nullptr, (float) mW, (float) mH);
 
-    for (FramedTUI* skill : mSkillList) {
-        skill->Render();
-    }
-    mSkillDesc->Render();
+    mInvTab->Render();
+    mSkillTab->Render();
+    
+    if (mCsUI->mIsRender) mCsUI->RenderThings();
+    if (mInvUI->mIsRender) mInvUI->RenderThings();
 
     SDL_SetRenderTarget(System::sRenderer, nullptr);
     mIsRenderUpdate = false;
-}
-
-CharacterSkillUI::CharacterSkillUI()
-{
 }
 
 QuickSkillUI::QuickSkillUI(int x, int  y, int w, int h, GameContext& gc)

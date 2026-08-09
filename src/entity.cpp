@@ -475,12 +475,12 @@ void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
     //이전 엔티티와 같은 경우
     if (ent == mPrevFocusedEnt)  {
         //포커스된 엔티티를 한번 더 클릭했을 경우 
-        SDL_Log("one more click on focused entity");
         mPrevFocusedEnt = ent;
         if (!ent->mIsPawn) return; //아군이 아니면 반환함. 
-
+        SDL_Log("one more click on focused pawn");
+        Pawn* p = static_cast<Pawn*>(ent);
         //스킬 ui등을 표시.
-        gc.mUim->mCharacterSheet->Activate(ent);
+        gc.mUim->mCharacterSheet->Activate(p);
     }
 
     mPrevFocusedEnt = ent;
