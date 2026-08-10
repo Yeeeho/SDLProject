@@ -21,6 +21,11 @@ class Item {
     int mValue {0}; //가치, 실제 계산 방식은 여러 변수들에 의해 동적으로 변한다.
 };
 
+struct ItemStack {
+    public:
+    std::vector<Item*> mStack;
+};
+
 //장비 클래스
 class Equipment : public Item {
     public:

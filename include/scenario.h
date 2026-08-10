@@ -90,5 +90,4 @@ class ScenarioManager {
 class ScenarioHelper {
     public:
     Map* GetMap(GameContext& gc, std::string where);
-    std::map<int, Item*>* GetItemMap(ItemManager* itm, std::string where);
 };

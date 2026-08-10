@@ -5,6 +5,7 @@
 
 using json = nlohmann::json;
 
+struct ItemStack;
 struct GameContext;
 class Map;
 class Texture;
@@ -19,28 +20,29 @@ class ItemManager {
     void LoadSpriteSheets();
     void LoadItemData();
 
-    void SpawnItemOnMap(Item* item, std::map<int, Item*>& mapItems, int tileId);
-    void SpawnItemOnMap(Item* item, std::map<int, Item*>& mapItems, Map* map, int xPos, int yPos);
-    void DespawnItemOnMap(int itemId, std::map<int, Item*>& mapItems);
-
     int GetValidId();
     void ReturnId(int id);
+
+    //스택 관리
+    void StackItemOnMap(Map* map, int tileId, Item* item);
+    Item* PopSpecificItem(Map* map, int tileId, int itemId);
+    Item* PopItemStack(Map* map, int tileId);
+    
+    //아이템 스폰
+    void SpawnItemOnMap(Map* map, int tileId, Item* item);
+    void DespawnItemOnMap(Map* map, int tileId, int itemId);
 
     void RenderItem(Item* item);
     void RenderItems();
     void StoreTexture();
     void RenderStoredTex();
     void Render();
-
+    
     bool mIsRender {true};
     bool mIsRenderUpdate {false};
-
+    
     //참고용 컨텍스트
     GameContext* mGc {nullptr};
-
-    //맵 상에 존재하는 아이템들의 컨테이너
-    std::map<int, Item*> mSubmapItems;
-    std::map<int, Item*> mCitymapItems;
 
     //임시 텍스처
     SDL_Texture* mTempTex {nullptr};
@@ -68,6 +70,8 @@ class ItemManager {
 
 class ItemHelper {
     public:
+    void DestroyStackObj(Map* map, int tileId);
+
     EqType GetEqType(json eq);
     float GetEqWeight(json eq); 
 

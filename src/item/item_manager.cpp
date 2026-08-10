@@ -7,9 +7,11 @@
 #include "render.h"
 #include "map.h"
 #include "texture.h"
+#include "text.h"
 #include "entity.h"
 #include "item/item_manager.h"
 #include "item/item.h"
+#include "ui.h"
 
 ItemManager::ItemManager(GameContext* gc)
 {
@@ -65,26 +67,40 @@ void ItemManager::LoadItemData()
     jh.LoadJsonFile(mSpecItDb, "data/item/special.json");
 }
 
-void ItemManager::SpawnItemOnMap(Item *item, std::map<int, Item*>& mapItems, int tileId)
+void ItemManager::SpawnItemOnMap(Map *map, int tileId, Item *item)
 {
     item->mTileId = tileId;
+    StackItemOnMap(map, tileId, item);
+
     std::string message = "item spawned at tild id " + std::to_string(tileId); 
-    SDL_Log(message.c_str());
-    mapItems.insert({item->mId, item});
+    SDL_Log(message.c_str());    
+
+    //타일에 데이터를 로드
+    map->mMapTiles[tileId]->mInfos.push_back(new TTFWord(item->mName, System::sWh, System::sFont));
+    map->mMapTiles[tileId]->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
+    mGc->mUim->mToolTip->mIsRenderUpdate = true;
+
     mIsRenderUpdate = true;
 }
 
-void ItemManager::SpawnItemOnMap(Item *item, std::map<int, Item*>& mapItems, Map* map, int xpos, int ypos)
+void ItemManager::DespawnItemOnMap(Map * map, int tileId, int itemId)
 {
-    MapHelper mh;
-    int tileId = mh.WhatTileOnPoint((float) xpos, (float) ypos, map);
-
-    SpawnItemOnMap(item, mapItems, tileId);
-}
-
-void ItemManager::DespawnItemOnMap(int itemId, std::map<int, Item*>& mapItems)
-{
-    mapItems.erase(itemId);
+    if (map->mItemStackMap.find(tileId) == map->mItemStackMap.end()) {
+        //스택 자체가 이미 없을 경우
+        SDL_Log("despawn item: stack does not exist on map!");
+        return;
+    }
+    //스택이 있는 경우
+    ItemStack* stack = map->mItemStackMap[tileId];
+    int i = 0;
+    for (Item* item : stack->mStack) {
+        if (item->mId == itemId) {
+            stack->mStack.erase(stack->mStack.begin() + i);
+            mIsRenderUpdate = true;
+            return;
+        }
+        i++;
+    }    
 }
 
 int ItemManager::GetValidId()
@@ -101,6 +117,80 @@ int ItemManager::GetValidId()
 void ItemManager::ReturnId(int id)
 {
     mIdTable[id] += id;
+}
+
+void ItemManager::StackItemOnMap(Map *map, int tileId, Item *item)
+{
+    if (map->mItemStackMap.find(tileId) == map->mItemStackMap.end()) {
+        //아이템을 스택에 없을 경우
+        map->mItemStackMap[tileId] = new ItemStack();
+        map->mItemStackMap[tileId]->mStack.push_back(item);
+    }
+    else {
+        //아이템이 스택에 이미 있는 경우
+        map->mItemStackMap[tileId]->mStack.push_back(item);
+    }
+}
+
+Item *ItemManager::PopSpecificItem(Map *map, int tileId, int itemId)
+{
+    ItemHelper ih;
+    ItemStack* stackObj = map->mItemStackMap[tileId];
+
+    if (stackObj->mStack.empty()) {
+        ih.DestroyStackObj(map, tileId);
+        SDL_Log("pop specific item from stack: stack already empty");
+        return nullptr;
+    }
+
+    int i = 0;
+    Item* targetItem = nullptr;
+    //스택 순회하며 아이템 검색
+    for (Item* item : stackObj->mStack) {
+        if (item->mId == itemId) {
+            //아이템 찾으면 스택에서 참조만 지움
+            stackObj->mStack.erase(stackObj->mStack.begin() + i);
+            targetItem = item;
+            break;
+        }
+        i++;
+    }
+
+    //아이템을 못 찾았을 경우 널포인터 반환
+    if (targetItem == nullptr) {
+        SDL_Log("pop specific item from stack: specific item not found in stack");
+        return targetItem;
+    }
+    //아이템을 찾았을 경우
+    //만약 스택이 비었다면 스택 오브젝트 파괴
+    if (stackObj->mStack.empty()) {
+        ih.DestroyStackObj(map, tileId);
+    }
+
+    return targetItem;
+}
+
+Item* ItemManager::PopItemStack(Map *map, int tileId)
+{
+    ItemHelper ih;
+    ItemStack* stackObj = map->mItemStackMap[tileId];
+
+    //비었으면 해제해준다.
+    if (stackObj->mStack.empty()) {
+        ih.DestroyStackObj(map, tileId);
+        SDL_Log("pop item from stack: stack already empty");
+        return nullptr;
+    }
+
+    Item* item = map->mItemStackMap[tileId]->mStack.back();
+
+    map->mItemStackMap[tileId]->mStack.pop_back();
+
+    if (stackObj->mStack.empty()) {
+        ih.DestroyStackObj(map, tileId);
+    }
+
+    return item;
 }
 
 void ItemManager::StoreTexture()
@@ -129,11 +219,11 @@ void ItemManager::RenderItems()
 {
     ItemHelper ih;
 
-    for (auto pair : mSubmapItems) {
-        RenderItem(pair.second);
-    }
-    for (auto pair : mCitymapItems) {
-        RenderItem(pair.second);
+    Map* currentMap = mGc->mMapm->mCurrentMap;
+
+    for (auto stack : currentMap->mItemStackMap) {
+        Item* item = stack.second->mStack.back();
+        RenderItem(item);
     }
 }
 
@@ -171,6 +261,12 @@ void ItemManager::Render()
 {
     RenderStoredTex();
     StoreTexture();
+}
+
+void ItemHelper::DestroyStackObj(Map* map, int tileId) {
+    ItemStack* stackObj = map->mItemStackMap[tileId];        
+    map->mItemStackMap.erase(tileId);
+    delete stackObj;
 }
 
 EqType ItemHelper::GetEqType(json eq)

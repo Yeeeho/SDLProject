@@ -71,7 +71,6 @@ void Scenario::UpdateScenario(GameContext& gc)
         std::string where = section["where"].get<std::string>();
         //어떤 맵에 스폰할지 결정한다.
         map = snh.GetMap(gc, where);
-        std::map<int, Item*>* itemMap = snh.GetItemMap(gc.mObjm->mItm, where);
 
         json items = section["items"];
         for (json item : items) {
@@ -100,7 +99,7 @@ void Scenario::UpdateScenario(GameContext& gc)
 
                 //구한 데이터를 기반으로 아이템 객체를 생성하고 맵에 스폰한다.
                 Item* it = gc.mObjm->mItm->MakeItem(*gc.mObjm, code, itemType);
-                gc.mObjm->mItm->SpawnItemOnMap(it, *itemMap, tileId);
+                gc.mObjm->mItm->SpawnItemOnMap(map, tileId, it);
             }
         }
         mScProgress += 1; //시나리오를 자동으로 진행시키고,
@@ -306,23 +305,4 @@ Map *ScenarioHelper::GetMap(GameContext &gc, std::string where)
     }
 
     return map;
-}
-
-std::map<int, Item *>* ScenarioHelper::GetItemMap(ItemManager *itm, std::string where)
-{
-    if (where == "submap") {
-        return &itm->mSubmapItems;
-    } 
-    else if (where == "overmap") {
-        //TODO: 수정 필요
-        SDL_Log("i'm working on it");
-        return &itm->mSubmapItems;
-    } 
-    else if (where == "citymap") {
-        return &itm->mCitymapItems;
-    }  
-    else {
-        SDL_Log("get map: cannot find map, param : (where)");
-        return &itm->mSubmapItems;
-    }    
 }

@@ -6,7 +6,7 @@
 
 //전방 선언
 struct GameContext;
-class Item;
+class Item; struct ItemStack;
 class GameStateManager;
 class UIManager;
 class ObjectManager;
@@ -67,9 +67,13 @@ class Map : public Grid {
     std::vector<MapTile*> mMapTiles; //맵타일들 담는 컨테이너
 
     //엔티티
-    //TODO: 이거 분리해야됨
+    //아니 분리하지마 코드 더 더러워짐
     std::vector<Entity*> mNpcs; //맵에 있는 npc들 담는 컨테이너
     std::vector<Entity*> mPawns; //맵에 있는 폰들을 담는 컨테이너
+
+    //맵에 스폰된 아이템들을 스택 형식으로 관리하는 응애
+    std::map<int, ItemStack*> mItemStackMap; //int: 타일 아이디
+
     //지형지물(추가 예정)
 };
 
@@ -100,6 +104,7 @@ class MapTile {
 class MapManager {
     public:
     MapManager();
+
     //오버맵에서 사용할 월드맵 객체다.
     Map* mOverMap {nullptr};
     //탐험/전투가 일어나는 맵이다.
