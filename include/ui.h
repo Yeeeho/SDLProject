@@ -50,6 +50,8 @@ class TextUI {
     public:
     TextUI(float x, float y);
 
+    int GetHeight();
+
     void ClearTexts();
 
     void AddWord(TTFWord word);
@@ -135,8 +137,6 @@ class ToolTip : public UI {
 
     //업데이트
     void CheckUpdate(); //업데이트 로직에서 업데이트 유무를 검사함
-    //이벤트 핸들러
-    void HandleEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
     //렌더링 메서드
     void StoreTexture();
     void RenderStoredTex();
@@ -231,12 +231,16 @@ class TileHLUI {
 
 class InventoryUI : public UI {
     public:
-    InventoryUI(int x, int y, int w, int h, int tileLen);
+    InventoryUI(int x, int y, int w, int h, int tileLen, GameContext* gc);
 
     void Activate(Pawn* p);
     void Deactivate();
 
     void RenderThings();
+    void RenderEqSlots(Texture& t);
+    void RenderEqSlot(Texture& t, int x, int y, std::string info);
+
+    GameContext* mGc {nullptr};
 
     Grid* mGrid {nullptr};
 };
@@ -266,7 +270,7 @@ enum class CharacterSheetIdx {
 
 class CharacterSheetUI : public UI {
     public:
-    CharacterSheetUI(int x, int y, int w, int h);
+    CharacterSheetUI(int x, int y, int w, int h, GameContext* gc);
 
     void Activate(Pawn* pc);
     void Deactivate();
@@ -274,6 +278,8 @@ class CharacterSheetUI : public UI {
     void HandleEvent(SDL_Event& e, GameContext& gc, float mx, float my);
 
     void StoreTexture() override;
+
+    GameContext* mGc {nullptr};
 
     Button* mInvTab {nullptr};
     Button* mSkillTab {nullptr};
@@ -322,6 +328,8 @@ class LogUI : public UI {
 
     void StoreTexture() override;
 
+    int mTotalH {0};
+    
     FramedTUI* mBody {nullptr};
 };
 
@@ -356,7 +364,6 @@ class UIManager {
 
     void LoadMapToolTip(Map* map, int tileId);
     void UpdateMapToolTip(Map* map);
-    void UpdateMapToolTip(Map* map, Entity* ent, int targetTileId);
 
     void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
     void RenderMapToolTip(Map* map);
@@ -383,4 +390,9 @@ class UIManager {
     //레이아웃 관련 변수
     //TODO: 이런거는 설정 파일로 빼라
     int mTopPanelH{60};
+};
+
+class UIHelper {
+    public:
+    void AddEntityData(TextUI* tui, Entity* ent);
 };

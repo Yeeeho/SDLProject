@@ -63,8 +63,6 @@ void MoveManager::MoveEntityTo(Map *map, Entity *ent, int currentTId, int target
 
     //구 타일의 정보 삭제후 신 타일에 정보 로드
     originTile->mIsEntOn = false;
-    originTile->DestroyInfos();
-    mObjm->mEntm->LoadDataInTile(targetTile, ent);
     //포커스 스프라이트 업데이트
     mUim->mFocusIcon->SetDimension(ent->mMapX, ent->mMapY, map->mTileLen, map->mTileLen);
     //툴팁도 업데이트

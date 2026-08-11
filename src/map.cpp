@@ -245,15 +245,6 @@ void MapTile::ChangeTexture(std::string path)
     }
 }
 
-void MapTile::DestroyInfos()
-{
-    for (TTFWord* word : mInfos) {
-        word->Destroy();
-    }
-
-    mInfos.clear();
-}
-
 int MapHelper::WhatTileOnPoint(float x, float y, Map *map)
 {
     float xDis = x - static_cast<float>(map->mX);
@@ -331,9 +322,6 @@ MapManager::MapManager()
     mOverMap->mMapTiles[cityIdx]->ChangeTexture("images/map/city.png");
 
     SDL_Color tc = {0xE0, 0xE0, 0xE0, 0xFF};
-    mOverMap->mMapTiles[cityIdx]->mInfos.push_back(new TTFWord("당신의 도시", tc, System::sFont));
-    mOverMap->mMapTiles[cityIdx]->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
-
 
     mSubMap = new Map(System::sWindowWidth*0.5 - 6*40, 100, 16, 16, 80); //서브맵 객체 생성
     mSubMap->GenerateMapTiles();

@@ -17,6 +17,8 @@
 #include "util.h"
 #include "map.h"
 #include "entity.h"
+#include "item/item.h"
+#include "item/item_manager.h"
 #include "skill/skill.h"
 
 void UI::HandleEvent(SDL_Event &e, GameContext &gc, float mouseX, float mouseY)
@@ -166,7 +168,7 @@ UIManager::UIManager(GameContext& gc)
 
     mCharacterSheet = new CharacterSheetUI(
         System::sWindowWidth * 0.5 - 600, System::sWindowHeight * 0.5 - 400,
-        1200, 800 
+        1200, 800, &gc 
     );
     mBCUI = new BottomCharacterUI(
         0, System::sWindowHeight - 120,
@@ -285,7 +287,9 @@ void UIManager::DestroyUIs()
 
 void UIManager::LoadMapToolTip(Map* map, int tileId)
 {
+    UIHelper uh;
     TextUI* tui = mToolTip->mTui;
+    MapTile* tile = map->mMapTiles[tileId];
 
     SDL_Color tc {0x00, 0xB0, 0x00, 0xFF};
     tui->AddWord(TTFWord("타일 id:", tc, System::sFont));
@@ -293,10 +297,32 @@ void UIManager::LoadMapToolTip(Map* map, int tileId)
     tui->AddWord(TTFWord(std::to_string(tileId), tc, System::sFont));
     tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
 
-    //타일 객체를 구함
-    MapTile* tile = map->mMapTiles[tileId];
-    for (TTFWord* word : tile->mInfos) {
-        tui->AddWord(*word);
+    for (Entity* ent : map->mNpcs) {
+        if (ent->mTileId == tileId) {
+            uh.AddEntityData(tui, ent);
+        }
+    }
+    for (Entity* p : map->mPawns) {
+        if (p->mTileId == tileId) {
+            uh.AddEntityData(tui, p);
+        }   
+    }
+
+    //아이템 스택이 맵에 존재하는 경우
+    if (map->mItemStackMap.find(tileId) != map->mItemStackMap.end()) {
+        ItemStack* stackObj = map->mItemStackMap[tileId];
+        //스택이 빈 경우 아무것도 하지 않음
+        if (stackObj->mStack.empty()) {}
+        //스택에 아이템이 하나인 경우 아이템 이름을 추가함
+        else if ((int) stackObj->mStack.size() == 1) {
+            tui->AddWord(TTFWord (stackObj->mStack[0]->mName, System::sWh, System::sFont));
+            tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
+        }
+        //스택에 아이템이 하나 이상인 경우 첫번째 아이템 이름을 렌더링하고 생략된 표현을 추가함
+        else {
+            tui->AddWord(TTFWord (stackObj->mStack[0]->mName + "...", System::sWh, System::sFont));
+            tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
+        }
     }
 }
 
@@ -317,15 +343,6 @@ void UIManager::UpdateMapToolTip(Map* map)
 
         LoadMapToolTip(map, id);
     }
-}
-
-void UIManager::UpdateMapToolTip(Map *map, Entity *ent, int targetTileId)
-{
-    MapTile* ttile = map->mMapTiles[targetTileId];
-    ttile->DestroyInfos();
-    if (ent->mIsOnMap) mGc->mObjm->mEntm->LoadDataInTile(ttile, ent);
-    mToolTip->ClearContent();
-    mToolTip->mIsRenderUpdate = true;
 }
 
 void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
@@ -362,8 +379,6 @@ void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, float
     MapTile* tile = mToolTipMap->mMapTiles[id];
     //타일 좌표를 툴팁의 참조 좌표에 할당해줌
     mToolTip->SetRefInfo(tile->mX, tile->mY, tile->mW, tile->mH);
-    //툴팁 이벤트 핸들링
-    mToolTip->HandleEvent(e, gsm, mouseX, mouseY);
 }
 
 ToolTip::ToolTip()
@@ -458,17 +473,6 @@ void ToolTip::CheckUpdate()
     }
 }
 
-void ToolTip::HandleEvent(SDL_Event &e, GameStateManager &gs, float mouseX, float mouseY)
-{
-    //마우스가 참조 객체 좌표 안에 있는지 확인
-    //마우스가 프레임 밖에 있는가?
-    if (mouseX < mRefX || mouseX > mRefX + mRefW    
-        || mouseY < mRefY || mouseY > mRefY + mRefH) {
-            return;
-    }
-    //마우스가 프레임 안에 있을때
-}
-
 void ToolTip::StoreTexture()
 {
     if (!mIsRenderUpdate) return;
@@ -504,6 +508,19 @@ void ToolTip::Render()
 TextUI::TextUI(float x, float y)
 {
     mX = x; mY = y;
+}
+
+int TextUI::GetHeight()
+{
+    int ret {0};
+    for (auto textPair : mTexts) {
+        if (textPair.second.mType == TextType::NewLine) {
+            ret += TTF_GetFontHeight(textPair.second.mFont);
+            ret += mLineSpacing;
+        }
+    }
+
+    return ret;
 }
 
 void TextUI::ClearTexts()
@@ -910,8 +927,10 @@ void TileHLUI::RenderBetweenTiles(Map* map)
     }
 }
 
-InventoryUI::InventoryUI(int x, int y, int w, int h, int tileLen)
+InventoryUI::InventoryUI(int x, int y, int w, int h, int tileLen, GameContext* gc)
 {
+    mGc = gc;
+
     mX = x; mY = y; mW = w; mH = h;
 
     int remain = w % tileLen;
@@ -937,7 +956,84 @@ void InventoryUI::Deactivate()
 
 void InventoryUI::RenderThings()
 {
+    ItemHelper ih; 
+
+    ItemManager* itm = mGc->mObjm->mItm;
+    Pawn* focusedP = static_cast<Pawn*> (mGc->mObjm->mEntm->mFocusedEnt);
+
     mGrid->RenderTiles();
+    Texture t;
+    t.LoadFromFile("images/ui/frame.png");
+    RenderEqSlots(t);
+
+    int x {0}; int y {0};
+    for (auto itemPair : focusedP->mInventory) {
+        Item* item = itemPair.second;
+
+        json* db = ih.GetItemDb(itm, item);
+        json* ssmap = ih.GetItemSsMap(itm, item);
+
+        json itemData = (*db)["items"][item->mCode];
+        std::string sname = itemData["sprite_name"].get<std::string>();
+
+        json sprites = (*ssmap)["sprites"];
+        //스프라이트 탐색 및 렌더링
+        for (json sp : sprites) {
+            if (sp["filename"].get<std::string>() == sname) {
+                Texture* ss = ih.GetItemSs(itm, item);
+                SDL_FRect fr = {sp["x"].get<float>(), sp["y"].get<float>(),
+                    sp["width"].get<float>(), sp["height"].get<float>() 
+                };
+                ss->Render((float) x + mGrid->mX, (float) y + mGrid->mY, &fr, (float) mGrid->mTileLen, (float) mGrid->mTileLen);
+            }
+        }
+        
+        x += mGrid->mTileLen;
+        if (x > mGrid->mW - mGrid->mTileLen) {
+            x = 0;
+            y += mGrid->mTileLen;
+        }
+    }
+}
+
+void InventoryUI::RenderEqSlots(Texture& t)
+{
+    int tl = mGrid->mTileLen;
+    int  totalH {0};
+    RenderEqSlot(t, mX + tl * 2, mY + tl + totalH, "머리");
+    RenderEqSlot(t, mX + tl * 4.6, mY + tl + totalH, "무기1");
+    
+    totalH += 32;
+
+    RenderEqSlot(t, mX + tl * 2, mY + tl * 2 + totalH, "몸통");
+    RenderEqSlot(t, mX + tl * 0.7, mY + tl * 2 + totalH, "손");
+    RenderEqSlot(t, mX + tl * 3.3, mY + tl * 2 + totalH, "손");
+    RenderEqSlot(t, mX + tl * 4.6, mY + tl * 2 + totalH, "무기2");
+    totalH += 32;
+
+    RenderEqSlot(t, mX + tl * 2, mY + tl * 3 + totalH, "다리");
+    totalH += 32;
+
+    RenderEqSlot(t, mX + tl * 0.7, mY + tl * 4 + totalH, "발");
+    RenderEqSlot(t, mX + tl * 3.3, mY + tl * 4 + totalH, "발");
+    totalH += 32;
+
+}
+
+void InventoryUI::RenderEqSlot(Texture &t, int x, int y, std::string info)
+{
+    int totalH {0};
+    int tl = mGrid->mTileLen;
+    TextUI tui = TextUI(0.f, 0.f);
+    tui.mPadding = 6;
+    TTFWord word = TTFWord(info, System::sTc, System::sFont);
+
+    t.Render((float) x , (float) y, nullptr, (float) tl, (float) tl); //머리
+    tui.AddWord(word);
+    int rem = tl - word.GetWordWidth(); if (rem < 0) rem = 0;
+    
+    tui.mX = (float) x + rem * 0.5 - tui.mPadding; tui.mY = (float) (y + tl);
+    tui.RenderWords();
 }
 
 CharacterSkillUI::CharacterSkillUI(int x, int y, int w, int h)
@@ -1039,14 +1135,16 @@ void CharacterSkillUI::RenderThings()
     mSkillDesc->Render();
 }
 
-CharacterSheetUI::CharacterSheetUI(int x, int y, int w, int h)
+CharacterSheetUI::CharacterSheetUI(int x, int y, int w, int h, GameContext* gc)
 {
+    mGc = gc;
+
     mX = x; mY = y; mW = w; mH = h;
 
     mInvTab = new Button(0, 0, 120, 60, "인벤토리", BtnType::Default);
     mSkillTab = new Button(120, 0, 120, 60, "스킬", BtnType::Default);
 
-    mInvUI = new InventoryUI(0, 60, w, h - 60, 64);
+    mInvUI = new InventoryUI(0, 60, w, h - 60, 64, gc);
     mCsUI = new CharacterSkillUI(0, 60, w, h - 60);
 
     TextureManager tm;
@@ -1251,7 +1349,7 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
             std::string stype = sd["type"].get<std::string>();
             if (stype == "movement") gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight.png");
             else if (stype == "attack") gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight_red.png");
-            else SDL_Log("quick skill ui: unknown skill type!");
+            else gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight.png");
 
             mGc->mSkm->SetSkillData(sd); //스킬 데이터 캐싱
             mGc->mSkm->mIsSkillReady = true; //스킬 사용 준비 완료
@@ -1362,8 +1460,30 @@ LogUI::LogUI(int x, int y, int w, int h)
 
 void LogUI::AddMessage(std::string message, SDL_Color c)
 {
-    mBody->AddWordAndProcess(TTFWord(message, c, System::sFont));
+    TTFWord word = TTFWord(message, c, System::sFont);
+    
+    //메세지 총 길이와 넓이를 넘어간 횟수를 구한다.
+    int ln = word.GetWordWidth();
+    int count = ln / (mBody->mW - mBody->mPadding * 2);
+
+    //텍스트 총 높이 연산후 캐싱
+    for (int i = 0; i < count; i++) {        
+        mTotalH += TTF_GetFontHeight(System::sFont);
+        mTotalH += mBody->mTui->mLineSpacing;
+    }
+
+    mTotalH += TTF_GetFontHeight(System::sFont);
+    mTotalH += mBody->mTui->mLineSpacing;
+
+    //로그창 높이를 초과한 경우 텍스트 비우기
+    if (mTotalH > mH - mBody->mPadding * 2 - TTF_GetFontHeight(System::sFont)) {
+        mBody->ClearText();
+        mTotalH = 0;
+    }
+
+    mBody->AddWordAndProcess(word);
     mBody->AddWord(TTFWord(System::sFont, TextType::NewLine));
+    
     mIsRenderUpdate = true;
 }
 
@@ -1379,4 +1499,35 @@ void LogUI::StoreTexture()
 
     SDL_SetRenderTarget(System::sRenderer, nullptr);
     mIsRenderUpdate = false;
+}
+
+void UIHelper::AddEntityData(TextUI *tui, Entity *ent)
+{
+    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
+    SDL_Color yellow = {0xB0, 0xB0, 0x40, 0xFF};
+    SDL_Color white = {0xF0, 0xF0, 0xF0, 0xFF};
+    SDL_Color red = {0xB0, 0x40, 0x40, 0xFF};
+    SDL_Color blue = {0x40, 0x40, 0xB0, 0xFF};
+    if (ent->mDemeanor == Demeanor::Hostile) tc = {0xB0, 0x00, 0x00, 0xFF};
+    if (ent->mDemeanor == Demeanor::Neutral) tc = yellow;
+
+    TTFWord name = TTFWord(ent->mName, tc, System::sFont);
+
+    StatHelper sh;
+
+    tui->AddWord(name);
+    tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
+    tui->AddWord(TTFWord("HP:", red, System::sFont));
+    tui->AddWord(TTFWord(System::sFont, TextType::Space));
+    tui->AddWord(TTFWord(std::to_string(ent->mCurHp), white, System::sFont));
+    std::string maxHp = "/" + std::to_string(sh.GetMaxHp(ent));
+    tui->AddWord(TTFWord(maxHp, white, System::sFont));
+    tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
+
+    tui->AddWord(TTFWord("AP:", blue, System::sFont));
+    tui->AddWord(TTFWord(System::sFont, TextType::Space));
+    tui->AddWord(TTFWord(std::to_string(ent->mCurAp), white, System::sFont));
+    std::string maxAp = "/" + std::to_string(sh.GetMaxAp(ent));
+    tui->AddWord(TTFWord(maxAp, white, System::sFont));
+    tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
 }

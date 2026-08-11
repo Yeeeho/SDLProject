@@ -12,6 +12,7 @@
 #include "camera.h"
 #include "text.h"
 #include "texture.h"
+#include "item/item_manager.h"
 #include "item/item.h"
 #include "skill/skill.h"
 #include "skill/skill_enum.h"
@@ -129,7 +130,6 @@ void TeamManager::SpawnTeamOnMap(Map *map, Team *team, int id)
     team->mId = id;
 
     MapTile* tile = map->mMapTiles[id];
-    LoadDataInTile(tile, team);
 }
 
 void TeamManager::SpawnTeamOnMap(Map *map, Team *team, int x, int y)
@@ -146,16 +146,6 @@ void TeamManager::SpawnTeamOnMap(Map *map, Team *team, int x, int y)
     //타일에 데이터 로드
     //타일 객체 구함
     MapTile* tile = map->mMapTiles[id];
-    LoadDataInTile(tile, team);
-}
-
-void TeamManager::LoadDataInTile(MapTile* tile, Team *team)
-{
-    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
-    TTFWord* teamName = new TTFWord(team->mName, tc, System::sFont);
-
-    tile->mInfos.push_back(teamName);
-    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
 }
 
 void TeamManager::PutEntInTeam(Team* team, Entity* ent)
@@ -231,7 +221,12 @@ void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, in
     ent->mTexture->LoadFromFile(entData["img_path"].get<std::string>());
 
     //데이터 읽고 가져오기
-    ent->mName = entData["name"].get<std::string>(); //문자열은 24바이트를 처먹기 때문에 고쳐야 할지도
+    ent->mName = entData["name"].get<std::string>();
+    json entSkills = entData["skills"];
+    for (json skill : entSkills) {
+        std::string skillcode = skill.get<std::string>();
+        ent->mSkills.push_back(new Skill(skillcode, skillcode));
+    }
     
     ent->mStr = entData["str"].get<int>();
     ent->mEnd = entData["end"].get<int>();
@@ -281,6 +276,7 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     //TODO:스킬 배우는 동작도 엔티티 생성자에서 언젠가 분리시켜야 한다.
     pawn->mSkills.push_back(new Skill("move", "이동"));
     pawn->mSkills.push_back(new Skill("punch", "주먹질"));
+    pawn->mSkills.push_back(new Skill("pickup", "줍기"));
 
     std::string message = "pawn id: " + std::to_string(id) + " name: " + name + " is allocated";
     SDL_Log(message.c_str());
@@ -311,40 +307,6 @@ void EntityManager::KillEntityOnMap(GameContext& gc, Map* map, Entity* ent)
     }
 }
 
-void EntityManager::LoadDataInTile(MapTile *tile, Entity *ent)
-{
-    tile->mIsEntOn = true;
-
-    SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
-    SDL_Color yellow = {0xB0, 0xB0, 0x40, 0xFF};
-    SDL_Color white = {0xF0, 0xF0, 0xF0, 0xFF};
-    SDL_Color red = {0xB0, 0x40, 0x40, 0xFF};
-    SDL_Color blue = {0x40, 0x40, 0xB0, 0xFF};
-    if (ent->mDemeanor == Demeanor::Hostile) tc = {0xB0, 0x00, 0x00, 0xFF};
-    if (ent->mDemeanor == Demeanor::Neutral) tc = yellow;
-
-    TTFWord* name = new TTFWord(ent->mName, tc, System::sFont);
-
-    StatHelper sh;
-
-    tile->mInfos.push_back(name);
-    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
-
-    tile->mInfos.push_back(new TTFWord("HP:", red, System::sFont));
-    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::Space));
-    tile->mInfos.push_back(new TTFWord(std::to_string(ent->mCurHp), white, System::sFont));
-    std::string maxHp = "/" + std::to_string(sh.GetMaxHp(ent));
-    tile->mInfos.push_back(new TTFWord(maxHp, white, System::sFont));
-    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
-
-    tile->mInfos.push_back(new TTFWord("AP:", blue, System::sFont));
-    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::Space));
-    tile->mInfos.push_back(new TTFWord(std::to_string(ent->mCurAp), white, System::sFont));
-    std::string maxAp = "/" + std::to_string(sh.GetMaxAp(ent));
-    tile->mInfos.push_back(new TTFWord(maxAp, white, System::sFont));
-    tile->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
-}
-
 void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent)
 {
 
@@ -353,6 +315,8 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent)
 void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent, int tileId)
 {
     ent->mIsOnMap = true;
+    MapTile* tile = map->mMapTiles[tileId]; 
+    tile->mIsEntOn = true;
 
     ent->mTileId = tileId;
 
@@ -365,9 +329,6 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent,
     std::string message = "entity spawned at: " + std::to_string(ent->mMapX) + ", " + std::to_string(ent->mMapY);
     SDL_Log(message.c_str());
 
-    //타일에 데이터를 로드해준다.
-    MapTile* tile = map->mMapTiles[tileId]; 
-    LoadDataInTile(tile, ent);
     //맵 엔티티 컨테이너에 엔티티를 추가한다.
     if (ent->mIsPawn) map->mPawns.push_back(ent);
     else map->mNpcs.push_back(ent);
@@ -380,7 +341,6 @@ void EntityManager::DespawnEntity(ObjectManager &objm, Map *map, Entity *ent)
     int tid = ent->mTileId;
     MapTile* tile = map->mMapTiles[tid];
     tile->mIsEntOn = false;
-    tile->DestroyInfos();
     if (ent->mIsPawn) {
         int i = 0;
         for (Entity* p : map->mPawns) {
@@ -401,6 +361,22 @@ void EntityManager::DespawnEntity(ObjectManager &objm, Map *map, Entity *ent)
             i ++;
         }
     }
+}
+
+bool EntityManager::PickUpItem(GameContext& gc, int tileId, int itemId, Pawn *p)
+{
+    bool itemPicked = false;
+
+    Item* target = gc.mObjm->mItm->PopSpecificItem(gc.mMapm->mCurrentMap, tileId, itemId);
+
+    if (target == nullptr) {
+        SDL_Log("pickup item: item was nullptr!");
+        return itemPicked;
+    }
+
+    p->mInventory[itemId] = target;
+    itemPicked = true;
+    return itemPicked;
 }
 
 void EntityManager::Update(ObjectManager &objm)
@@ -439,13 +415,13 @@ void EntityManager::HandleEntityEvent(SDL_Event &e, GameContext &gc, Map *map, E
         Skill* sk = gc.mSkm->mSkill;
         int tn = skh.GetSkillTargetNum(sd, sk);
 
-        if (gc.mSkm->mTargets.size() >= tn) {
+        if (gc.mSkm->mTargets.size() > tn) {
             //최대 타겟 개수를 넘어가면 리턴함.
             return; 
         }
 
-        gc.mSkm->mTargets.push_back(ent);
-        SDL_Log("스킬의 타겟이 설정됨");
+        gc.mSkm->SetTarget(ent);
+        SDL_Log("skill target entity set");
         return;
     } 
     

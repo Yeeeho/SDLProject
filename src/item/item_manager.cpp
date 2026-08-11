@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include "math.h"
 #include "camera.h"
 #include "game_context.h"
 #include "game_json.h"
@@ -12,6 +13,7 @@
 #include "item/item_manager.h"
 #include "item/item.h"
 #include "ui.h"
+#include "skill/skill.h"
 
 ItemManager::ItemManager(GameContext* gc)
 {
@@ -76,10 +78,7 @@ void ItemManager::SpawnItemOnMap(Map *map, int tileId, Item *item)
     SDL_Log(message.c_str());    
 
     //타일에 데이터를 로드
-    map->mMapTiles[tileId]->mInfos.push_back(new TTFWord(item->mName, System::sWh, System::sFont));
-    map->mMapTiles[tileId]->mInfos.push_back(new TTFWord(System::sFont, TextType::NewLine));
     mGc->mUim->mToolTip->mIsRenderUpdate = true;
-
     mIsRenderUpdate = true;
 }
 
@@ -101,6 +100,43 @@ void ItemManager::DespawnItemOnMap(Map * map, int tileId, int itemId)
         }
         i++;
     }    
+}
+
+void ItemManager::HandleEvent(SDL_Event &e, GameContext *gc, float mx, float my)
+{
+    Map* map = gc->mMapm->mCurrentMap;
+
+    //마우스 오프셋
+    mx += map->mCam->mSight.x;
+    my += map->mCam->mSight.y;
+
+    MapHelper mh;
+    int tileId = mh.WhatTileOnPoint(mx, my, map);
+
+    //타일에 스택이 생성되지 않았다면 리턴함
+    if (map->mItemStackMap.find(tileId) == map->mItemStackMap.end()) return;
+    //타일에 스택이 있을 경우
+
+    for (Item* item : map->mItemStackMap[tileId]->mStack) {
+        HandleItemEvent(e, gc, item, mx, my);
+    }
+}
+
+void ItemManager::HandleItemEvent(SDL_Event& e, GameContext* gc, Item* item, float mx, float my) 
+{
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
+    
+    MapTile* tile = gc->mMapm->mCurrentMap->mMapTiles[item->mTileId];
+
+    Math mth;
+    bool isIn = mth.IsPointInSquare(mx, my, (float) tile->mX, (float) tile->mY, (float) tile->mW, (float) tile->mH);
+    if (!isIn) return;
+    //아이템이 있는 타일에 마우스가 들어왔을 경우
+
+    //스킬이 준비된 경우 아이템을 타겟으로 설정함.
+    if (gc->mSkm->mIsSkillReady) {
+        gc->mSkm->SetTargetItem(item);
+    }
 }
 
 int ItemManager::GetValidId()
@@ -132,11 +168,16 @@ void ItemManager::StackItemOnMap(Map *map, int tileId, Item *item)
     }
 }
 
+//리턴할 아이템을 찾지 못하면 널포인터를 반환한다.
 Item *ItemManager::PopSpecificItem(Map *map, int tileId, int itemId)
 {
+    if (map->mItemStackMap.find(tileId) == map->mItemStackMap.end()) {
+        SDL_Log("pop specific item from stack: cannot find item stack object, param: tileId");
+        return nullptr;
+    }
+
     ItemHelper ih;
     ItemStack* stackObj = map->mItemStackMap[tileId];
-
     if (stackObj->mStack.empty()) {
         ih.DestroyStackObj(map, tileId);
         SDL_Log("pop specific item from stack: stack already empty");
@@ -240,12 +281,12 @@ void ItemManager::RenderItem(Item* item)
     float itemY = (float) (xy["y"] * currentMap->mTileLen + currentMap->mY);
 
     json* db = ih.GetItemDb(this, item);
+    json* ssmap = ih.GetItemSsMap(this, item);
 
     json itemData = (*db)["items"][item->mCode];
     std::string sname = itemData["sprite_name"].get<std::string>();
 
-    json* map = ih.GetItemSsMap(this, item);
-    json sprites = (*map)["sprites"];
+    json sprites = (*ssmap)["sprites"];
     for (json sp : sprites) {
         if (sp["filename"].get<std::string>() == sname) {
             Texture* ss = ih.GetItemSs(this, item);
@@ -267,6 +308,7 @@ void ItemHelper::DestroyStackObj(Map* map, int tileId) {
     ItemStack* stackObj = map->mItemStackMap[tileId];        
     map->mItemStackMap.erase(tileId);
     delete stackObj;
+    SDL_Log("deleted stack object");
 }
 
 EqType ItemHelper::GetEqType(json eq)

@@ -206,6 +206,7 @@ void SubMapState::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float
     gc.mUim->mDialogueUI->HandleEvent(e, gc, mouseX, mouseY);
 
     gc.mObjm->mEntm->HandleEvent(e, gc, gc.mMapm->mSubMap, mouseX, mouseY);
+    gc.mObjm->mItm->HandleEvent(e, &gc, mouseX, mouseY);
 
     gc.mMapm->mSubMap->mCam->HandleEvent(e);
     gc.mMapm->mSubMap->HandleEvent(e, gc, mouseX, mouseY);

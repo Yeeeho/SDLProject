@@ -17,6 +17,14 @@
             }
         },
 
+        "pickup" : {
+            "name" : "줍기",
+            "type" : "pickup",
+            "img_path" : "images/icons/skill/pickup.png",
+            "target" : "single",
+            "range" : 1
+        },
+
         "punch" : {
             "name" : "주먹질",
             "type" : "attack",

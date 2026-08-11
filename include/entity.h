@@ -75,7 +75,6 @@ class TeamManager {
     //생성
     void SpawnTeamOnMap(Map* map, Team* team, int id);
     void SpawnTeamOnMap(Map* map, Team* team, int x, int y);
-    void LoadDataInTile(MapTile* tile, Team* team); //타일의 참조 데이터 컨테이너에 팀 데이터를 삽입한다.
 
     //팀에 엔티티 넣고 빼는 함수
     void PutEntInTeam(Team* team, Entity* ent); //팀에 엔티티 삽입
@@ -116,11 +115,13 @@ class EntityManager {
     void DeallocEntityOnTable(ObjectManager& objm, int id);
     void DeallocPawnOnTable(ObjectManager& objm, int id);
 
-    //맵
-    void LoadDataInTile(MapTile* tile, Entity* ent); //타일에 데이터 로드
+    //맵 상호작용
     void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent);
     void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent, int tileId);
     void DespawnEntity(ObjectManager& objm, Map* map, Entity* ent);
+    //아이템 상호작용
+    bool PickUpItem(GameContext& gc, int tileId, int itemId, Pawn* p);
+    void DropItem();
 
     //업데이트
     void Update(ObjectManager& objm);

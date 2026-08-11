@@ -32,6 +32,11 @@ class ItemManager {
     void SpawnItemOnMap(Map* map, int tileId, Item* item);
     void DespawnItemOnMap(Map* map, int tileId, int itemId);
 
+    //이벤트 핸들링
+    void HandleEvent(SDL_Event& e, GameContext* gc, float mx, float my);
+    void HandleItemEvent(SDL_Event& e, GameContext* gc, Item* item, float mx, float my);
+
+    //아이템 렌더링
     void RenderItem(Item* item);
     void RenderItems();
     void StoreTexture();

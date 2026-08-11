@@ -1,10 +1,12 @@
 #include "pch.h"
 
+#include "system.h"
 #include "game_context.h"
 #include "game_json.h"
 #include "game_object.h"
 #include "item/item_enum.h"
 #include "item/item.h"
+#include "item/item_manager.h"
 #include "texture.h"
 #include "combat.h"
 #include "ui.h"
@@ -33,7 +35,8 @@ void Skill::Activate(SkillManager* skm)
     LogUI* log = gc->mUim->mLogUI;
     Entity* actor = skm->mActor;
     Map* map = skm->mMap;
-    std::vector<Entity*> targets = skm->mTargets;
+    std::vector<Item*>& targetItems = skm->mTargetItems;
+    std::vector<Entity*>& targets = skm->mTargets;
     std::vector<int> tids = skm->mTileIds;
     json skillData = skm->mSkillData;
 
@@ -90,6 +93,23 @@ void Skill::Activate(SkillManager* skm)
         mvm.MoveEntityTo(map, actor, actor->mTileId, targetTileId);
     }
 
+    else if (skillType == "pickup") {
+
+        if (targetItems.empty()) {
+            SDL_Log("skill: target items empty");
+            return;
+        }
+
+        Item* item = targetItems.back();
+
+        Pawn* pactor = static_cast<Pawn*> (actor);
+        bool itemPicked = gc->mObjm->mEntm->PickUpItem(*gc, targetTileId, item->mId, pactor);
+        if (!itemPicked) return; //아이템을 줍지 못했다면 리턴한다.
+        log->AddMessage(pactor->mName + "이(가) " + item->mName + "를 주웠습니다.", System::sWh);
+        gc->mObjm->mItm->mIsRenderUpdate = true;
+        gc->mUim->mToolTip->mIsRenderUpdate = true;
+    }
+
     //공격 스킬일 경우
     else if (skillType == "attack") {
 
@@ -128,10 +148,8 @@ void Skill::Activate(SkillManager* skm)
             if (ent->mId == actor->mId && ent->mIsPawn == actor->mIsPawn) {
                 gc->mUim->mBCUI->UpdateUI(ent);
             }
-            //래핑?
-            gc->mUim->UpdateMapToolTip(map, ent, targetTileId);
         }
-
+        gc->mUim->mToolTip->mIsRenderUpdate = true;
     }
     else {
         SDL_Log("skill: cannot find skill type");
@@ -166,14 +184,32 @@ void SkillManager::SetActor(Entity *actor)
     mActor = actor;
 }
 
+void SkillManager::SetTargetItems(std::vector<Item*> targetItems) {
+    mTargetItems = targetItems;
+}
+
+void SkillManager::SetTargetItem(Item* item) {
+    mTargetItems.clear();
+    mTargetItems.push_back(item);
+    SDL_Log("set target item: item target set");
+}
+
+
 void SkillManager::SetTargets(std::vector<Entity *> targets)
 {
     mTargets.clear();
     mTargets = targets;
 }
 
+void SkillManager::SetTarget(Entity* target)
+{
+    mTargets.clear();
+    mTargets.push_back(target);
+}
+
 void SkillManager::SetTileIds(std::vector<int> tileIds)
 {
+    std::string message = "skill manager: tile id set as: " + std::to_string(tileIds.back());
     mTileIds = tileIds;
 }
 

@@ -72,6 +72,12 @@ void TurnManager::TakeTurn(Entity *ent)
     //턴당 회복
     CombatHelper ch;
     ch.RegenEntity(ent, *mGc);
+
+    if (!ent->mIsPawn) {
+        //TODO: npc ai대로 행동 구현
+        //행동 후 턴을 넘김.
+        UpdateTurn();
+    }
 }
 
 void TurnManager::ClearTargets()

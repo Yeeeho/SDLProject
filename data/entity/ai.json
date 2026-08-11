@@ -1,0 +1,11 @@
+{
+    "type" : "ai",
+    "items" : {
+        "beast" : {
+            "tends" : [
+                {"attack" : 0.5},
+                {"defense" : 0.5}
+            ]
+        }
+    }
+}

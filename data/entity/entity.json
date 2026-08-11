@@ -6,6 +6,7 @@
             "race" : "error_race",
             "kin" : "error_kin",
             "img_path" : "images/error.png",
+            "skills" : [],
 
             "str" : 1,
             "end" : 1,
@@ -22,7 +23,8 @@
             "race" : "null_race",
             "kin" : "null_kin",
             "img_path" : "images/null.png",
-            
+            "skills" : [],
+
             "str" : 1,
             "end" : 1,
             "per" : 1,            
@@ -38,6 +40,9 @@
             "race" : "beast",
             "kin" : "rodent",
             "img_path" : "images/entity/npc/rat.png",
+            "skills" : [
+                "bite"
+            ],
 
             "str" : 1,
             "end" : 1,

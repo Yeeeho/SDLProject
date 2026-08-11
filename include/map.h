@@ -87,9 +87,6 @@ class MapTile {
     void Destroy();
 
     void ChangeTexture(std::string path);
-    void DestroyInfos(); //참조 데이터 컨테이너를 비우는 함수. 
-
-    std::vector<TTFWord*> mInfos;
 
     int mId = 0; //식별용 타일 아이디
 
