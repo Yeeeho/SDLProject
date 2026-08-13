@@ -240,11 +240,11 @@ void UIManager::RenderUIs()
     }
 }
 
-void UIManager::RenderMapToolTip(Map *map)
+void UIManager::RenderMapToolTip(Grid *grid)
 { 
     //카메라 오프셋
-    mToolTip->mX = mToolTip->mRefX + mToolTip->mRefW * 0.5 - map->mCam->mSight.x;
-    mToolTip->mY = mToolTip->mRefY + mToolTip->mRefH * 0.5 - map->mCam->mSight.y;
+    mToolTip->mX = mToolTip->mRefX + mToolTip->mRefW * 0.5 - grid->mCam->mSight.x;
+    mToolTip->mY = mToolTip->mRefY + mToolTip->mRefH * 0.5 - grid->mCam->mSight.y;
     mToolTip->Render();
 }
 
@@ -254,12 +254,12 @@ void UIManager::RenderMapUIs(Map* map)
 
     mLogUI->Render();
 
-    RenderMapToolTip(map);
     if (!mDialogueUI->mIsRender) mTurnOverBtn->Render();
-
+    
     mCharacterSheet->Render();
     mQSUI->Render();
-
+    RenderMapToolTip(mToolTipGrid);
+    
     mBCUI->mIsRender = true; //DEBUG
     mBCUI->Render();
 }
@@ -285,7 +285,31 @@ void UIManager::DestroyUIs()
     mPanels.clear();
 }
 
-void UIManager::LoadMapToolTip(Map* map, int tileId)
+void UIManager::LoadInvToolTip(Grid *grid, int tileId)
+{
+    UIHelper uh;
+    TextUI* tui = mToolTip->mTui;
+    Entity* focused = mGc->mObjm->mEntm->mFocusedEnt;
+
+    SDL_Color tc {0x00, 0xB0, 0x00, 0xFF};
+    tui->AddWord(TTFWord("타일 id:", tc, System::sFont));
+    tui->AddWord(TTFWord(System::sFont, TextType::Space));
+    tui->AddWord(TTFWord(std::to_string(tileId), tc, System::sFont));
+    tui->AddWord(TTFWord(System::sFont, TextType::NewLine));    
+
+    Pawn* focusedP = static_cast<Pawn*>(focused);
+    for (auto itemPair : focusedP->mInventory) {
+        Item* item = itemPair.second;
+        if (item->mTileId == tileId) {
+            tui->AddWord(TTFWord(item->mName, System::sWh, System::sFont));
+            tui->AddWord(TTFWord(System::sFont, TextType::NewLine));    
+            tui->AddWord(TTFWord("가치: " + std::to_string(item->mValue), System::sWh, System::sFont));
+            tui->AddWord(TTFWord(System::sFont, TextType::NewLine));        
+        }
+    }
+}
+
+void UIManager::LoadMapToolTip(Map *map, int tileId)
 {
     UIHelper uh;
     TextUI* tui = mToolTip->mTui;
@@ -326,7 +350,7 @@ void UIManager::LoadMapToolTip(Map* map, int tileId)
     }
 }
 
-void UIManager::UpdateMapToolTip(Map* map)
+void UIManager::UpdateGridToolTip(Grid* grid)
 {
     mToolTip->CheckUpdate();
 
@@ -339,23 +363,33 @@ void UIManager::UpdateMapToolTip(Map* map)
         tui->mTotalWidth = 0; tui->mTotalHeight = 0;
 
         MapHelper mh;
-        int id = mh.WhatTileOnPoint(mToolTip->mRefX, mToolTip->mRefY, map);
+        int id = mh.WhatTileOnPoint(mToolTip->mRefX, mToolTip->mRefY, grid);
 
-        LoadMapToolTip(map, id);
+        if (grid->mGridType == GridType::Map) {
+            Map* map = static_cast<Map*>(grid);
+            LoadMapToolTip(map, id);
+        }
+
+        else if (grid->mGridType == GridType::Inventory) {
+            LoadInvToolTip(grid, id);
+        }
     }
 }
 
 void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, float mouseX, float mouseY)
 {
+    if (!mCanHandleToolTip) return;
+
     //카메라 때문에 생긴 오차 보정
-    mouseX += mToolTipMap->mCam->mSight.x;
-    mouseY += mToolTipMap->mCam->mSight.y;
+    mouseX += mToolTipGrid->mCam->mSight.x;
+    mouseY += mToolTipGrid->mCam->mSight.y;
 
     //마우스가 맵 안에 있는지 확인
     Math phs;
     bool mouseIn = phs.IsPointInSquare(mouseX, mouseY, 
-        static_cast<float>(mToolTipMap->mX), static_cast<float>(mToolTipMap->mY),
-        static_cast<float>(mToolTipMap->mW), static_cast<float>(mToolTipMap->mH)
+        static_cast<float>(mToolTipGrid->mOffsetX + mToolTipGrid->mX),
+        static_cast<float>(mToolTipGrid->mOffsetY + mToolTipGrid->mY),
+        static_cast<float>(mToolTipGrid->mW), static_cast<float>(mToolTipGrid->mH)
     );
     //마우스가 맵 안에 있으면 렌더링함.
     if (mouseIn) {
@@ -374,11 +408,16 @@ void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, float
 
     //mouseover 중인 타일의 id를 구함
     MapHelper mh;
-    int id = mh.WhatTileOnPoint(mouseX, mouseY, mToolTipMap);
+    int id = mh.WhatTileOnPoint(mouseX, mouseY, mToolTipGrid);
 
-    MapTile* tile = mToolTipMap->mMapTiles[id];
+    int tl = mToolTipGrid->mTileLen;
+    std::unordered_map<std::string, int> xy = mh.PosXYByTileId(id, mToolTipGrid);
     //타일 좌표를 툴팁의 참조 좌표에 할당해줌
-    mToolTip->SetRefInfo(tile->mX, tile->mY, tile->mW, tile->mH);
+    mToolTip->SetRefInfo(
+        mToolTipGrid->mOffsetX + mToolTipGrid->mX + xy["x"]*tl,
+        mToolTipGrid->mOffsetY + mToolTipGrid->mY + xy["y"]*tl,
+        tl, tl
+    );
 }
 
 ToolTip::ToolTip()
@@ -464,13 +503,22 @@ void ToolTip::CheckUpdate()
     //새로운 좌표로 이동했음
     else {
         mIsRenderUpdate = true;
-        SDL_Log("update tooltip");
         mX = mRefX + mRefW * 0.5; //가운데쯤에 생성
         mY = mRefY + mRefH * 0.5;
         
         mPrevX = mRefX; mPrevY = mRefY; //좌표 정보 다시 캐싱
         mPrevW = mRefW; mPrevH = mRefH; 
     }
+}
+
+void ToolTip::RenderThings(float x, float y)
+{
+    mUIFrame->SetX(x); mUIFrame->SetY(y); //위치 설정
+    SetToolTipFrame(); //동적 크기 설정
+    mTui->mX = x; mTui->mY = y;
+
+    mUIFrame->Render(0x00, 0xB0, 0x00, 0xFF, 0x08, 0x08, 0x08, 0xD0);
+    mTui->RenderWords();
 }
 
 void ToolTip::StoreTexture()
@@ -480,12 +528,7 @@ void ToolTip::StoreTexture()
     rm.SetRenderTarget(System::sRenderer, mTempTex);
 
     //실제 텍스처 렌더링 동작
-    mUIFrame->SetX(0.f); mUIFrame->SetY(0.f); //위치 설정
-    SetToolTipFrame(); //동적 크기 설정
-    mTui->mX = 0.f; mTui->mY = 0.f;
-
-    mUIFrame->Render(0x00, 0xB0, 0x00, 0xFF, 0x08, 0x08, 0x08, 0xD0);
-    mTui->RenderWords();
+    RenderThings(0.f, 0.f);
 
     //타겟 해제 지점
     SDL_SetRenderTarget(System::sRenderer, nullptr);
@@ -927,44 +970,60 @@ void TileHLUI::RenderBetweenTiles(Map* map)
     }
 }
 
-InventoryUI::InventoryUI(int x, int y, int w, int h, int tileLen, GameContext* gc)
+InventoryUI::InventoryUI(int x, int y, int offsetX, int offsetY, int w, int h, int tileLen, GameContext* gc)
 {
     mGc = gc;
+    mToolTip = new ToolTip();
 
     mX = x; mY = y; mW = w; mH = h;
+    mOffsetX = offsetX; mOffsetY = offsetY;
 
     int remain = w % tileLen;
     
-    mGrid = new Grid(x + remain * 0.5 + 6 * tileLen, y, 12, 10, tileLen);
+    mGrid = new Grid(x, y, remain * 0.5 + 6 * tileLen + offsetX, offsetY, 12, 10, tileLen, GridType::Inventory);
 
     TextureManager tm;
     mTempTex = tm.CreateTempTexture(System::sRenderer, w, h);
 
     int tl = tileLen;
     SlotInfo si;
-    si = {"머리", mX + tl * 2, mY + tl};
-
+    si = {EqType::Head, 0, "머리", mOffsetX + tl * 2, mOffsetY + tl};
     mSlotInfos.insert({EqType::Head, si});
-    si.mInfo = "등"; si.x = mX + tl * 0.7;
+
+    si.mEqType = EqType::Back, si.mInfo = "등"; 
+    si.x = mOffsetX + tl * 0.7; si.mId++;
     mSlotInfos.insert({EqType::Back, si});
-    si.mInfo = "무기1", si.x = mX + tl * 4.6;
+
+    si.mEqType = EqType::Weapon, si.mInfo = "무기1", 
+    si.x = mOffsetX + tl * 4.6; si.mId++;
     mSlotInfos.insert({EqType::Weapon, si});
 
-    si.mInfo = "몸통", si.x = mX + tl * 2; si.y = mY + tl * 2 + 32;
+    si.mEqType = EqType::Torso, si.mInfo = "몸통", 
+    si.x = mOffsetX + tl * 2; si.y = mOffsetY + tl * 2 + 32; si.mId++;
     mSlotInfos.insert({EqType::Torso, si});
-    si.mInfo = "손1", si.x = mX + tl * 0.7;
+
+    si.mEqType = EqType::Hand, si.mInfo = "손1", 
+    si.x = mOffsetX + tl * 0.7; si.mId++;
     mSlotInfos.insert({EqType::Hand, si});
-    si.mInfo = "손2", si.x = mX + tl * 3.3;
+
+    si.mEqType = EqType::Hand, si.mInfo = "손2", 
+    si.x = mOffsetX + tl * 3.3; si.mId++;
     mSlotInfos.insert({EqType::Hand, si});
-    si.mInfo = "무기2", si.x = mX + tl * 4.6;
+
+    si.mEqType = EqType::Weapon, si.mInfo = "무기2", 
+    si.x = mOffsetX + tl * 4.6; si.mId++;
     mSlotInfos.insert({EqType::Weapon, si});
 
-    si.mInfo = "다리", si.x = mX + tl * 2; si.y = mY + tl * 3 + 64;
+    si.mEqType = EqType::Leg, si.mInfo = "다리",
+    si.x = mOffsetX + tl * 2; si.y = mOffsetY + tl * 3 + 64; si.mId++;
     mSlotInfos.insert({EqType::Leg, si});
 
-    si.mInfo = "발1", si.x = mX + tl * 0.7; si.y = mY + tl * 4 + 96;
+    si.mEqType = EqType::Foot, si.mInfo = "발1",
+    si.x = mOffsetX + tl * 0.7; si.y = mOffsetY + tl * 4 + 96; si.mId++;
     mSlotInfos.insert({EqType::Foot, si});
-    si.mInfo = "발2", si.x = mX + tl * 3.3;
+
+    si.mEqType = EqType::Foot, si.mInfo = "발2", 
+    si.x = mOffsetX + tl * 3.3; si.mId++;
     mSlotInfos.insert({EqType::Foot, si});
 }
 
@@ -973,12 +1032,68 @@ void InventoryUI::Activate(Pawn *p)
     mCanHandleEvent = true;
     mIsRender = true;
     mIsRenderUpdate = true;
+
+    mGc->mUim->mCanHandleToolTip = true;
+    mGc->mUim->mToolTipGrid = mGrid;
 }
 
 void InventoryUI::Deactivate()
 {
     mCanHandleEvent = false;
     mIsRender = false;
+
+    mGc->mUim->mToolTipGrid = mGc->mMapm->mCurrentMap;
+}
+
+void InventoryUI::LoadEqToolTip(SlotInfo& si)
+{
+    Pawn* p = static_cast<Pawn*> (mGc->mObjm->mEntm->mFocusedEnt);
+    if (p->mEqs.find(si.mEqType) == p->mEqs.end()) return;
+    Equipment* eq = p->mEqs[si.mEqType];
+    
+    ToolTip* tt = mToolTip;
+    if (mPrevEqIdx != si.mId) {
+        mPrevEqIdx = si.mId;
+    
+        tt->ClearContent();
+        tt->mTui->AddWord(TTFWord("id: ", System::sTc, System::sFont));
+        tt->mTui->AddWord(TTFWord(System::sFont, TextType::Space));
+        tt->mTui->AddWord(TTFWord(std::to_string(si.mId), System::sWh, System::sFont));
+        tt->mTui->AddWord(TTFWord(System::sFont, TextType::NewLine));
+    }
+
+    tt->mIsRender = true;
+    tt->SetRefInfo(si.x, si.y, mGrid->mTileLen, mGrid->mTileLen);
+    mGc->mUim->mCharacterSheet->mIsRenderUpdate = true;
+    tt->mTui->mTotalHeight = 0; tt->mTui->mTotalWidth = 0;
+}
+
+void InventoryUI::HandleEvent(SDL_Event &e, float mx, float my)
+{
+    if (!mCanHandleEvent) return;
+    mMouseIn = false;
+
+    for (auto siPair : mSlotInfos) {
+        HandleEqSlotEvent(e, siPair.second, mx, my);
+    }
+
+    if (!mMouseIn) {
+        mToolTip->mIsRender = false;
+        mGc->mUim->mCharacterSheet->mIsRenderUpdate = true;
+    }
+}
+
+void InventoryUI::HandleEqSlotEvent(SDL_Event &e, SlotInfo si, float mx, float my)
+{
+    int tl = mGrid->mTileLen;
+
+    Math mth;
+    bool isIn = mth.IsPointInSquare(mx, my, (float) si.x, (float) si.y, (float) tl, (float) tl);
+    if (!isIn) return;
+    mMouseIn = true;
+
+    Pawn* p = static_cast<Pawn*>(mGc->mObjm->mEntm->mFocusedEnt);
+    LoadEqToolTip(si);
 }
 
 void InventoryUI::RenderThings()
@@ -1011,7 +1126,7 @@ void InventoryUI::RenderThings()
                 SDL_FRect fr = {sp["x"].get<float>(), sp["y"].get<float>(),
                     sp["width"].get<float>(), sp["height"].get<float>() 
                 };
-                ss->Render((float) x + mGrid->mX, (float) y + mGrid->mY, &fr, (float) mGrid->mTileLen, (float) mGrid->mTileLen);
+                ss->Render((float) x + mGrid->mOffsetX, (float) y + mGrid->mOffsetY, &fr, (float) mGrid->mTileLen, (float) mGrid->mTileLen);
             }
         }
         
@@ -1021,6 +1136,12 @@ void InventoryUI::RenderThings()
             y += mGrid->mTileLen;
         }
     }
+
+    if (mToolTip->mIsRender)
+    mToolTip->RenderThings(
+        mToolTip->mRefX + mToolTip->mRefW * 0.5, 
+        mToolTip->mRefY + mToolTip->mRefH * 0.5
+    );
 }
 
 void InventoryUI::RenderEqSlots(Texture& t)
@@ -1157,7 +1278,7 @@ CharacterSheetUI::CharacterSheetUI(int x, int y, int w, int h, GameContext* gc)
     mInvTab = new Button(0, 0, 120, 60, "인벤토리", BtnType::Default);
     mSkillTab = new Button(120, 0, 120, 60, "스킬", BtnType::Default);
 
-    mInvUI = new InventoryUI(0, 60, w, h - 60, 64, gc);
+    mInvUI = new InventoryUI(x, y, 0, 60, w, h - 60, 64, gc);
     mCsUI = new CharacterSkillUI(0, 60, w, h - 60);
 
     TextureManager tm;
@@ -1169,6 +1290,7 @@ void CharacterSheetUI::Activate(Pawn *pc)
     SDL_Log("activated character sheet");
 
     Deactivate();
+    mGc->mUim->mCanHandleToolTip = false;
     mCanHandleEvent = true;
     mIsRender = true;
     mIsRenderUpdate = true;
@@ -1190,6 +1312,7 @@ void CharacterSheetUI::HandleEvent(SDL_Event &e, GameContext &gc, float mx, floa
     mx -= (float) mX; my -= (float) mY; //오프셋
 
     mCsUI->HandleEvent(e, &gc, mx, my);
+    mInvUI->HandleEvent(e, mx, my);
 
     Entity* ent = gc.mObjm->mEntm->mFocusedEnt;
     if (!ent) {

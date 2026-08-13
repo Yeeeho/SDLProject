@@ -1,8 +1,8 @@
 {
     "type" : "gear",
     "items" : {
-        "robe" : {
-            "name" : "로브",
+        "cloak" : {
+            "name" : "망토",
             "type" : "back"
         }
     }

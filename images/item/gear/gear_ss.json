@@ -1,0 +1,16 @@
+{
+    "spritesheet_width": 96,
+    "spritesheet_height": 96,
+    "cell_width": 96,
+    "cell_height": 96,
+    "sprites": [
+        {
+            "filename": "cloak.png",
+            "order": 0,
+            "width": 96,
+            "height": 96,
+            "x": 0,
+            "y": 0
+        }
+    ]
+}

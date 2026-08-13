@@ -125,8 +125,8 @@ void TeamManager::SpawnTeamOnMap(Map *map, Team *team, int id)
     std::unordered_map<std::string, int> xy;
     xy = mh.PosXYByTileId(id, map);
 
-    team->mMapPosX = map->mX + map->mTileLen * xy["x"];
-    team->mMapPosY = map->mY + map->mTileLen * xy["y"];
+    team->mMapPosX = map->mOffsetX + map->mTileLen * xy["x"];
+    team->mMapPosY = map->mOffsetY + map->mTileLen * xy["y"];
     team->mId = id;
 
     MapTile* tile = map->mMapTiles[id];
@@ -263,6 +263,12 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     pawn->mType = pType;
     pawn->mDemeanor = Demeanor::Friendly;
 
+    pawn->mHead.mCount = 1;
+    pawn->mTorso.mCount = 1;
+    pawn->mLower.mCount = 1;
+    pawn->mHand.mCount = 2;
+    pawn->mFoot.mCount = 2;
+
     StatHelper sh;
     pawn->mCurHp = sh.GetMaxHp(pawn);
     pawn->mCurSp = sh.GetMaxSp(pawn); 
@@ -324,8 +330,8 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent,
     MapHelper mh;
     xy = mh.PosXYByTileId(tileId, map);
 
-    ent->mMapX = map->mX + map->mTileLen * xy["x"];
-    ent->mMapY = map->mY + map->mTileLen * xy["y"];
+    ent->mMapX = map->mOffsetX + map->mTileLen * xy["x"];
+    ent->mMapY = map->mOffsetY + map->mTileLen * xy["y"];
     std::string message = "entity spawned at: " + std::to_string(ent->mMapX) + ", " + std::to_string(ent->mMapY);
     SDL_Log(message.c_str());
 
@@ -375,6 +381,7 @@ bool EntityManager::PickUpItem(GameContext& gc, int tileId, int itemId, Pawn *p)
     }
 
     p->mInventory[itemId] = target;
+    target->mTileId = (int) p->mInventory.size() - 1;
     itemPicked = true;
     return itemPicked;
 }
@@ -509,6 +516,7 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
     mSpd = 10;
 
     mEqs[EqType::Head] = new Equipment(objm, "naked");
+    mEqs[EqType::Back] = new Equipment(objm, "naked");
     mEqs[EqType::Torso] = new Equipment(objm, "naked");
     mEqs[EqType::Leg] = new Equipment(objm, "naked");
     mEqs[EqType::Hand] = new Equipment(objm, "naked");

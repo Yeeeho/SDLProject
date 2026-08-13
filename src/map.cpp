@@ -16,8 +16,9 @@
 #include "skill/skill.h"
 #include "move.h"
 
-Grid::Grid(int x, int y, int xTiles, int yTiles, int tileLen)
+Grid::Grid(int x, int y, int offsetX, int offsetY, int xTiles, int yTiles, int tileLen, GridType gt)
 {
+    mGridType = gt;
     mTileLen = tileLen;
     mXTiles = xTiles; mYTiles = yTiles;
 
@@ -25,6 +26,7 @@ Grid::Grid(int x, int y, int xTiles, int yTiles, int tileLen)
     mH = mTileLen*mYTiles;
 
     mX = x; mY = y;
+    mOffsetX = offsetX; mOffsetY = offsetY;
     mInitX = x; mInitY = y;
 
     mCam = new Camera(0, 0, 0);
@@ -38,13 +40,14 @@ void Grid::RenderTiles()
 
     for (int i = 0; i < mYTiles; i++) {
         for (int j = 0; j < mXTiles; j++) {
-            t.Render((float) mX + j*mTileLen,(float) mY + i*mTileLen, nullptr,(float) mTileLen,(float) mTileLen);
+            t.Render((float) mOffsetX + j*mTileLen,(float) mOffsetY + i*mTileLen, nullptr,(float) mTileLen,(float) mTileLen);
         }
     }
 }
 
-Map::Map(int x, int y, int xTiles, int yTiles, int tileLen)
+Map::Map(int x, int y, int offsetX, int offsetY, int xTiles, int yTiles, int tileLen)
 {
+    mGridType = GridType::Map;
     mTileLen = tileLen;
     mXTiles = xTiles; mYTiles = yTiles;
 
@@ -52,6 +55,7 @@ Map::Map(int x, int y, int xTiles, int yTiles, int tileLen)
     mH = mTileLen*mYTiles;
 
     mX = x; mY = y;
+    mOffsetX = offsetX; mOffsetY = offsetY;
     mInitX = x; mInitY = y;
 
     mCam = new Camera(10, System::sWindowWidth + 4000, System::sWindowHeight + 4000);
@@ -95,7 +99,7 @@ void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
     mouseY += mCam->mSight.y;
 
     Math mth;
-    bool isInMap = mth.IsPointInSquare(mouseX, mouseY, mX, mY, mW, mH); 
+    bool isInMap = mth.IsPointInSquare(mouseX, mouseY, mOffsetX, mOffsetY, mW, mH); 
     if (!isInMap) { //맵 밖에 있는 경우
         gc.mUim->mTileHLUI->mIsRenderBetweenTiles = false; //타일 ui 렌더링 플래그 거짓
         return;
@@ -161,7 +165,7 @@ void Map::GenerateMapTiles()
 
     for (int i = 0; i < mYTiles; i++) {
         for (int j = 0; j < mXTiles; j++) {
-            MapTile* tile = new MapTile(mX + j*mTileLen, mY + i*mTileLen, mTileLen, mTileLen);
+            MapTile* tile = new MapTile(mOffsetX + j*mTileLen, mOffsetY + i*mTileLen, mTileLen, mTileLen);
             tile->mId = id;
 
             mMapTiles.push_back(tile);
@@ -178,7 +182,7 @@ void Map::GenerateCityTiles()
 
     for (int i = 0; i < mYTiles; i++) {
         for (int j = 0; j < mXTiles; j++) {
-            MapTile* tile = new MapTile(mX + j*mTileLen, mY + i*mTileLen, mTileLen, mTileLen, path);
+            MapTile* tile = new MapTile(mOffsetX + j*mTileLen, mOffsetY + i*mTileLen, mTileLen, mTileLen, path);
             tile->mId = id;
 
             mMapTiles.push_back(tile);
@@ -247,21 +251,21 @@ void MapTile::ChangeTexture(std::string path)
     }
 }
 
-int MapHelper::WhatTileOnPoint(float x, float y, Map *map)
+int MapHelper::WhatTileOnPoint(float x, float y, Grid *grid)
 {
-    float xDis = x - static_cast<float>(map->mX);
-    float yDis = y - static_cast<float>(map->mY);
-    int xPos = xDis/map->mTileLen; //상대 거리를 타일 크기로 나누어 타일 좌표를 구한다.
-    int yPos = yDis/map->mTileLen;
+    float xDis = x - static_cast<float>(grid->mOffsetX + grid->mX);
+    float yDis = y - static_cast<float>(grid->mOffsetY + grid->mY);
+    int xPos = xDis/grid->mTileLen; //상대 거리를 타일 크기로 나누어 타일 좌표를 구한다.
+    int yPos = yDis/grid->mTileLen;
 
     //좌표에 한계를 지정한다.
-    if (xPos >= map->mXTiles) xPos = map->mXTiles - 1;
-    if (yPos >= map->mYTiles) yPos = map->mYTiles - 1;
+    if (xPos >= grid->mXTiles) xPos = grid->mXTiles - 1;
+    if (yPos >= grid->mYTiles) yPos = grid->mYTiles - 1;
     if (xPos < 0) xPos = 0;
     if (yPos < 0) yPos = 0;
 
     //맵 아이디를 구한다.
-    int id = xPos + (map->mXTiles * yPos);
+    int id = xPos + (grid->mXTiles * yPos);
     return id;
 }
 
@@ -270,10 +274,10 @@ std::vector<int> MapHelper::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile 
     std::vector<int> ret;
 
     int tileLen = map->mTileLen;
-    int x1 = (tile1->mX - map->mX) / tileLen;
-    int y1 = (tile1->mY - map->mY) / tileLen;
-    int x2 = (tile2->mX - map->mX) / tileLen;
-    int y2 = (tile2->mY - map->mY) / tileLen;
+    int x1 = (tile1->mX - map->mOffsetX) / tileLen;
+    int y1 = (tile1->mY - map->mOffsetY) / tileLen;
+    int x2 = (tile2->mX - map->mOffsetX) / tileLen;
+    int y2 = (tile2->mY - map->mOffsetY) / tileLen;
 
     //여기서 브레젠험 알고리즘을 사용한다.
     int dx = std::abs(x2 - x1);
@@ -284,7 +288,7 @@ std::vector<int> MapHelper::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile 
     int err = dx + dy; int e2; //오차.
 
     while (true) {
-        int id = WhatTileOnPoint(x1 * tileLen + map->mX, y1 * tileLen + map->mY, map);
+        int id = WhatTileOnPoint(x1 * tileLen + map->mOffsetX, y1 * tileLen + map->mOffsetY, map);
         ret.push_back(id);
 
         e2 = 2*err;
@@ -302,10 +306,10 @@ std::vector<int> MapHelper::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile 
     return ret;
 }   
 
-std::unordered_map<std::string, int> MapHelper::PosXYByTileId(int id, Map *map)
+std::unordered_map<std::string, int> MapHelper::PosXYByTileId(int id, Grid *grid)
 {
-    int posY = id / map->mXTiles;
-    int posX = id - posY * map->mXTiles;
+    int posY = id / grid->mXTiles;
+    int posX = id - posY * grid->mXTiles;
 
     std::unordered_map<std::string, int> ret;
     ret.insert({"x", posX});
@@ -317,7 +321,7 @@ std::unordered_map<std::string, int> MapHelper::PosXYByTileId(int id, Map *map)
 MapManager::MapManager()
 {
     //오버맵에 도시 생성
-    mOverMap = new Map(System::sWindowWidth/2 - 6 * 50 , 100, 6 ,6, 100); //월드 맵 객체 생성
+    mOverMap = new Map(0, 0, System::sWindowWidth/2 - 6 * 50 , 100, 6 ,6, 100); //월드 맵 객체 생성
     mOverMap->GenerateMapTiles();
     
     int cityIdx = mOverMap->mXTiles * mOverMap->mYTiles * 0.5 - mOverMap->mXTiles * 0.5;
@@ -325,10 +329,10 @@ MapManager::MapManager()
 
     SDL_Color tc = {0xE0, 0xE0, 0xE0, 0xFF};
 
-    mSubMap = new Map(System::sWindowWidth*0.5 - 6*40, 100, 16, 16, 80); //서브맵 객체 생성
+    mSubMap = new Map(0, 0, System::sWindowWidth*0.5 - 6*40, 100, 16, 16, 80); //서브맵 객체 생성
     mSubMap->GenerateMapTiles();
 
-    mCityMap = new Map(System::sWindowWidth*0.5 - 6*40, 100, 32, 32, 80);
+    mCityMap = new Map(0, 0, System::sWindowWidth*0.5 - 6*40, 100, 32, 32, 80);
     mCityMap->GenerateCityTiles();
 }
 

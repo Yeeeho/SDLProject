@@ -159,6 +159,7 @@ Done:
     - 툴팁
         - 툴팁 동적 렌더링: done
         - 툴팁 깜박임 해결: done
+        - ui매니저 툴팁 의존성 개선: in progress
 
     - 로그 ui:
         - 기본적 구현 : done

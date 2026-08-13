@@ -65,6 +65,7 @@ class ItemManager {
 
     json mGearDb;
     json mUGearDb;
+    json mGearSsMap;
 
     json mUseItDb;
     json mConsumItDb;

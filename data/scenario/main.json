@@ -23,6 +23,12 @@
                     "item_type" : "consumable",
                     "code" : "apple",
                     "tile_id" : 100
+                },
+                {
+                    "type" : "single_item",
+                    "item_type" : "equipment",
+                    "code" : "dagger",
+                    "tile_id" : 100
                 }
             ]
         },

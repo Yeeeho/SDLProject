@@ -16,19 +16,27 @@ class MapTile;
 class Texture;
 class UI;
 
+enum class GridType {
+    Default, Map, Inventory
+};
+
 class Grid {
     //맵의 상위 객체
     //그리드가 필요한 곳에 써야함
     public:
     Grid() = default;
-    Grid(int x, int y, int xTiles, int yTiles, int tileLen);
+    Grid(int x, int y, int offsetX, int offsetY, int xTiles, int yTiles, int tileLen, GridType gt);
 
     virtual void RenderTiles();
     
     Camera* mCam {nullptr}; //카메라
 
+    GridType mGridType {GridType::Default};
+
     //좌표와 크기
-    int mX {0}, mY {0}; //맵 위치
+    int mX {0}, mY {0}; //맵 기준점
+    int mOffsetX {0}, mOffsetY {0}; //기준점에서 오프셋
+
     int mInitX {0}, mInitY {0}; //맵 시작 위치
     
     int mW {0}, mH {0}; //맵의 크기. 타일 길이 * 타일 개수
@@ -42,7 +50,7 @@ class Grid {
 //월드맵 클래스
 class Map : public Grid {
     public:
-    Map(int x, int y, int xTiles, int yTiles, int tileLen);
+    Map(int x, int y, int offsetX, int offsetY, int xTiles, int yTiles, int tileLen);
     void GenerateMapTiles();
     void GenerateCityTiles();
     
@@ -113,10 +121,10 @@ class MapManager {
 
 class MapHelper {
     public:
-    int WhatTileOnPoint(float x, float y, Map* map); //이 점은 맵의 어느 타일에 있는가?
+    int WhatTileOnPoint(float x, float y, Grid* grid); //이 점은 맵의 어느 타일에 있는가?
 
     //브레젠험 
     std::vector<int> GetTilesIdBetween(Map* map, MapTile* tile1, MapTile* tile2); //타일 두개를 이었을때 그 사이에 무슨 타일들이 있는지 구함.
 
-    std::unordered_map<std::string, int> PosXYByTileId(int id, Map* map);
+    std::unordered_map<std::string, int> PosXYByTileId(int id, Grid* grid);
 };

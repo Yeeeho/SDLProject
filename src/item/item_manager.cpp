@@ -61,7 +61,8 @@ void ItemManager::LoadItemData()
 
     jh.LoadJsonFile(mGearDb, "data/item/gear.json");
     jh.LoadJsonFile(mUGearDb, "data/item/unique_gear.json");
-    
+    jh.LoadJsonFile(mGearSsMap, "images/item/gear/gear_ss.json");
+
     jh.LoadJsonFile(mUseItDb, "data/item/useable.json");
     jh.LoadJsonFile(mConsumItDb, "data/item/consumable.json");
     jh.LoadJsonFile(mConsumItSsMap, "images/item/consumable/consumable_ss.json");
@@ -277,8 +278,8 @@ void ItemManager::RenderItem(Item* item)
     Map* currentMap = mGc->mMapm->mCurrentMap;
     std::unordered_map<std::string, int> xy = mm.PosXYByTileId(item->mTileId, mGc->mMapm->mCurrentMap);
     //TODO: 이런것도 래핑해야 좌표 구하기 편해질거다.
-    float itemX = (float) (xy["x"] * currentMap->mTileLen + currentMap->mX);
-    float itemY = (float) (xy["y"] * currentMap->mTileLen + currentMap->mY);
+    float itemX = (float) (xy["x"] * currentMap->mTileLen + currentMap->mOffsetX);
+    float itemY = (float) (xy["y"] * currentMap->mTileLen + currentMap->mOffsetY);
 
     json* db = ih.GetItemDb(this, item);
     json* ssmap = ih.GetItemSsMap(this, item);
@@ -296,6 +297,7 @@ void ItemManager::RenderItem(Item* item)
             ss->Render(itemX, itemY, &fr, (float) currentMap->mTileLen, (float) currentMap->mTileLen);
         }
     }
+    SDL_Log("rendered an item");
 }
 
 void ItemManager::Render()
@@ -419,6 +421,11 @@ json *ItemHelper::GetItemSsMap(ItemManager *itm, Item *item)
 {
     if (item->mType == ItemType::Consumable)  {
         return &itm->mConsumItSsMap;
+    }
+    else if (item->mType == ItemType::Equipment) {
+        Equipment* eq = static_cast<Equipment*> (item);
+        if (eq->mEqType == EqType::Weapon) return &itm->mWeaponSsMap;
+        else return &itm->mGearSsMap;
     }
     else {
         SDL_Log("get item sprite sheet map: item type unknown!");

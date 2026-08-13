@@ -6,6 +6,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
+#include "item/item_enum.h"
+
 //전방선언 리스트
 enum class EqType;
 struct GameContext;
@@ -42,6 +44,7 @@ class UI {
     bool mCanHandleEvent {false}; //이벤트 핸들링 가능?
 
     int mX {0}, mY {0}, mW {0}, mH {0};
+    int mOffsetX {0}, mOffsetY {0};
 
     private:
 };
@@ -139,6 +142,7 @@ class ToolTip : public UI {
     //업데이트
     void CheckUpdate(); //업데이트 로직에서 업데이트 유무를 검사함
     //렌더링 메서드
+    void RenderThings(float x, float y);
     void StoreTexture();
     void RenderStoredTex();
     void Render();
@@ -231,6 +235,8 @@ class TileHLUI {
 //캐릭터 시트용 ui
 struct SlotInfo {
     public:
+    EqType mEqType {EqType::All};
+    int mId {0};
     std::string mInfo {""};
     int x {0};
     int y {0};
@@ -238,20 +244,28 @@ struct SlotInfo {
 
 class InventoryUI : public UI {
     public:
-    InventoryUI(int x, int y, int w, int h, int tileLen, GameContext* gc);
+    InventoryUI(int x, int y, int offsetX, int offsetY, int w, int h, int tileLen, GameContext* gc);
 
     void Activate(Pawn* p);
     void Deactivate();
+
+    void LoadEqToolTip(SlotInfo& si);
+
+    void HandleEvent(SDL_Event& e, float mx, float my);
+    void HandleEqSlotEvent(SDL_Event& e, SlotInfo si, float mx, float my);
+    bool mMouseIn {false};
 
     void RenderThings();
     void RenderEqSlots(Texture& t);
     void RenderEqSlot(Texture& t, int x, int y, std::string info);
 
     std::multimap<EqType, SlotInfo> mSlotInfos;
+    ToolTip* mToolTip {nullptr};
 
     GameContext* mGc {nullptr};
 
     Grid* mGrid {nullptr};
+    int mPrevEqIdx {0};    
 };
 
 class CharacterSkillUI : public UI {
@@ -367,15 +381,17 @@ class UIManager {
     void RenderUIs();
     void RenderMapUIs(Map* map); //맵상에 있을 ui들 렌더링
     
-    // 맵 툴팁 관련
+    //툴팁 관련
     ToolTip* mToolTip{nullptr}; //툴팁
-    Map* mToolTipMap {nullptr}; //툴팁 타겟
+    Grid* mToolTipGrid {nullptr};
 
+    void LoadInvToolTip(Grid* grid, int tileId);
     void LoadMapToolTip(Map* map, int tileId);
-    void UpdateMapToolTip(Map* map);
+    void UpdateGridToolTip(Grid* grid);
 
     void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
-    void RenderMapToolTip(Map* map);
+    bool mCanHandleToolTip {true};
+    void RenderMapToolTip(Grid* grid);
     
     //맵 관련 ui 객체
     IconUI* mFocusIcon {nullptr}; //맵 타일 포커스 아이콘

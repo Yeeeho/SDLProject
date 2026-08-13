@@ -148,6 +148,12 @@ enum class Demeanor {
     Neutral, Hostile, Friendly
 };
 
+struct BodyPart {
+    public:
+    int mCount {0};
+    int mStatus {0}; //타입 바꿔야한다. 지금은 임시
+};
+
 class Entity {
     public:
     Entity() = default;
@@ -170,6 +176,13 @@ class Entity {
     int mMapY {-1};
     int mXspeed {0};
     int mYspeed {0};
+
+    //부위 정보
+    BodyPart mHead = {0, 0};
+    BodyPart mTorso = {0, 0};
+    BodyPart mLower = {0, 0};
+    BodyPart mHand = {0, 0};
+    BodyPart mFoot = {0, 0};
 
     //범용 스탯
     int mStr {0};

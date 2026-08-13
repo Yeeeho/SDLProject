@@ -97,7 +97,7 @@ void OverMapState::Enter(GameContext& gc)
     Map* map = gc.mMapm->mOverMap;
 
     gc.mTurnm->Enter(map);
-    gc.mUim->mToolTipMap = map; 
+    gc.mUim->mToolTipGrid = map; 
     //시나리오 로딩
 
     gc.mMapm->mCurrentMap = map;
@@ -129,7 +129,7 @@ void OverMapState::Update(GameContext& gc)
     gc.mScm->Update(gc);
 
     gc.mMapm->mOverMap->mCam->Move();
-    gc.mUim->UpdateMapToolTip(gc.mMapm->mOverMap);
+    gc.mUim->UpdateGridToolTip(gc.mUim->mToolTipGrid);
 }
 
 void OverMapState::HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY)
@@ -172,7 +172,7 @@ void SubMapState::Enter(GameContext& gc)
 
     Map* map = gc.mMapm->mSubMap;
     gc.mMapm->mCurrentMap = map;
-    gc.mUim->mToolTipMap = map;
+    gc.mUim->mToolTipGrid = map;
     gc.mTurnm->Enter(map);
 
     gc.mMapm->mSubMap->mIsMapUpdate = true;
@@ -198,7 +198,7 @@ void SubMapState::Update(GameContext& gc)
 
     gc.mMapm->mSubMap->mCam->Move();
 
-    gc.mUim->UpdateMapToolTip(gc.mMapm->mSubMap);
+    gc.mUim->UpdateGridToolTip(gc.mUim->mToolTipGrid);
 }
 
 void SubMapState::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
@@ -247,7 +247,7 @@ void CityViewState::Enter(GameContext& gc)
     SDL_Log("enter city view");
     Map* map = gc.mMapm->mCityMap;
     gc.mTurnm->Enter(map);
-    gc.mUim->mToolTipMap = map;
+    gc.mUim->mToolTipGrid = map;
     gc.mMapm->mCurrentMap = map;
 
     //도시 맵 렌더링 플래그
@@ -274,7 +274,7 @@ void CityViewState::Update(GameContext& gc)
 {
     gc.mScm->Update(gc);
 
-    gc.mUim->UpdateMapToolTip(gc.mMapm->mCityMap);
+    gc.mUim->UpdateGridToolTip(gc.mUim->mToolTipGrid);
 }
 
 void CityViewState::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
