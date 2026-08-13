@@ -25,6 +25,8 @@ class Grid {
 
     virtual void RenderTiles();
     
+    Camera* mCam {nullptr}; //카메라
+
     //좌표와 크기
     int mX {0}, mY {0}; //맵 위치
     int mInitX {0}, mInitY {0}; //맵 시작 위치
@@ -57,10 +59,7 @@ class Map : public Grid {
     void RenderOnUpdate();
     
     SDL_Texture* mTempTex {nullptr}; //베이킹용 임시 텍스처
-    
-    //맵 카메라
-    Camera* mCam {nullptr};
-    
+        
     //턴 제어
     int mCurrentTurn {0};
     

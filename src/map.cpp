@@ -26,6 +26,8 @@ Grid::Grid(int x, int y, int xTiles, int yTiles, int tileLen)
 
     mX = x; mY = y;
     mInitX = x; mInitY = y;
+
+    mCam = new Camera(0, 0, 0);
 }
 
 void Grid::RenderTiles()

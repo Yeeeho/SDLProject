@@ -939,6 +939,33 @@ InventoryUI::InventoryUI(int x, int y, int w, int h, int tileLen, GameContext* g
 
     TextureManager tm;
     mTempTex = tm.CreateTempTexture(System::sRenderer, w, h);
+
+    int tl = tileLen;
+    SlotInfo si;
+    si = {"머리", mX + tl * 2, mY + tl};
+
+    mSlotInfos.insert({EqType::Head, si});
+    si.mInfo = "등"; si.x = mX + tl * 0.7;
+    mSlotInfos.insert({EqType::Back, si});
+    si.mInfo = "무기1", si.x = mX + tl * 4.6;
+    mSlotInfos.insert({EqType::Weapon, si});
+
+    si.mInfo = "몸통", si.x = mX + tl * 2; si.y = mY + tl * 2 + 32;
+    mSlotInfos.insert({EqType::Torso, si});
+    si.mInfo = "손1", si.x = mX + tl * 0.7;
+    mSlotInfos.insert({EqType::Hand, si});
+    si.mInfo = "손2", si.x = mX + tl * 3.3;
+    mSlotInfos.insert({EqType::Hand, si});
+    si.mInfo = "무기2", si.x = mX + tl * 4.6;
+    mSlotInfos.insert({EqType::Weapon, si});
+
+    si.mInfo = "다리", si.x = mX + tl * 2; si.y = mY + tl * 3 + 64;
+    mSlotInfos.insert({EqType::Leg, si});
+
+    si.mInfo = "발1", si.x = mX + tl * 0.7; si.y = mY + tl * 4 + 96;
+    mSlotInfos.insert({EqType::Foot, si});
+    si.mInfo = "발2", si.x = mX + tl * 3.3;
+    mSlotInfos.insert({EqType::Foot, si});
 }
 
 void InventoryUI::Activate(Pawn *p)
@@ -999,25 +1026,11 @@ void InventoryUI::RenderThings()
 void InventoryUI::RenderEqSlots(Texture& t)
 {
     int tl = mGrid->mTileLen;
-    int  totalH {0};
-    RenderEqSlot(t, mX + tl * 2, mY + tl + totalH, "머리");
-    RenderEqSlot(t, mX + tl * 4.6, mY + tl + totalH, "무기1");
-    
-    totalH += 32;
 
-    RenderEqSlot(t, mX + tl * 2, mY + tl * 2 + totalH, "몸통");
-    RenderEqSlot(t, mX + tl * 0.7, mY + tl * 2 + totalH, "손");
-    RenderEqSlot(t, mX + tl * 3.3, mY + tl * 2 + totalH, "손");
-    RenderEqSlot(t, mX + tl * 4.6, mY + tl * 2 + totalH, "무기2");
-    totalH += 32;
-
-    RenderEqSlot(t, mX + tl * 2, mY + tl * 3 + totalH, "다리");
-    totalH += 32;
-
-    RenderEqSlot(t, mX + tl * 0.7, mY + tl * 4 + totalH, "발");
-    RenderEqSlot(t, mX + tl * 3.3, mY + tl * 4 + totalH, "발");
-    totalH += 32;
-
+    for (auto slotPair : mSlotInfos) {
+        SlotInfo si = slotPair.second;
+        RenderEqSlot(t, si.x, si.y, si.mInfo);
+    }
 }
 
 void InventoryUI::RenderEqSlot(Texture &t, int x, int y, std::string info)

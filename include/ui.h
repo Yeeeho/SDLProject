@@ -7,6 +7,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 //전방선언 리스트
+enum class EqType;
 struct GameContext;
 class ObjectManager;
 class UIManager;
@@ -228,6 +229,12 @@ class TileHLUI {
 };
 
 //캐릭터 시트용 ui
+struct SlotInfo {
+    public:
+    std::string mInfo {""};
+    int x {0};
+    int y {0};
+};
 
 class InventoryUI : public UI {
     public:
@@ -239,6 +246,8 @@ class InventoryUI : public UI {
     void RenderThings();
     void RenderEqSlots(Texture& t);
     void RenderEqSlot(Texture& t, int x, int y, std::string info);
+
+    std::multimap<EqType, SlotInfo> mSlotInfos;
 
     GameContext* mGc {nullptr};
 
