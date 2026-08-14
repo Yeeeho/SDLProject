@@ -4,6 +4,7 @@
         "dagger" : {
             "type" : "weapon",
             "name" : "단검",
+            "sprite_name" : "dagger.png",
             "flags" : [
                 "one_hand" 
             ],

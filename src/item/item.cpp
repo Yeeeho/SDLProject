@@ -5,10 +5,11 @@
 #include "game_json.h"
 #include "game_object.h"
 
-Equipment::Equipment(const ObjectManager& objm, std::string code)
+Equipment::Equipment(const ObjectManager& objm, std::string code, EqType et)
 {
     mId = objm.mItm->GetValidId();
     mType = ItemType::Equipment;
+    mEqType = et;
 
     ItemHelper ith;
     json* db = ith.GetEqDb(objm.mItm , code);
@@ -29,8 +30,6 @@ Equipment::Equipment(const ObjectManager& objm, std::string code)
     //데이터 가져오기
     mName = eq["name"].get<std::string>();
     mCode = code;
-
-    mEqType = ith.GetEqType(eq);
 
     mWeight = ith.GetEqWeight(eq);
 

@@ -94,11 +94,17 @@ void Scenario::UpdateScenario(GameContext& gc)
                 std::string code = item["code"].get<std::string>();
                 std::string itype = item["item_type"].get<std::string>();
                 ItemType itemType = ih.GetItemType(itype);
-                SDL_Log(std::to_string((int) itemType).c_str());
                 int tileId = item["tile_id"].get<int>();
-
+                
+                Item* it {nullptr};
+                if (itemType == ItemType::Equipment) {
+                    EqType et = ih.GetEqType(item);
+                    it = gc.mObjm->mItm->MakeEq(*gc.mObjm, code, et);
+                }
+                else {
+                    it = gc.mObjm->mItm->MakeItem(*gc.mObjm, code, itemType);
+                }
                 //구한 데이터를 기반으로 아이템 객체를 생성하고 맵에 스폰한다.
-                Item* it = gc.mObjm->mItm->MakeItem(*gc.mObjm, code, itemType);
                 gc.mObjm->mItm->SpawnItemOnMap(map, tileId, it);
             }
         }

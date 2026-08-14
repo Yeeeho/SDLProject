@@ -119,6 +119,7 @@ class EntityManager {
     void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent);
     void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent, int tileId);
     void DespawnEntity(ObjectManager& objm, Map* map, Entity* ent);
+    
     //아이템 상호작용
     bool PickUpItem(GameContext& gc, int tileId, int itemId, Pawn* p);
     void DropItem();

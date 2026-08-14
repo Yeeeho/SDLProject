@@ -16,7 +16,8 @@ class ItemManager {
     ItemManager(GameContext* gc);
 
     Item* MakeItem(ObjectManager& objm, std::string code, ItemType);
-    
+    Equipment* MakeEq(ObjectManager& objm, std::string code, EqType);
+
     void LoadSpriteSheets();
     void LoadItemData();
 
@@ -53,8 +54,12 @@ class ItemManager {
     SDL_Texture* mTempTex {nullptr};
     //아이템 스프라이트 시트
     Texture* mConsumableSs {nullptr};
+    Texture* mWeaponSs {nullptr};
+    Texture* mGearSs {nullptr};
 
-    int mIdTable[1024];
+    //아이템 아이디 관리
+    inline const static int kMaxItemId {2048};
+    int mIdTable[kMaxItemId];
 
     //아이템 json 데이터객체들
     json mItemCodeTable;
@@ -84,12 +89,14 @@ class ItemHelper {
     int GetEqDamage(json eq);
     int GetEqDamage(json eq, Entity* ent);
     int GetEqArmor(json eq);
-
+    
     json* GetEqDb(ItemManager* itm, std::string code);
+    json* GetEqDb(ItemManager* itm, Equipment* eq);
     json* GetItemDb(ItemManager* itm, json scenarioData);
+    json* GetItemDb(ItemManager* itm, Item* item);
+    
     json* GetItemSsMap(ItemManager* itm, Item* item);
     Texture* GetItemSs(ItemManager* itm, Item* item);
-    json* GetItemDb(ItemManager* itm, Item* item);
-    json* GetEqDb(ItemManager* itm, Equipment* eq);
+    
     ItemType GetItemType(std::string iType);
 };

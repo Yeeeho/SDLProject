@@ -344,7 +344,7 @@ void UIManager::LoadMapToolTip(Map *map, int tileId)
         }
         //스택에 아이템이 하나 이상인 경우 첫번째 아이템 이름을 렌더링하고 생략된 표현을 추가함
         else {
-            tui->AddWord(TTFWord (stackObj->mStack[0]->mName + "...", System::sWh, System::sFont));
+            tui->AddWord(TTFWord (stackObj->mStack.back()->mName + "...", System::sWh, System::sFont));
             tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
         }
     }
@@ -1300,6 +1300,7 @@ void CharacterSheetUI::Activate(Pawn *pc)
 
 void CharacterSheetUI::Deactivate()
 {
+    mGc->mUim->mCanHandleToolTip = true;
     mCanHandleEvent = false;
     mIsRender = false;
     mCsUI->Deactivate();

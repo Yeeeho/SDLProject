@@ -380,6 +380,9 @@ bool EntityManager::PickUpItem(GameContext& gc, int tileId, int itemId, Pawn *p)
         return itemPicked;
     }
 
+    std::string message = "picked item id: " + std::to_string(itemId);
+
+    SDL_Log(message.c_str());
     p->mInventory[itemId] = target;
     target->mTileId = (int) p->mInventory.size() - 1;
     itemPicked = true;
@@ -515,14 +518,13 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
     mInt = 10;
     mSpd = 10;
 
-    mEqs[EqType::Head] = new Equipment(objm, "naked");
-    mEqs[EqType::Back] = new Equipment(objm, "naked");
-    mEqs[EqType::Torso] = new Equipment(objm, "naked");
-    mEqs[EqType::Leg] = new Equipment(objm, "naked");
-    mEqs[EqType::Hand] = new Equipment(objm, "naked");
-    mEqs[EqType::Foot] = new Equipment(objm, "naked");
-    mEqs[EqType::Weapon] = new Equipment(objm, "dagger");
-    mEqs[EqType::Offhand] = new Equipment(objm, "naked");
+    mEqs[EqType::Head] = new Equipment(objm, "naked", EqType::Head);
+    mEqs[EqType::Back] = new Equipment(objm, "naked", EqType::Back);
+    mEqs[EqType::Torso] = new Equipment(objm, "naked", EqType::Torso);
+    mEqs[EqType::Leg] = new Equipment(objm, "naked", EqType::Leg);
+    mEqs[EqType::Hand] = new Equipment(objm, "naked", EqType::Hand);
+    mEqs[EqType::Foot] = new Equipment(objm, "naked", EqType::Foot);
+    mEqs[EqType::Weapon] = new Equipment(objm, "dagger", EqType::Weapon);
 }
 
 int StatHelper::GetMaxHp(Entity *ent)

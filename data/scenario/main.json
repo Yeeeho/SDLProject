@@ -27,6 +27,7 @@
                 {
                     "type" : "single_item",
                     "item_type" : "equipment",
+                    "sub_type" : "weapon",
                     "code" : "dagger",
                     "tile_id" : 100
                 }

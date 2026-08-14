@@ -191,7 +191,8 @@ void SkillManager::SetTargetItems(std::vector<Item*> targetItems) {
 void SkillManager::SetTargetItem(Item* item) {
     mTargetItems.clear();
     mTargetItems.push_back(item);
-    SDL_Log("set target item: item target set");
+    std::string message = "set target item: item target set to" + item->mCode;
+    SDL_Log(message.c_str());
 }
 
 

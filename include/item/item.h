@@ -29,7 +29,7 @@ struct ItemStack {
 //장비 클래스
 class Equipment : public Item {
     public:
-    Equipment(const ObjectManager& objm, std::string code);
+    Equipment(const ObjectManager& objm, std::string code, EqType);
     void Destroy(const ObjectManager& objm);
 
     //장비 속성

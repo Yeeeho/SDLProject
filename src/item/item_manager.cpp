@@ -21,7 +21,7 @@ ItemManager::ItemManager(GameContext* gc)
     LoadSpriteSheets();
     LoadItemData();
 
-    for (int i = 0; i <  1024; i++) {
+    for (int i = 0; i < kMaxItemId; i++) {
         mIdTable[i] = i;
     }
 
@@ -34,10 +34,7 @@ ItemManager::ItemManager(GameContext* gc)
 //공변 반환
 Item *ItemManager::MakeItem(ObjectManager& objm, std::string code, ItemType it)
 {
-    if (it == ItemType::Equipment) {
-        return new Equipment(objm, code);
-    }
-    else if (it == ItemType::Consumable) {
+    if (it == ItemType::Consumable) {
         return new Consumable(objm, code);
     }
     else {
@@ -46,9 +43,16 @@ Item *ItemManager::MakeItem(ObjectManager& objm, std::string code, ItemType it)
     }
 }
 
+Equipment *ItemManager::MakeEq(ObjectManager& objm, std::string code, EqType et)
+{
+    return new Equipment(objm, code, et);
+}
+
 void ItemManager::LoadSpriteSheets()
 {
     mConsumableSs = new Texture("images/item/consumable/consumable_ss.png");
+    mWeaponSs = new Texture("images/item/weapon/weapon_ss.png");
+    mGearSs = new Texture("images/item/gear/gear_ss.png");
 }
 
 void ItemManager::LoadItemData()
@@ -75,7 +79,9 @@ void ItemManager::SpawnItemOnMap(Map *map, int tileId, Item *item)
     item->mTileId = tileId;
     StackItemOnMap(map, tileId, item);
 
-    std::string message = "item spawned at tild id " + std::to_string(tileId); 
+    std::string message = "item spawned at tild id: "
+        + std::to_string(tileId) + " item code: " + item->mCode
+        + " item id: " + std::to_string(item->mId); 
     SDL_Log(message.c_str());    
 
     //타일에 데이터를 로드
@@ -118,9 +124,8 @@ void ItemManager::HandleEvent(SDL_Event &e, GameContext *gc, float mx, float my)
     if (map->mItemStackMap.find(tileId) == map->mItemStackMap.end()) return;
     //타일에 스택이 있을 경우
 
-    for (Item* item : map->mItemStackMap[tileId]->mStack) {
-        HandleItemEvent(e, gc, item, mx, my);
-    }
+    Item* item = map->mItemStackMap[tileId]->mStack.back();
+    HandleItemEvent(e, gc, item, mx, my);
 }
 
 void ItemManager::HandleItemEvent(SDL_Event& e, GameContext* gc, Item* item, float mx, float my) 
@@ -142,9 +147,12 @@ void ItemManager::HandleItemEvent(SDL_Event& e, GameContext* gc, Item* item, flo
 
 int ItemManager::GetValidId()
 {
-    for (int i : mIdTable) {
-        if (i == 0) continue;
-        else return i;
+    for (int i = 0; i < kMaxItemId; i++) {
+        if (mIdTable[i] == 0) continue;
+        int ret = mIdTable[i];
+        SDL_Log(std::to_string(ret).c_str());
+        mIdTable[i] = 0;
+        return ret;
     }
 
     SDL_Log("ran out of item index!");
@@ -313,9 +321,9 @@ void ItemHelper::DestroyStackObj(Map* map, int tileId) {
     SDL_Log("deleted stack object");
 }
 
-EqType ItemHelper::GetEqType(json eq)
+EqType ItemHelper::GetEqType(json eqData)
 {
-    std::string type = eq["type"].get<std::string>();
+    std::string type = eqData["sub_type"].get<std::string>();
 
     if (type == "weapon") return EqType::Weapon;
     else if (type == "offhand") return EqType::Offhand;
@@ -437,6 +445,11 @@ Texture *ItemHelper::GetItemSs(ItemManager *itm, Item *item)
 {
     if (item->mType == ItemType::Consumable) {
         return itm->mConsumableSs;
+    }
+    else if (item->mType == ItemType::Equipment) {
+        Equipment* eq = static_cast<Equipment*>(item);
+        if (eq->mEqType == EqType::Weapon) return itm->mWeaponSs;
+        else return itm->mGearSs;
     }
     else {
         SDL_Log("get item sprite sheet: item type unknown!");
