@@ -103,9 +103,9 @@ void Skill::Activate(SkillManager* skm)
         Item* item = targetItems.back();
 
         Pawn* pactor = static_cast<Pawn*> (actor);
-        bool itemPicked = gc->mObjm->mEntm->PickUpItem(*gc, targetTileId, item->mId, pactor);
+        bool itemPicked = gc->mObjm->mEntm->PickUpItemFromMap(*gc, targetTileId, item->mId, pactor);
         if (!itemPicked) return; //아이템을 줍지 못했다면 리턴한다.
-        log->AddMessage(pactor->mName + "이(가) " + item->mName + "를 주웠습니다.", System::sWh);
+        log->AddMessage(pactor->mName + "이(가) " + item->mName + "를 주웠습니다.", System::kWh);
         gc->mObjm->mItm->mIsRenderUpdate = true;
         gc->mUim->mToolTip->mIsRenderUpdate = true;
     }
@@ -299,9 +299,17 @@ int SkillHelper::GetSkillDamage(json skillData, Skill *skill, Entity *ent)
     if (dd.contains("mod")) {
         json ddMod = dd["mod"];
         if (ddMod.contains("weapon_dmg_mod")) {
-            int wd = ent->mEqs[EqType::Weapon]->mDamage;
-            mod = ddMod["weapon_dmg_mod"].get<float>();
-            dmg += (int) (wd * mod);
+            //인벤토리의 모든 무기들 데이터를 가져옴
+            for (auto range = ent->mEqs.equal_range(EqType::Weapon);
+                range.first != range.second; range.first++
+            )
+            {
+                Equipment* eq = range.first->second;
+                if (eq == nullptr) continue;
+                int wd = range.first->second->mDamage;
+                mod = ddMod["weapon_dmg_mod"].get<float>();
+                dmg += (int) (wd * mod);
+            }
         }
         if (ddMod.contains("str_mod")) {
             mod = ddMod["str_mod"].get<float>();

@@ -76,10 +76,10 @@ void Scenario::UpdateScenario(GameContext& gc)
         for (json item : items) {
             if (item["type"].get<std::string>() == "single_ent") {
                 SDL_Log("scenario: spawning single entity");
-                std::string code = item["code"].get<std::string>();
-                std::string demeanor = item["demeanor"].get<std::string>();
+                std::string code = jh.GetString(item, "code");
+                std::string demeanor = jh.GetString(item, "demeanor");
                 
-                int tileId = item["tile_id"].get<int>();
+                int tileId = jh.GetInt(item, "tile_id");
             
                 gc.mObjm->mEntm->AllocEntityOnTable(*gc.mObjm, code, -1, -1, 0);
                 Entity* ent = gc.mObjm->mEntm->mEntTable[0];
@@ -91,10 +91,11 @@ void Scenario::UpdateScenario(GameContext& gc)
             }
             if (item["type"].get<std::string>() == "single_item") {
                 //시나리오 데이터에서 코드, 아이템타입, 타일 아이디를 구한다.
-                std::string code = item["code"].get<std::string>();
-                std::string itype = item["item_type"].get<std::string>();
+                std::string code = jh.GetString(item, "code");
+                std::string itype = jh.GetString(item, "item_type");
                 ItemType itemType = ih.GetItemType(itype);
-                int tileId = item["tile_id"].get<int>();
+                int tileId = jh.GetInt(item, "tile_id");
+                int count = jh.GetInt(item, "count");
                 
                 Item* it {nullptr};
                 if (itemType == ItemType::Equipment) {

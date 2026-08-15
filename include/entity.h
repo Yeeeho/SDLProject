@@ -121,8 +121,12 @@ class EntityManager {
     void DespawnEntity(ObjectManager& objm, Map* map, Entity* ent);
     
     //아이템 상호작용
-    bool PickUpItem(GameContext& gc, int tileId, int itemId, Pawn* p);
+    bool PickUpItemFromMap(GameContext& gc, int tileId, int itemId, Pawn* p);
+    bool PickUpItem(GameContext& gc, Pawn* p, Item* item);
+    bool EraseFromInv(Pawn* p, int itemId);
     void DropItem();
+    bool EquipItem(GameContext& gc, Pawn* p, Equipment* eq);
+    bool UnequipItem(GameContext& gc, Pawn* p, int itemId);
 
     //업데이트
     void Update(ObjectManager& objm);
@@ -143,6 +147,7 @@ class EntityManager {
 
     Entity* mPrevFocusedEnt {nullptr};
     Entity* mFocusedEnt {nullptr};
+    Pawn* mFocusedPc {nullptr};
 };
 
 enum class Demeanor {
@@ -207,7 +212,7 @@ class Entity {
     //알고 있는 기술들
     std::vector<Skill*> mSkills;
 
-    std::unordered_map<EqType, Equipment*> mEqs; //실제로 장비한 장비들 컨테이너
+    std::multimap<EqType, Equipment*> mEqs; //실제로 장비한 장비들 컨테이너
     //여행용 스탯
     //턴당 요구 보급품량 << 헬퍼에서 연산
 };
@@ -224,7 +229,7 @@ class Pawn : public Entity {
 
     PawnType mType;
 
-    std::map<int, Item*> mInventory;
+    std::map<int, Item*> mInventory; //int: item id
 
     std::vector<std::string> mQuickSkills;
 };
@@ -255,4 +260,6 @@ class EntityUtil {
     public:
     SDL_Color GetDemeanorColor(Entity* ent);
     SDL_Color GetRDemeanorColor(Entity* ent);
+
+    Equipment* GetEquipment(Pawn* p, int itemId);
 };

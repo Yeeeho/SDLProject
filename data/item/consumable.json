@@ -3,18 +3,15 @@
     "items" : {
         "error_item" : {
             "name" : "error_item",
-            "sprite_name" : "null.png",
-            "val" : 0
+            "sprite_name" : "null.png"
         },
         "apple" : {
             "name" : "사과",
-            "sprite_name" : "apple.png",
-            "val" : 10
+            "sprite_name" : "apple.png"
         },
         "protein_bar" : {
             "name" : "단백질 바",
-            "sprite_name" : "protein_bar.png",
-            "val" : 100
+            "sprite_name" : "protein_bar.png"
         }
     }
 }

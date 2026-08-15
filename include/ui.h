@@ -21,6 +21,7 @@ class UI;
 class TTFWord;
 class Grid;
 class Map;
+class Item;
 class Camera;
 class Pawn; class Entity;
 class Skill;
@@ -236,7 +237,8 @@ class TileHLUI {
 struct SlotInfo {
     public:
     EqType mEqType {EqType::All};
-    int mId {0};
+    int mEqId {0}; //슬롯에 장착된 장비 아이디
+    int mId {0}; //슬롯 구분용 번호
     std::string mInfo {""};
     int x {0};
     int y {0};
@@ -249,15 +251,17 @@ class InventoryUI : public UI {
     void Activate(Pawn* p);
     void Deactivate();
 
+    void UpdateEqToolTip(SlotInfo& si);
     void LoadEqToolTip(SlotInfo& si);
 
     void HandleEvent(SDL_Event& e, float mx, float my);
     void HandleEqSlotEvent(SDL_Event& e, SlotInfo si, float mx, float my);
+    void HandleItemEvent(SDL_Event& e, Item* item, float mx, float my);
     bool mMouseIn {false};
 
     void RenderThings();
     void RenderEqSlots(Texture& t);
-    void RenderEqSlot(Texture& t, int x, int y, std::string info);
+    void RenderEqSlot(Texture& t, SlotInfo si);
 
     std::multimap<EqType, SlotInfo> mSlotInfos;
     ToolTip* mToolTip {nullptr};

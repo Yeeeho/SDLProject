@@ -22,6 +22,7 @@
                     "type" : "single_item",
                     "item_type" : "consumable",
                     "code" : "apple",
+                    "count" : 5,
                     "tile_id" : 100
                 },
                 {
@@ -29,6 +30,7 @@
                     "item_type" : "equipment",
                     "sub_type" : "weapon",
                     "code" : "dagger",
+                    "count" : 1,
                     "tile_id" : 100
                 }
             ]

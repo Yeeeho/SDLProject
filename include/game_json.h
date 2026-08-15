@@ -19,4 +19,10 @@ class JsonHelper {
     public:
     //json 파일에서 json 객체로 파싱
     bool LoadJsonFile(json& j, std::string path);
+
+    //데이터 가져오는 메서드
+    void SDLLogErrorMsg(json& data, std::string datatype, std::string what);
+    std::string GetDataType(json& data);
+    std::string GetString(json& data, std::string what);
+    int GetInt(json& data, std::string what);
 };

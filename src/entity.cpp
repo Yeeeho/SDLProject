@@ -369,24 +369,140 @@ void EntityManager::DespawnEntity(ObjectManager &objm, Map *map, Entity *ent)
     }
 }
 
-bool EntityManager::PickUpItem(GameContext& gc, int tileId, int itemId, Pawn *p)
+bool EntityManager::PickUpItemFromMap(GameContext& gc, int tileId, int itemId, Pawn *p)
 {
     bool itemPicked = false;
 
     Item* target = gc.mObjm->mItm->PopSpecificItem(gc.mMapm->mCurrentMap, tileId, itemId);
+    LogUI* log = gc.mUim->mLogUI;
 
     if (target == nullptr) {
         SDL_Log("pickup item: item was nullptr!");
         return itemPicked;
     }
 
+    PickUpItem(gc, p, target);
+    
     std::string message = "picked item id: " + std::to_string(itemId);
-
     SDL_Log(message.c_str());
-    p->mInventory[itemId] = target;
-    target->mTileId = (int) p->mInventory.size() - 1;
     itemPicked = true;
     return itemPicked;
+}
+
+bool EntityManager::PickUpItem(GameContext& gc, Pawn *p, Item *item)
+{
+    bool success = false;
+
+    p->mInventory[item->mId] = item;
+    
+    LogUI* log = gc.mUim->mLogUI;
+    if ((int) p->mInventory.size() == System::sInvCap) {
+        SDL_Log("pick up item: inventory full!");
+        log->AddMessage("인벤토리가 가득 찼습니다!", System::kY);
+        return false;
+    }
+    
+    item->mTileId = (int) p->mInventory.size() - 1;
+    success = true;
+    return success;
+}
+
+bool EntityManager::EraseFromInv(Pawn *p, int itemId)
+{
+    bool success = false;
+
+    Item* item = p->mInventory[itemId]; //아이템 캐싱
+    //실제 삭제
+    p->mInventory.erase(itemId);
+
+    //아이템 타일 위치 조정(이렇게 해서 정렬함)
+    for (auto itemPair : p->mInventory) {
+        //타일 id가 타겟 아이템보다 큰 객체들을 대상으로 타일 id를 하나씩 감소시킨다.
+        if (itemPair.second->mTileId > item->mTileId) {
+            itemPair.second->mTileId -= 1;
+        }
+    }
+    success = true;
+    return success;
+}
+
+bool EntityManager::EquipItem(GameContext &gc, Pawn* p, Equipment* eq)
+{
+    bool success = false;
+
+    //내가 장비한 장비들 중 같은 장비 타입인 것들을 순회한다.
+    for (auto range = p->mEqs.equal_range(eq->mEqType); range.first != range.second;
+    range.first++) 
+    {
+        Equipment* targetEq = range.first->second;
+        //조건을 검색해 이미 장비하고 있는 무언가가 있다면 continue 한다.
+        if (targetEq != nullptr) continue;
+        //장비 슬롯이 비어있을 경우
+        range.first->second = eq; //장비한게 없다면 mEq 맵에 매개변수 장비를 할당해준다.
+        EraseFromInv(p, eq->mId); //아이템을 인벤토리에서 삭제한다.
+        break;
+    }
+
+    //장비 슬롯 객체의 정보도 업데이트한다.
+    CharacterSheetUI* cui = gc.mUim->mCharacterSheet;
+    for (auto range = cui->mInvUI->mSlotInfos.equal_range(eq->mEqType);
+        range.first != range.second; range.first++) 
+    {
+        SlotInfo& si = range.first->second;
+        if (si.mEqId != 0) continue; //슬롯의 장비 아이디가 0이면 장비가 없음. 반대의 경우 continue
+        si.mEqId = eq->mId;
+        cui->mInvUI->LoadEqToolTip(si);
+        success = true;
+        break;
+    }
+
+    SDL_Log("item equipped");
+    cui->mIsRenderUpdate = true;
+    return success;
+}
+
+bool EntityManager::UnequipItem(GameContext &gc, Pawn *p, int itemId)
+{
+    bool success = false;
+
+    EntityUtil eu;
+    Equipment* eq = nullptr;
+    
+    //매개변수 아이디와 일치하는 장비를 찾는다.
+    for (auto iter = p->mEqs.begin(); iter != p->mEqs.end(); iter++) {
+        if (iter->second == nullptr) continue;
+        if (iter->second->mId == itemId) {
+            eq = iter->second;
+            
+            iter->second = nullptr;
+            break;
+        }
+    }
+    //만약 장비를 찾지 못했다면 즉시 반환.
+    if (eq == nullptr) {
+        SDL_Log("unequip item: cannot find item id param from equipments!");
+        return false;
+    }
+    //슬롯 참조 데이터도 초기화한다.
+    InventoryUI* inv = gc.mUim->mCharacterSheet->mInvUI;
+    SlotInfo si;
+    for (auto iter = inv->mSlotInfos.begin(); iter != inv->mSlotInfos.end(); iter++) {
+        if (iter->second.mEqId == itemId) {
+            iter->second.mEqId = 0;
+            si = iter->second;
+            SDL_Log(std::to_string(iter->second.mEqId).c_str());
+            break;
+        }
+    }
+
+    //인벤토리에 다시 넣는다.
+    PickUpItem(gc, p, eq);
+    CharacterSheetUI* cui = gc.mUim->mCharacterSheet;
+    SDL_Log("item unequipped");
+    cui->mInvUI->LoadEqToolTip(si);
+    cui->mIsRenderUpdate = true;
+    success = true;
+    return success;
 }
 
 void EntityManager::Update(ObjectManager &objm)
@@ -457,6 +573,7 @@ void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
     mFocusedEnt = ent;
     //아군이 아닐 경우 타일 범위 렌더링 끔
     if (!ent->mIsPawn) gc.mUim->mTileHLUI->mIsRenderBetweenTiles = false;
+    else mFocusedPc = static_cast<Pawn*>(ent);
 
     //이전 엔티티와 같은 경우
     if (ent == mPrevFocusedEnt)  {
@@ -518,13 +635,16 @@ Pawn::Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id)
     mInt = 10;
     mSpd = 10;
 
-    mEqs[EqType::Head] = new Equipment(objm, "naked", EqType::Head);
-    mEqs[EqType::Back] = new Equipment(objm, "naked", EqType::Back);
-    mEqs[EqType::Torso] = new Equipment(objm, "naked", EqType::Torso);
-    mEqs[EqType::Leg] = new Equipment(objm, "naked", EqType::Leg);
-    mEqs[EqType::Hand] = new Equipment(objm, "naked", EqType::Hand);
-    mEqs[EqType::Foot] = new Equipment(objm, "naked", EqType::Foot);
-    mEqs[EqType::Weapon] = new Equipment(objm, "dagger", EqType::Weapon);
+    mEqs.insert({EqType::Head, nullptr});
+    mEqs.insert({EqType::Back, nullptr});
+    mEqs.insert({EqType::Torso, nullptr});
+    mEqs.insert({EqType::Leg, nullptr});
+    mEqs.insert({EqType::Hand, nullptr});
+    mEqs.insert({EqType::Hand, nullptr});
+    mEqs.insert({EqType::Foot, nullptr});
+    mEqs.insert({EqType::Foot, nullptr});
+    mEqs.insert({EqType::Weapon, nullptr});
+    mEqs.insert({EqType::Weapon, nullptr});
 }
 
 int StatHelper::GetMaxHp(Entity *ent)
@@ -550,6 +670,7 @@ float StatHelper::GetTotalWeight(Entity *ent)
     float weight = 0;
     //장비의 무게 합산
     for (auto eq : ent->mEqs) {
+        if (eq.second == nullptr) continue;
         weight += eq.second->mWeight;
     }
     //TODO:
@@ -591,6 +712,7 @@ int StatHelper::GetTotalArmor(Entity *ent)
     //장비의 방어력 합산
     int armor = 0;
     for (auto eq : ent->mEqs) {
+        if (eq.second == nullptr) continue;
         armor += eq.second->mArmor;
     }
     //TODO:
@@ -640,4 +762,19 @@ SDL_Color EntityUtil::GetRDemeanorColor(Entity *ent)
         SDL_Log("entity util: cannot find demeanor type of entity");
         return {0xFF, 0xFF, 0xFF, 0xFF};
     }
+}
+
+Equipment *EntityUtil::GetEquipment(Pawn *p, int itemId)
+{
+    Equipment* eq = nullptr;
+    
+    for (auto eqPair : p->mEqs) {
+        if (eqPair.second == nullptr) continue;
+        if (eqPair.second->mId == itemId) {
+            eq = eqPair.second;
+            break;
+        }
+    }
+
+    return eq;
 }

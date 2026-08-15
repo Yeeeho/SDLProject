@@ -5,6 +5,13 @@
 #include "game_json.h"
 #include "game_object.h"
 
+int Item::GetValue()
+{
+    SDL_Log("get item value: virtual function called");
+    return 0;
+}
+
+
 Equipment::Equipment(const ObjectManager& objm, std::string code, EqType et)
 {
     mId = objm.mItm->GetValidId();
@@ -35,6 +42,8 @@ Equipment::Equipment(const ObjectManager& objm, std::string code, EqType et)
 
     mDamage = ith.GetEqDamage(eq);
     mArmor = ith.GetEqArmor(eq);
+
+    mValue = GetValue();
 }
 
 void Equipment::Destroy(const ObjectManager &objm)
@@ -42,8 +51,15 @@ void Equipment::Destroy(const ObjectManager &objm)
     objm.mItm->ReturnId(mId);
 }
 
+int Equipment::GetValue()
+{
+    SDL_Log("get equipment value: still making");
+    return 0;
+}
+
 Consumable::Consumable(const ObjectManager &objm, std::string code)
 {
+    ItemHelper ih;
     mId = objm.mItm->GetValidId(); //아이디 테이블을 조회해서 유효한 아이디를 가져온다.
     mType = ItemType::Consumable;
     
@@ -57,11 +73,17 @@ Consumable::Consumable(const ObjectManager &objm, std::string code)
     mCode = code;
     
     json item = consumTb[code];
-    mValue = item["val"].get<int>();
     mName = item["name"].get<std::string>();
+    mValue = GetValue();
 }
 
 void Consumable::Destroy(const ObjectManager &objm)
 {
     objm.mItm->ReturnId(mId);
+}
+
+int Consumable::GetValue() 
+{
+    SDL_Log("get consumable value: still making");
+    return 0;
 }

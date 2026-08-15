@@ -39,6 +39,7 @@ class ItemManager {
 
     //아이템 렌더링
     void RenderItem(Item* item);
+    void RenderItem(Item* item, float x, float y, float w, float h);
     void RenderItems();
     void StoreTexture();
     void RenderStoredTex();
@@ -84,6 +85,7 @@ class ItemHelper {
     void DestroyStackObj(Map* map, int tileId);
 
     EqType GetEqType(json eq);
+    ItemType GetItemType(std::string iType);
     float GetEqWeight(json eq); 
 
     int GetEqDamage(json eq);
@@ -98,5 +100,4 @@ class ItemHelper {
     json* GetItemSsMap(ItemManager* itm, Item* item);
     Texture* GetItemSs(ItemManager* itm, Item* item);
     
-    ItemType GetItemType(std::string iType);
 };

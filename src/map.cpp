@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "render.h"
+#include "shape/point.h"
 #include "game_context.h"
 #include "game_object.h"
 #include "turn.h"
@@ -316,6 +317,15 @@ std::unordered_map<std::string, int> MapHelper::PosXYByTileId(int id, Grid *grid
     ret.insert({"y", posY});
 
     return ret;
+}
+
+Point MapHelper::GetPosPoint(int tileId, Grid *grid)
+{
+    int posY = tileId / grid->mXTiles;
+    int posX = tileId - posY * grid->mXTiles;
+
+    Point p = {posX, posY};
+    return p;
 }
 
 MapManager::MapManager()

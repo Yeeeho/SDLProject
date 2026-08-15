@@ -11,12 +11,14 @@ class Item {
     public:
     Item() = default;
 
+    virtual int GetValue();
+
     //아이템 속성
     ItemType mType {ItemType::Error};
     int mId {0}; //인게임 식별용 코드.
     std::string mCode = ""; //데이터베이스 식별용 코드. 런타임에서 바꾸면 안됨
     std::string mName = ""; //게임 내에서 실제로 보일 이름
-    int mTileId {0}; //어느 타일에 있는가
+    int mTileId {0}; //맵상에서 어느 위치에 있는지도 알려주고 인벤토리에 있을 경우 인벤토리 위치의 기준도 된다.
 
     int mValue {0}; //가치, 실제 계산 방식은 여러 변수들에 의해 동적으로 변한다.
 };
@@ -31,6 +33,8 @@ class Equipment : public Item {
     public:
     Equipment(const ObjectManager& objm, std::string code, EqType);
     void Destroy(const ObjectManager& objm);
+
+    int GetValue() override;
 
     //장비 속성
     
@@ -55,4 +59,6 @@ class Consumable : public Item {
     public:
     Consumable(const ObjectManager& objm, std::string code);
     void Destroy(const ObjectManager& objm);
+
+    int GetValue() override;
 };

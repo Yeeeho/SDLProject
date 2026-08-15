@@ -14,11 +14,16 @@ using json = nlohmann::json;
 class System {
     public:
 
-    inline const static SDL_Color sTc {0x00, 0xB0, 0x00, 0xFF};
-    inline const static SDL_Color sWh {0xF0, 0xF0, 0xF0, 0xFF};
+    //기본 색깔
+    inline const static SDL_Color kTc {0x00, 0xB0, 0x00, 0xFF};
+    inline const static SDL_Color kWh {0xF0, 0xF0, 0xF0, 0xFF};
+    inline const static SDL_Color kY {0xB0, 0xB0, 0x00, 0xFF};
 
     inline static int sWindowWidth {1920};
     inline static int sWindowHeight {1080};
+
+    //인벤토리 제한
+    inline const static int sInvCap {120};
 
     //스킬 관련 
     inline static int sQuickSlotCap {8};

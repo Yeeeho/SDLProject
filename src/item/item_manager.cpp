@@ -150,7 +150,6 @@ int ItemManager::GetValidId()
     for (int i = 0; i < kMaxItemId; i++) {
         if (mIdTable[i] == 0) continue;
         int ret = mIdTable[i];
-        SDL_Log(std::to_string(ret).c_str());
         mIdTable[i] = 0;
         return ret;
     }
@@ -289,6 +288,14 @@ void ItemManager::RenderItem(Item* item)
     float itemX = (float) (xy["x"] * currentMap->mTileLen + currentMap->mOffsetX);
     float itemY = (float) (xy["y"] * currentMap->mTileLen + currentMap->mOffsetY);
 
+    RenderItem(item, itemX, itemY, currentMap->mTileLen, currentMap->mTileLen);
+    SDL_Log("rendered an item");
+}
+
+void ItemManager::RenderItem(Item* item, float x, float y, float w, float h) 
+{
+    ItemHelper ih;
+
     json* db = ih.GetItemDb(this, item);
     json* ssmap = ih.GetItemSsMap(this, item);
 
@@ -302,11 +309,11 @@ void ItemManager::RenderItem(Item* item)
             SDL_FRect fr = {sp["x"].get<float>(), sp["y"].get<float>(),
                 sp["width"].get<float>(), sp["height"].get<float>() 
             };
-            ss->Render(itemX, itemY, &fr, (float) currentMap->mTileLen, (float) currentMap->mTileLen);
+            ss->Render(x, y, &fr, (float) w, (float) h);
         }
     }
-    SDL_Log("rendered an item");
 }
+
 
 void ItemManager::Render()
 {

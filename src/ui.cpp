@@ -47,7 +47,7 @@ Button::Button(int x, int y, int w, int h, std::string uiText, BtnType type)
     mX = x; mY = y; mW = w; mH = h;
 
     mTui = new TextUI(0.f, 0.f);
-    TTFWord word = TTFWord(uiText, System::sTc, System::sFont);
+    TTFWord word = TTFWord(uiText, System::kTc, System::sFont);
     mTui->AddWord(word);
     //가운데 위치에 정렬하는 작업
     //가로 정렬
@@ -200,6 +200,7 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameContext& gc, float mouseX, float
     if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_RIGHT) {
         //포커스 해제
         gc.mObjm->mEntm->mFocusedEnt = nullptr;
+        gc.mObjm->mEntm->mFocusedPc = nullptr;
         gc.mObjm->mEntm->mPrevFocusedEnt = nullptr;
         mFocusIcon->mIsRender = false; //포커스 아이콘 렌더링 안함
         mCharacterSheet->Deactivate();
@@ -301,9 +302,9 @@ void UIManager::LoadInvToolTip(Grid *grid, int tileId)
     for (auto itemPair : focusedP->mInventory) {
         Item* item = itemPair.second;
         if (item->mTileId == tileId) {
-            tui->AddWord(TTFWord(item->mName, System::sWh, System::sFont));
+            tui->AddWord(TTFWord(item->mName, System::kWh, System::sFont));
             tui->AddWord(TTFWord(System::sFont, TextType::NewLine));    
-            tui->AddWord(TTFWord("가치: " + std::to_string(item->mValue), System::sWh, System::sFont));
+            tui->AddWord(TTFWord("가치: " + std::to_string(item->mValue), System::kWh, System::sFont));
             tui->AddWord(TTFWord(System::sFont, TextType::NewLine));        
         }
     }
@@ -339,12 +340,12 @@ void UIManager::LoadMapToolTip(Map *map, int tileId)
         if (stackObj->mStack.empty()) {}
         //스택에 아이템이 하나인 경우 아이템 이름을 추가함
         else if ((int) stackObj->mStack.size() == 1) {
-            tui->AddWord(TTFWord (stackObj->mStack[0]->mName, System::sWh, System::sFont));
+            tui->AddWord(TTFWord (stackObj->mStack[0]->mName, System::kWh, System::sFont));
             tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
         }
         //스택에 아이템이 하나 이상인 경우 첫번째 아이템 이름을 렌더링하고 생략된 표현을 추가함
         else {
-            tui->AddWord(TTFWord (stackObj->mStack.back()->mName + "...", System::sWh, System::sFont));
+            tui->AddWord(TTFWord (stackObj->mStack.back()->mName + "...", System::kWh, System::sFont));
             tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
         }
     }
@@ -987,7 +988,7 @@ InventoryUI::InventoryUI(int x, int y, int offsetX, int offsetY, int w, int h, i
 
     int tl = tileLen;
     SlotInfo si;
-    si = {EqType::Head, 0, "머리", mOffsetX + tl * 2, mOffsetY + tl};
+    si = {EqType::Head, 0, 0, "머리", mOffsetX + tl * 2, mOffsetY + tl};
     mSlotInfos.insert({EqType::Head, si});
 
     si.mEqType = EqType::Back, si.mInfo = "등"; 
@@ -1045,27 +1046,47 @@ void InventoryUI::Deactivate()
     mGc->mUim->mToolTipGrid = mGc->mMapm->mCurrentMap;
 }
 
-void InventoryUI::LoadEqToolTip(SlotInfo& si)
+void InventoryUI::UpdateEqToolTip(SlotInfo& si)
 {
-    Pawn* p = static_cast<Pawn*> (mGc->mObjm->mEntm->mFocusedEnt);
-    if (p->mEqs.find(si.mEqType) == p->mEqs.end()) return;
-    Equipment* eq = p->mEqs[si.mEqType];
+    EntityUtil eu;
+    Pawn* p = mGc->mObjm->mEntm->mFocusedPc;
+
+    //엔티티가 실제로 뭘 장비했는지 확인한다.
+    //슬롯의 장비 아이디와 현재 장비 아이디를 조회
+    Equipment* eq = eu.GetEquipment(p, si.mEqId);
     
     ToolTip* tt = mToolTip;
     if (mPrevEqIdx != si.mId) {
         mPrevEqIdx = si.mId;
-    
-        tt->ClearContent();
-        tt->mTui->AddWord(TTFWord("id: ", System::sTc, System::sFont));
-        tt->mTui->AddWord(TTFWord(System::sFont, TextType::Space));
-        tt->mTui->AddWord(TTFWord(std::to_string(si.mId), System::sWh, System::sFont));
-        tt->mTui->AddWord(TTFWord(System::sFont, TextType::NewLine));
+ 
+        LoadEqToolTip(si);
     }
 
     tt->mIsRender = true;
     tt->SetRefInfo(si.x, si.y, mGrid->mTileLen, mGrid->mTileLen);
     mGc->mUim->mCharacterSheet->mIsRenderUpdate = true;
     tt->mTui->mTotalHeight = 0; tt->mTui->mTotalWidth = 0;
+}
+
+void InventoryUI::LoadEqToolTip(SlotInfo &si)
+{
+    EntityUtil eu;
+    Pawn* p = mGc->mObjm->mEntm->mFocusedPc;
+    ToolTip* tt = mToolTip;
+    Equipment* eq = eu.GetEquipment(p, si.mEqId);
+
+    tt->ClearContent();
+    tt->mTui->AddWord(TTFWord(si.mInfo, System::kTc, System::sFont));
+    tt->mTui->AddWord(TTFWord(System::sFont, TextType::NewLine));
+    tt->mTui->AddWord(TTFWord("equipment id: " + std::to_string(si.mEqId), System::kTc, System::sFont));
+    tt->mTui->AddWord(TTFWord(System::sFont, TextType::NewLine));
+    
+    //장비가 있을 경우에만 정보를 푸시함
+    if (eq) {
+        tt->mTui->AddWord(TTFWord(eq->mName, System::kTc, System::sFont));
+        tt->mTui->AddWord(TTFWord(System::sFont, TextType::NewLine));
+    }
+    
 }
 
 void InventoryUI::HandleEvent(SDL_Event &e, float mx, float my)
@@ -1075,6 +1096,11 @@ void InventoryUI::HandleEvent(SDL_Event &e, float mx, float my)
 
     for (auto siPair : mSlotInfos) {
         HandleEqSlotEvent(e, siPair.second, mx, my);
+    }
+
+    Pawn* p = static_cast<Pawn*>(mGc->mObjm->mEntm->mFocusedEnt);
+    for (auto itemPair : p->mInventory) {
+        HandleItemEvent(e, itemPair.second, mx, my);
     }
 
     if (!mMouseIn) {
@@ -1090,15 +1116,43 @@ void InventoryUI::HandleEqSlotEvent(SDL_Event &e, SlotInfo si, float mx, float m
     Math mth;
     bool isIn = mth.IsPointInSquare(mx, my, (float) si.x, (float) si.y, (float) tl, (float) tl);
     if (!isIn) return;
+    //마우스 오버
     mMouseIn = true;
 
     Pawn* p = static_cast<Pawn*>(mGc->mObjm->mEntm->mFocusedEnt);
-    LoadEqToolTip(si);
+    UpdateEqToolTip(si);
+    
+    //클릭시
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
+    mGc->mObjm->mEntm->UnequipItem(*mGc, p, si.mEqId);
+}
+
+void InventoryUI::HandleItemEvent(SDL_Event &e, Item* item, float mx, float my)
+{
+    MapHelper mh; Math mth;
+    Point p = mh.GetPosPoint(item->mTileId, mGrid);
+
+    int tl = mGrid->mTileLen;
+    bool isIn = mth.IsPointInSquare(mx, my, 
+        (float) mGrid->mOffsetX + p.mX * tl,
+        (float) mGrid->mOffsetY + p.mY * tl,
+        (float) tl, (float) tl
+    );
+    if (!isIn) return;
+
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
+
+    Entity* focused = mGc->mObjm->mEntm->mFocusedEnt;
+    Pawn* fp = static_cast<Pawn*>(focused);
+    if (item->mType == ItemType::Equipment) {
+        Equipment* eq = static_cast<Equipment*>(item);
+        mGc->mObjm->mEntm->EquipItem(*mGc, fp, eq);
+    }
 }
 
 void InventoryUI::RenderThings()
 {
-    ItemHelper ih; 
+    ItemHelper ih; MapHelper mh;
 
     ItemManager* itm = mGc->mObjm->mItm;
     Pawn* focusedP = static_cast<Pawn*> (mGc->mObjm->mEntm->mFocusedEnt);
@@ -1108,40 +1162,25 @@ void InventoryUI::RenderThings()
     t.LoadFromFile("images/ui/frame.png");
     RenderEqSlots(t);
 
+    int tl = mGrid->mTileLen;
     int x {0}; int y {0};
     for (auto itemPair : focusedP->mInventory) {
         Item* item = itemPair.second;
+        Point p = mh.GetPosPoint(item->mTileId, mGrid);
 
-        json* db = ih.GetItemDb(itm, item);
-        json* ssmap = ih.GetItemSsMap(itm, item);
-
-        json itemData = (*db)["items"][item->mCode];
-        std::string sname = itemData["sprite_name"].get<std::string>();
-
-        json sprites = (*ssmap)["sprites"];
-        //스프라이트 탐색 및 렌더링
-        for (json sp : sprites) {
-            if (sp["filename"].get<std::string>() == sname) {
-                Texture* ss = ih.GetItemSs(itm, item);
-                SDL_FRect fr = {sp["x"].get<float>(), sp["y"].get<float>(),
-                    sp["width"].get<float>(), sp["height"].get<float>() 
-                };
-                ss->Render((float) x + mGrid->mOffsetX, (float) y + mGrid->mOffsetY, &fr, (float) mGrid->mTileLen, (float) mGrid->mTileLen);
-            }
-        }
-        
-        x += mGrid->mTileLen;
-        if (x > mGrid->mW - mGrid->mTileLen) {
-            x = 0;
-            y += mGrid->mTileLen;
-        }
+        itm->RenderItem(item, 
+            (float) p.mX * tl + mGrid->mOffsetX,
+            (float) p.mY * tl + mGrid->mOffsetY, 
+            (float) tl, (float) tl
+        );
     }
 
-    if (mToolTip->mIsRender)
-    mToolTip->RenderThings(
-        mToolTip->mRefX + mToolTip->mRefW * 0.5, 
-        mToolTip->mRefY + mToolTip->mRefH * 0.5
-    );
+    if (mToolTip->mIsRender) {
+        mToolTip->RenderThings(
+            mToolTip->mRefX + mToolTip->mRefW * 0.5, 
+            mToolTip->mRefY + mToolTip->mRefH * 0.5
+        );
+    }
 }
 
 void InventoryUI::RenderEqSlots(Texture& t)
@@ -1150,24 +1189,31 @@ void InventoryUI::RenderEqSlots(Texture& t)
 
     for (auto slotPair : mSlotInfos) {
         SlotInfo si = slotPair.second;
-        RenderEqSlot(t, si.x, si.y, si.mInfo);
+        RenderEqSlot(t, si);
     }
 }
 
-void InventoryUI::RenderEqSlot(Texture &t, int x, int y, std::string info)
+void InventoryUI::RenderEqSlot(Texture &t, SlotInfo si)
 {
     int totalH {0};
     int tl = mGrid->mTileLen;
     TextUI tui = TextUI(0.f, 0.f);
     tui.mPadding = 6;
-    TTFWord word = TTFWord(info, System::sTc, System::sFont);
+    TTFWord word = TTFWord(si.mInfo, System::kTc, System::sFont);
 
-    t.Render((float) x , (float) y, nullptr, (float) tl, (float) tl); //머리
+    t.Render((float) si.x , (float) si.y, nullptr, (float) tl, (float) tl); //머리
     tui.AddWord(word);
     int rem = tl - word.GetWordWidth(); if (rem < 0) rem = 0;
     
-    tui.mX = (float) x + rem * 0.5 - tui.mPadding; tui.mY = (float) (y + tl);
+    tui.mX = (float) si.x + rem * 0.5 - tui.mPadding; tui.mY = (float) (si.y + tl);
     tui.RenderWords();
+
+    EntityUtil eu;
+    Equipment* eq = eu.GetEquipment(mGc->mObjm->mEntm->mFocusedPc, si.mEqId);
+    
+    if (eq != nullptr) {
+        mGc->mObjm->mItm->RenderItem(eq, si.x, si.y, tl, tl);
+    }
 }
 
 CharacterSkillUI::CharacterSkillUI(int x, int y, int w, int h)
