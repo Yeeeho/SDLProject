@@ -21,7 +21,7 @@ class UI;
 class TTFWord;
 class Grid;
 class Map;
-class Item;
+class Item; class Equipment; class Consumable;
 class Camera;
 class Pawn; class Entity;
 class Skill;
@@ -32,6 +32,10 @@ class UI {
 
     virtual void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY);
 
+    virtual void Activate();
+    virtual void Deactivate();
+
+    virtual void RenderThings();
     virtual void StoreTexture(); //텍스처 캐싱
     virtual void RenderStoredTex(); //캐시 텍스처 렌더링
     void Render();
@@ -63,6 +67,7 @@ class TextUI {
     void ProcessAndAddText(std::string text, SDL_Color color, TTF_Font* font);
 
     void RenderWords();
+    void RenderWords(int x, int y);
     void RenderAtLine(const TTFWord& text);
     void NewLine(TTF_Font* font);
     void AddSpace(TTF_Font* font);
@@ -116,12 +121,14 @@ enum class BtnType {
 class Button : public UI {
     public:
     Button(int x, int y, int w, int h, std::string text, BtnType BtnType);
+    ~Button();
+    void Destroy();
 
     void HandleEvent(SDL_Event& e, GameContext& gc, float mouseX, float mouseY) override;
     bool IsMouseIn(float mx, float my);
 
-    void RenderThings();
-    void StoreTexture() override;
+    void RenderThings() override;
+    void RenderThings(int x, int y);
 
     TextUI* mTui {nullptr};
 
@@ -144,9 +151,8 @@ class ToolTip : public UI {
     void CheckUpdate(); //업데이트 로직에서 업데이트 유무를 검사함
     //렌더링 메서드
     void RenderThings(float x, float y);
-    void StoreTexture();
-    void RenderStoredTex();
-    void Render();
+    void StoreTexture() override;
+    void RenderStoredTex() override;
 
     TextUI* mTui {nullptr}; //텍스트
     Square* mUIFrame {nullptr}; //프레임
@@ -259,7 +265,7 @@ class InventoryUI : public UI {
     void HandleItemEvent(SDL_Event& e, Item* item, float mx, float my);
     bool mMouseIn {false};
 
-    void RenderThings();
+    void RenderThings() override;
     void RenderEqSlots(Texture& t);
     void RenderEqSlot(Texture& t, SlotInfo si);
 
@@ -285,7 +291,7 @@ class CharacterSkillUI : public UI {
     void UpdateUI(Entity* ent);
     void UpdateSkillDesc(int idx, GameContext* gc);
     
-    void RenderThings();
+    void RenderThings() override;
     
     std::vector<FramedTUI*> mSkillList; //스킬 리스트
     FramedTUI* mSkillDesc {nullptr}; //스킬 설명
@@ -299,12 +305,12 @@ class CharacterSheetUI : public UI {
     public:
     CharacterSheetUI(int x, int y, int w, int h, GameContext* gc);
 
-    void Activate(Pawn* pc);
-    void Deactivate();
+    void Activate() override;
+    void Deactivate() override;
 
     void HandleEvent(SDL_Event& e, GameContext& gc, float mx, float my);
 
-    void StoreTexture() override;
+    void RenderThings() override;
 
     GameContext* mGc {nullptr};
 
@@ -322,11 +328,11 @@ class QuickSkillUI : public UI{
     
     void AddSkill(Skill* skill);
     
-    void StoreTexture() override;
+    void RenderThings() override;
     
     void HandleEvent(SDL_Event& e, GameContext& gc, Map* map, float mouseX, float mouseY);
-    void Activate(GameContext& gc, Map* map, Pawn* pawn);
-    void Deactivate(GameContext& gc, Map* map);
+    void Activate() override;
+    void Deactivate() override;
     
     GameContext* mGc {nullptr};
 };
@@ -341,10 +347,31 @@ class BottomCharacterUI : public UI{
 
     void UpdateUI(Entity* ent);
 
-    void StoreTexture() override;
+    void RenderThings() override;
 
     FramedTUI* mMainStat {nullptr}; //hp 등을 보여주는 ui컴포넌트
     FramedTUI* mStatEffect {nullptr}; //상태이상들을 보여주는 ui 컴포넌트
+};
+
+class ItemMenu : public UI {
+    public:
+    ItemMenu(int x, int y, int w, int h, GameContext* gc);
+
+    void Activate() override;
+    void Deactivate() override;
+
+    void ClearButtons();
+
+    void HandleEvent(SDL_Event& e, float mx, float my);
+
+    void Update(Consumable* cons);
+    void Update(Equipment* eq);
+
+    void RenderThings() override;
+
+    GameContext* mGc {nullptr};
+
+    std::vector<Button*> mButtons;
 };
 
 class LogUI : public UI {
@@ -353,7 +380,7 @@ class LogUI : public UI {
 
     void AddMessage(std::string message, SDL_Color c);
 
-    void StoreTexture() override;
+    void RenderThings() override;
 
     int mTotalH {0};
     
@@ -367,10 +394,10 @@ class UIManager {
     //참고용 컨텍스트 객체
     GameContext* mGc {nullptr};
 
-    //ui 컨테이너
+    //ui 컨테이너, 삭제 고려
     std::map<std::string, UI*> uiMap;
-    std::unordered_map<std::string, Square*> mPanels;
-    
+    std::vector<UI*> mUIStack;
+
     void InitTopBar(); //탑 바를 초기화하는 녀석
     void InitUIs(); //게임 상태마다 초기화 할 ui들을 초기화
 
@@ -409,9 +436,11 @@ class UIManager {
     QuickSkillUI* mQSUI {nullptr};
     //캐릭터 하단 간략화 정보창
     BottomCharacterUI* mBCUI {nullptr};
-
     //캐릭터 정보창
     CharacterSheetUI* mCharacterSheet {nullptr};
+    
+    ItemMenu* mItemMenu {nullptr};
+
     //턴 종료 버튼
     Button* mTurnOverBtn {nullptr};
     bool mWasMouseOnMap {false};

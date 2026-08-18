@@ -28,11 +28,21 @@ void JsonHelper::SDLLogErrorMsg(json &data, std::string datatype, std::string wh
     SDL_Log(message.c_str());
 }
 
+
 std::string JsonHelper::GetDataType(json &data)
 {
     if (!data.contains("type")) return "unknown_type";
-
+    
     return data["type"].get<std::string>();
+}
+
+json JsonHelper::GetJson(json &data, std::string what)
+{
+    if (!data.contains(what)) {
+        SDLLogErrorMsg(data, "json", what);
+        return json();        
+    }
+    return data[what];
 }
 
 std::string JsonHelper::GetString(json& data, std::string what)

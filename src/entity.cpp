@@ -583,14 +583,11 @@ void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
         SDL_Log("one more click on focused pawn");
         Pawn* p = static_cast<Pawn*>(ent);
         //스킬 ui등을 표시.
-        gc.mUim->mCharacterSheet->Activate(p);
+        gc.mUim->mQSUI->Activate();
+        gc.mUim->mCharacterSheet->Activate();
     }
 
     mPrevFocusedEnt = ent;
-    //내가 아군일때
-    if (ent->mIsPawn) {
-        gc.mUim->mQSUI->Activate(gc, map, static_cast<Pawn*>(ent));
-    }
 }
 
 void EntityManager::RenderEntities(Map *map)

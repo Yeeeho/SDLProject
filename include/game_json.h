@@ -24,5 +24,6 @@ class JsonHelper {
     void SDLLogErrorMsg(json& data, std::string datatype, std::string what);
     std::string GetDataType(json& data);
     std::string GetString(json& data, std::string what);
+    json GetJson(json& data, std::string what);
     int GetInt(json& data, std::string what);
 };

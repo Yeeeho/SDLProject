@@ -25,8 +25,27 @@ void UI::HandleEvent(SDL_Event &e, GameContext &gc, float mouseX, float mouseY)
 {
 }
 
+void UI::Activate()
+{
+}
+void UI::Deactivate()
+{
+}
+
+void UI::RenderThings()
+{
+}
+
 void UI::StoreTexture()
 {
+    if (!mIsRenderUpdate) return;
+    RenderManager rm;
+    rm.SetRenderTarget(System::sRenderer, mTempTex);
+
+    RenderThings();
+
+    SDL_SetRenderTarget(System::sRenderer, nullptr);
+    mIsRenderUpdate = false;
 }
 
 void UI::RenderStoredTex()
@@ -46,7 +65,7 @@ Button::Button(int x, int y, int w, int h, std::string uiText, BtnType type)
 {
     mX = x; mY = y; mW = w; mH = h;
 
-    mTui = new TextUI(0.f, 0.f);
+    mTui = new TextUI((float) x, (float) y);
     TTFWord word = TTFWord(uiText, System::kTc, System::sFont);
     mTui->AddWord(word);
     //가운데 위치에 정렬하는 작업
@@ -68,6 +87,18 @@ Button::Button(int x, int y, int w, int h, std::string uiText, BtnType type)
     mTempTex = tm.CreateTempTexture(System::sRenderer, w, h);
 
     mIsRender = true;
+    mIsRenderUpdate = true;
+}
+
+Button::~Button()
+{
+    Destroy();
+}
+
+void Button::Destroy()
+{
+    if (mTempTex) SDL_DestroyTexture(mTempTex);
+    if (mTui) delete mTui;
 }
 
 void Button::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
@@ -134,16 +165,9 @@ void Button::RenderThings()
     mTui->RenderWords();
 }
 
-void Button::StoreTexture()
+void Button::RenderThings(int x, int y)
 {
-    if (!mIsRenderUpdate) return;
-    RenderManager rm;
-    rm.SetRenderTarget(System::sRenderer, mTempTex);
-
-    RenderThings();
-
-    SDL_SetRenderTarget(System::sRenderer, nullptr);
-    mIsRenderUpdate = false;
+    mTui->RenderWords(x, y);
 }
 
 UIManager::UIManager(GameContext& gc)
@@ -170,6 +194,11 @@ UIManager::UIManager(GameContext& gc)
         System::sWindowWidth * 0.5 - 600, System::sWindowHeight * 0.5 - 400,
         1200, 800, &gc 
     );
+    mItemMenu = new ItemMenu(
+        System::sWindowWidth * 0.5 - 50, System::sWindowHeight * 0.5 - 100,
+        100, 200, &gc
+    );
+
     mBCUI = new BottomCharacterUI(
         0, System::sWindowHeight - 120,
         400, 120
@@ -183,7 +212,6 @@ UIManager::UIManager(GameContext& gc)
 void UIManager::InitTopBar()
 {
     //탑 바 패널 생성
-    mPanels["topPanel"] = new Square(0, 0, System::sWindowWidth, mTopPanelH);
 
     //ui 객체들 생성
     TextUI* turnTui = new TextUI(70, 0);
@@ -196,16 +224,15 @@ void UIManager::InitUIs()
 
 void UIManager::HandleUIEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
 {
-    //오른쪽 마우스 버튼 클릭시
-    if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && e.button.button == SDL_BUTTON_RIGHT) {
-        //포커스 해제
-        gc.mObjm->mEntm->mFocusedEnt = nullptr;
-        gc.mObjm->mEntm->mFocusedPc = nullptr;
-        gc.mObjm->mEntm->mPrevFocusedEnt = nullptr;
-        mFocusIcon->mIsRender = false; //포커스 아이콘 렌더링 안함
-        mCharacterSheet->Deactivate();
-        mQSUI->Deactivate(gc, gc.mMapm->mCurrentMap); //퀵슬롯 비활성화
-        return;
+    //esc 눌렀을때
+    if (e.key.key == SDLK_ESCAPE && e.type == SDL_EVENT_KEY_DOWN) {
+        if (!mUIStack.empty()) {            
+            mUIStack.back()->Deactivate();
+            mUIStack.pop_back();
+            
+            if (!mUIStack.empty()) mUIStack.back()->mCanHandleEvent = true;
+            return;
+        } 
     } 
 
     mCharacterSheet->HandleEvent(e, gc, mouseX, mouseY);
@@ -231,9 +258,6 @@ void UIManager::RenderUIs()
     SDL_Color lineColor = {0x00, 0x80, 0x00, 0xFF};
 
     //ui 패널 렌더링
-    for (auto panel : mPanels) {
-        panel.second->Render(lineColor, fillColor);
-    }
 
     //기본 ui 렌더링
     for (auto ui : uiMap) {
@@ -260,7 +284,8 @@ void UIManager::RenderMapUIs(Map* map)
     mCharacterSheet->Render();
     mQSUI->Render();
     RenderMapToolTip(mToolTipGrid);
-    
+    mItemMenu->Render();
+
     mBCUI->mIsRender = true; //DEBUG
     mBCUI->Render();
 }
@@ -277,13 +302,7 @@ void UIManager::DestroyUIs()
         ui.second = nullptr;
     }
 
-    for (auto square : mPanels) {
-        delete square.second;
-        square.second = nullptr;
-    }
-
     uiMap.clear();
-    mPanels.clear();
 }
 
 void UIManager::LoadInvToolTip(Grid *grid, int tileId)
@@ -543,12 +562,6 @@ void ToolTip::RenderStoredTex()
     SDL_RenderTexture(System::sRenderer ,mTempTex, nullptr, &fr);
 }
 
-void ToolTip::Render()
-{
-    RenderStoredTex();
-    StoreTexture();
-}
-
 TextUI::TextUI(float x, float y)
 {
     mX = x; mY = y;
@@ -620,7 +633,12 @@ void TextUI::ProcessAndAddText(std::string text, SDL_Color color, TTF_Font *font
 
 void TextUI::RenderWords()
 {
-    mTotalWidth = 0; mTotalHeight = 0;
+    RenderWords(0, 0);
+}
+
+void TextUI::RenderWords(int x, int y)
+{
+    mTotalWidth = x; mTotalHeight = y;
     for (auto pair : mTexts) {
         if (pair.second.mType == TextType::NewLine) NewLine(pair.second.mFont);
         else if (pair.second.mType == TextType::Space) AddSpace(pair.second.mFont);
@@ -1139,6 +1157,7 @@ void InventoryUI::HandleItemEvent(SDL_Event &e, Item* item, float mx, float my)
         (float) tl, (float) tl
     );
     if (!isIn) return;
+    //마우스오버
 
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
 
@@ -1147,6 +1166,16 @@ void InventoryUI::HandleItemEvent(SDL_Event &e, Item* item, float mx, float my)
     if (item->mType == ItemType::Equipment) {
         Equipment* eq = static_cast<Equipment*>(item);
         mGc->mObjm->mEntm->EquipItem(*mGc, fp, eq);
+
+    }
+    else if (item->mType == ItemType::Consumable) {
+        Consumable* cons = static_cast<Consumable*>(item);
+        //여기에 아이템 메뉴 활성화 동작을 삽입..
+        ItemMenu* im = mGc->mUim->mItemMenu;
+        im->mX = mX + mGrid->mOffsetX + (p.mX + 1) * tl  + 20;
+        im->mY = mY + mGrid->mOffsetY + (p.mY + 1) * tl  + 20;
+        im->Update(cons);
+        im->Activate();
     }
 }
 
@@ -1331,9 +1360,10 @@ CharacterSheetUI::CharacterSheetUI(int x, int y, int w, int h, GameContext* gc)
     mTempTex = tm.CreateTempTexture(System::sRenderer, w, h);
 }
 
-void CharacterSheetUI::Activate(Pawn *pc)
+void CharacterSheetUI::Activate()
 {
-    SDL_Log("activated character sheet");
+    Pawn* pc = mGc->mObjm->mEntm->mFocusedPc;
+    if (!mIsRender) mGc->mUim->mUIStack.push_back(this);
 
     Deactivate();
     mGc->mUim->mCanHandleToolTip = false;
@@ -1371,23 +1401,19 @@ void CharacterSheetUI::HandleEvent(SDL_Event &e, GameContext &gc, float mx, floa
     if (mInvTab->IsMouseIn(mx, my)) {
         if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
             mTabIdx = CharacterSheetIdx::Inv;
-            Activate(p);
+            Activate();
         }
     }
     if (mSkillTab->IsMouseIn(mx, my)) {
         if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
             mTabIdx = CharacterSheetIdx::Skill;
-            Activate(p);
+            Activate();
         }
     }
 }
 
-void CharacterSheetUI::StoreTexture()
+void CharacterSheetUI::RenderThings()
 {
-    if (mIsRenderUpdate == false) return;
-    RenderManager rm;    
-    rm.SetRenderTarget(System::sRenderer, mTempTex);
-    
     Texture t;
     t.LoadFromFile("images/ui/character_sheet.png");
     t.Render(0.f, 0.f, nullptr, (float) mW, (float) mH);
@@ -1397,9 +1423,6 @@ void CharacterSheetUI::StoreTexture()
     
     if (mCsUI->mIsRender) mCsUI->RenderThings();
     if (mInvUI->mIsRender) mInvUI->RenderThings();
-
-    SDL_SetRenderTarget(System::sRenderer, nullptr);
-    mIsRenderUpdate = false;
 }
 
 QuickSkillUI::QuickSkillUI(int x, int  y, int w, int h, GameContext& gc)
@@ -1441,13 +1464,8 @@ void QuickSkillUI::AddSkill(Skill* skill)
     SDL_Log("quick skill ui: added skill code");
 }
 
-void QuickSkillUI::StoreTexture()
+void QuickSkillUI::RenderThings()
 {
-    if (!mIsRenderUpdate) return;
-
-    RenderManager rm;
-    rm.SetRenderTarget(System::sRenderer, mTempTex);
-
     Texture t;
     t.LoadFromFile("images/black.png");
     t.Render(0.f, 0.f, nullptr, (float) mW, (float) mH);
@@ -1479,9 +1497,6 @@ void QuickSkillUI::StoreTexture()
             i++;
         }
     }
-
-    SDL_SetRenderTarget(System::sRenderer, nullptr);
-    mIsRenderUpdate = false;
 }
 
 void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mouseX, float mouseY)
@@ -1545,18 +1560,20 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
     }
 }
 
-void QuickSkillUI::Activate(GameContext& gc, Map *map, Pawn *pawn)
+void QuickSkillUI::Activate()
 {
+    mGc->mUim->mUIStack.push_back(this);
     mCanHandleEvent = true;
     mIsRenderUpdate = true;
     mIsRender = true;
+    mGc->mMapm->mCurrentMap->mCanHandleEvent = false;
 }
 
-void QuickSkillUI::Deactivate(GameContext& gc, Map* map)
+void QuickSkillUI::Deactivate()
 {
     mCanHandleEvent = false;
     mIsRender = false; //스킬 퀵슬롯 렌더링 안함
-    map->mCanHandleEvent = true;
+    mGc->mMapm->mCurrentMap->mCanHandleEvent = true;
 }
 
 BottomCharacterUI::BottomCharacterUI(int x, int y, int w, int h)
@@ -1614,20 +1631,85 @@ void BottomCharacterUI::UpdateUI(Entity *ent)
     mIsRenderUpdate = true;
 }
 
-void BottomCharacterUI::StoreTexture()
+void BottomCharacterUI::RenderThings()
 {
-    if (!mIsRenderUpdate) return;
-    RenderManager rm;
-    rm.SetRenderTarget(System::sRenderer, mTempTex);
-
     Texture t;
     t.LoadFromFile("images/ui/bottom_char_ui.png");
     t.Render(0.f, 0.f, nullptr, (float) mW, (float) mH);
     mMainStat->Render();
     mStatEffect->Render();
+}
 
-    SDL_SetRenderTarget(System::sRenderer, nullptr);
-    mIsRenderUpdate = false;
+ItemMenu::ItemMenu(int x, int y, int w, int h, GameContext* gc)
+{
+    mX = x; mY = y; mW = w; mH = h;
+    mGc = gc;
+
+    TextureManager tm;
+    mTempTex = tm.CreateTempTexture(System::sRenderer, mW, mH);
+}
+
+void ItemMenu::Activate()
+{
+    std::vector<UI*> uistack = mGc->mUim->mUIStack;
+    
+    //상태가 변화했을 때만 스택 동작을 수행한다.
+    if (!mIsRender) {
+        //스택이 비어있지 않은 경우 이젠 스택 객체의 이벤트 핸들링을 비활성화한다.
+        if (!uistack.empty()) uistack.back()->mCanHandleEvent = false;
+        uistack.push_back(this);
+    }
+    mIsRender = true;
+    mIsRenderUpdate = true;
+}
+
+void ItemMenu::Deactivate()
+{
+    mIsRender = false;
+}
+
+void ItemMenu::ClearButtons()
+{
+    for (Button* btn : mButtons) {
+        delete btn;
+        btn = nullptr;
+    }
+    mButtons.clear();
+}
+
+void ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
+{
+    Math mth;
+
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
+}
+
+void ItemMenu::Update(Consumable *cons)
+{
+    ClearButtons();
+    mButtons.push_back(new Button(0, 0, mW, 40, "사용하기", BtnType::Default));
+    mButtons.push_back(new Button(0, 40, mW, 40, "확인하기", BtnType::Default));
+    mButtons.push_back(new Button(0, 80, mW, 40, "버리기", BtnType::Default));
+}
+
+void ItemMenu::Update(Equipment *eq)
+{
+    ClearButtons();
+    mButtons.push_back(new Button(0, 0, mW, 40, "장비하기", BtnType::Default));
+    mButtons.push_back(new Button(0, 40 + 40, mW, 40, "확인하기", BtnType::Default));
+    mButtons.push_back(new Button(0, 80, mW, 40, "버리기", BtnType::Default));
+}
+
+void ItemMenu::RenderThings()
+{
+    Texture t;
+    SDL_SetTextureScaleMode(t.mTexture, SDL_SCALEMODE_NEAREST);
+    t.LoadFromFile("images/ui/item_menu.png");
+    t.Render(0.f, 0.f, nullptr, (float) mW, (float) mH);
+
+    for (Button* btn : mButtons) {
+        btn->RenderThings(btn->mX, btn->mY);
+    }
 }
 
 LogUI::LogUI(int x, int y, int w, int h)
@@ -1670,18 +1752,11 @@ void LogUI::AddMessage(std::string message, SDL_Color c)
     mIsRenderUpdate = true;
 }
 
-void LogUI::StoreTexture()
+void LogUI::RenderThings()
 {
-    if (!mIsRenderUpdate) return;
-    RenderManager rm;
-    rm.SetRenderTarget(System::sRenderer, mTempTex);
-
     Texture* bg = new Texture("images/ui/log.png");
     bg->Render(0.f, 0.f, nullptr, (float) mW, (float) mH);
     mBody->Render();
-
-    SDL_SetRenderTarget(System::sRenderer, nullptr);
-    mIsRenderUpdate = false;
 }
 
 void UIHelper::AddEntityData(TextUI *tui, Entity *ent)
@@ -1714,3 +1789,5 @@ void UIHelper::AddEntityData(TextUI *tui, Entity *ent)
     tui->AddWord(TTFWord(maxAp, white, System::sFont));
     tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
 }
+
+

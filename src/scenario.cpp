@@ -46,20 +46,20 @@ void Scenario::UpdateScenario(GameContext& gc)
     ItemHelper ih;
     json section = mData["items"][mScProgress];
 
-    std::string sType = section["type"].get<std::string>();
+    std::string sType = jh.GetString(section, "type");
     std::string message = "scenario type: " + sType;
     SDL_Log(message.c_str());
 
     if (sType == "dialogue") {
         //어느 섹션의 대화인지를 찾아서 가져온다.
-        jh.LoadJsonFile(mDialogue, section["path"].get<std::string>());
-
-        std::string dSection = section["d_section"].get<std::string>();
+        jh.LoadJsonFile(mDialogue, jh.GetString(section, "path"));
+        
+        std::string dSection = jh.GetString(section, "d_section");
         mDialogueSection = mDialogue["items"][dSection];
     }
     else if (sType == "continue_dialogue") {
         //로딩을 하지 않고 섹션만 다시 찾는다.
-        std::string dSection = section["d_section"].get<std::string>();
+        std::string dSection = jh.GetString(section, "d_section");
         mDialogueSection = mDialogue["items"][dSection];
 
         mIsDialogueUpdate = true;
@@ -68,13 +68,14 @@ void Scenario::UpdateScenario(GameContext& gc)
     else if (sType == "static_spawn") {
         Map* map {nullptr};
         
-        std::string where = section["where"].get<std::string>();
+        std::string where = jh.GetString(section, "where");
         //어떤 맵에 스폰할지 결정한다.
         map = snh.GetMap(gc, where);
 
         json items = section["items"];
         for (json item : items) {
-            if (item["type"].get<std::string>() == "single_ent") {
+            
+            if (jh.GetString(item, "type") == "single_ent") {
                 SDL_Log("scenario: spawning single entity");
                 std::string code = jh.GetString(item, "code");
                 std::string demeanor = jh.GetString(item, "demeanor");
@@ -89,7 +90,7 @@ void Scenario::UpdateScenario(GameContext& gc)
                 else if (demeanor == "neutral") ent->mDemeanor = Demeanor::Neutral;
                 gc.mObjm->mEntm->SpawnEntityOnMap(*gc.mObjm, map, ent, tileId);
             }
-            if (item["type"].get<std::string>() == "single_item") {
+            if (jh.GetString(item, "type") == "single_item") {
                 //시나리오 데이터에서 코드, 아이템타입, 타일 아이디를 구한다.
                 std::string code = jh.GetString(item, "code");
                 std::string itype = jh.GetString(item, "item_type");
@@ -122,18 +123,20 @@ void Scenario::UpdateScenario(GameContext& gc)
 void Scenario::UpdateDialogue(GameContext& gc, json data)
 {
     if (!mIsDialogueUpdate) return;
+    JsonHelper jh;
 
     gc.mUim->mDialogueUI->mDialogueBody->mTui->ClearTexts();
     
     json d = data[mDialogueProgress];
-    std::string dType = d["type"].get<std::string>();
-
+    std::string dType = jh.GetString(d, "type");
+    
     //색깔 캐싱
     SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
     SDL_Color white = {0xF0, 0xF0, 0xF0, 0xFF};
 
-    if (dType == "narration") {        
-        std::string text = d["text"].get<std::string>();
+    if (dType == "narration") {
+                
+        std::string text = jh.GetString(d, "text");
         gc.mUim->mDialogueUI->SetUI(text);
         mDialogueProgress += 1;
 
@@ -141,7 +144,7 @@ void Scenario::UpdateDialogue(GameContext& gc, json data)
     }
     else if (dType == "player_line") {
         TTFWord name = TTFWord("당신", white, System::sFont);
-        std::string text = d["text"].get<std::string>();
+        std::string text = jh.GetString(d, "text");
         gc.mUim->mDialogueUI->SetUI(gc.mUim->mDialogueUI->mSpkrBlankImg, name, text);
         mDialogueProgress += 1;
 
@@ -152,29 +155,27 @@ void Scenario::UpdateDialogue(GameContext& gc, json data)
         json speaker;
         std::string name = "";
 
-        if (d["ent_type"].get<std::string>() == "npc") {
-
+        if (jh.GetString(d, "ent_type") == "npc") {
             json entDb = gc.mObjm->mJsm->mEntDb["items"];
-
-            name = d["speaker"].get<std::string>();
+            
+            name = jh.GetString(d, "speaker");
             speaker = entDb[name];
         }
-        else if (d["ent_type"].get<std::string>() == "pawn") {
+        else if (jh.GetString(d, "ent_type") == "pawn") {
             json pawnDb = gc.mObjm->mJsm->mPawnDb["items"];
-
-            name = d["speaker"].get<std::string>();
+            
+            name = jh.GetString(d, "speaker");
             speaker = pawnDb[name];
         }
-
-        std::string imgPath = speaker["img_path"].get<std::string>();
+        std::string imgPath = jh.GetString(speaker, "img_path");
         gc.mUim->mDialogueUI->mSpeakerImg->LoadFromFile(imgPath);
 
-        name = speaker["name"].get<std::string>();
+        name = jh.GetString(speaker, "name");
 
         SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
         TTFWord entName = TTFWord(name, tc, System::sFont);
 
-        std::string text = d["text"].get<std::string>();
+        std::string text = jh.GetString(d, "text");
 
         gc.mUim->mDialogueUI->SetUI(gc.mUim->mDialogueUI->mSpeakerImg, entName, text);
 
