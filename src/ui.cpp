@@ -226,15 +226,11 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameContext& gc, float mouseX, float
 {
     //esc 눌렀을때
     if (e.key.key == SDLK_ESCAPE && e.type == SDL_EVENT_KEY_DOWN) {
-        if (!mUIStack.empty()) {            
-            mUIStack.back()->Deactivate();
-            mUIStack.pop_back();
-            
-            if (!mUIStack.empty()) mUIStack.back()->mCanHandleEvent = true;
-            return;
-        } 
+        PopBackUI();
+        return;
     } 
 
+    mItemMenu->HandleEvent(e, mouseX, mouseY);
     mCharacterSheet->HandleEvent(e, gc, mouseX, mouseY);
 
     for (auto ui : uiMap) {
@@ -288,6 +284,17 @@ void UIManager::RenderMapUIs(Map* map)
 
     mBCUI->mIsRender = true; //DEBUG
     mBCUI->Render();
+}
+
+void UIManager::PopBackUI()
+{
+    if (!mUIStack.empty()) {            
+        mUIStack.back()->Deactivate();
+        mUIStack.pop_back();
+        
+        if (!mUIStack.empty()) mUIStack.back()->mCanHandleEvent = true;
+        return;
+    } 
 }
 
 void UIManager::DestroyUIs()
@@ -1142,7 +1149,12 @@ void InventoryUI::HandleEqSlotEvent(SDL_Event &e, SlotInfo si, float mx, float m
     
     //클릭시
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
-    mGc->mObjm->mEntm->UnequipItem(*mGc, p, si.mEqId);
+    // mGc->mObjm->mEntm->UnequipItem(*mGc, p, si.mEqId);
+    EntityUtil eu;
+    ItemMenu* im = mGc->mUim->mItemMenu;
+    im->UpdatePos(mX, mY, si.x, si.y, mGrid->mTileLen);
+    im->Update(eu.GetEquipment(p, si.mEqId), true);
+    im->Activate();
 }
 
 void InventoryUI::HandleItemEvent(SDL_Event &e, Item* item, float mx, float my)
@@ -1161,19 +1173,19 @@ void InventoryUI::HandleItemEvent(SDL_Event &e, Item* item, float mx, float my)
 
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
 
-    Entity* focused = mGc->mObjm->mEntm->mFocusedEnt;
-    Pawn* fp = static_cast<Pawn*>(focused);
+    ItemMenu* im = mGc->mUim->mItemMenu;
+    Pawn* fp = mGc->mObjm->mEntm->mFocusedPc;
+
     if (item->mType == ItemType::Equipment) {
         Equipment* eq = static_cast<Equipment*>(item);
-        mGc->mObjm->mEntm->EquipItem(*mGc, fp, eq);
-
+        im->UpdatePos(mGrid, mX, mY, p.mX, p.mY);
+        im->Update(eq, false);
+        im->Activate();        
     }
     else if (item->mType == ItemType::Consumable) {
         Consumable* cons = static_cast<Consumable*>(item);
         //여기에 아이템 메뉴 활성화 동작을 삽입..
-        ItemMenu* im = mGc->mUim->mItemMenu;
-        im->mX = mX + mGrid->mOffsetX + (p.mX + 1) * tl  + 20;
-        im->mY = mY + mGrid->mOffsetY + (p.mY + 1) * tl  + 20;
+        im->UpdatePos(mGrid, mX, mY, p.mX, p.mY);
         im->Update(cons);
         im->Activate();
     }
@@ -1367,6 +1379,8 @@ void CharacterSheetUI::Activate()
 
     Deactivate();
     mGc->mUim->mCanHandleToolTip = false;
+    mGc->mObjm->mItm->mCanHandleEvent = false;
+    mGc->mObjm->mEntm->mCanHandleEvent = false;
     mCanHandleEvent = true;
     mIsRender = true;
     mIsRenderUpdate = true;
@@ -1377,6 +1391,8 @@ void CharacterSheetUI::Activate()
 void CharacterSheetUI::Deactivate()
 {
     mGc->mUim->mCanHandleToolTip = true;
+    mGc->mObjm->mItm->mCanHandleEvent = true;
+    mGc->mObjm->mEntm->mCanHandleEvent = true;    
     mCanHandleEvent = false;
     mIsRender = false;
     mCsUI->Deactivate();
@@ -1651,20 +1667,24 @@ ItemMenu::ItemMenu(int x, int y, int w, int h, GameContext* gc)
 
 void ItemMenu::Activate()
 {
-    std::vector<UI*> uistack = mGc->mUim->mUIStack;
+    std::vector<UI*>& uistack = mGc->mUim->mUIStack;
     
     //상태가 변화했을 때만 스택 동작을 수행한다.
     if (!mIsRender) {
         //스택이 비어있지 않은 경우 이젠 스택 객체의 이벤트 핸들링을 비활성화한다.
         if (!uistack.empty()) uistack.back()->mCanHandleEvent = false;
         uistack.push_back(this);
+        SDL_Log("item menu stacked");
     }
+    mCanHandleEvent = true;
     mIsRender = true;
     mIsRenderUpdate = true;
 }
 
 void ItemMenu::Deactivate()
 {
+    SDL_Log("deactivated item menu");
+    mCanHandleEvent = false;
     mIsRender = false;
 }
 
@@ -1679,25 +1699,96 @@ void ItemMenu::ClearButtons()
 
 void ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
 {
+    if (!mCanHandleEvent) return;
     Math mth;
 
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
+
+    EntityManager* entm = mGc->mObjm->mEntm;
+    UIManager* uim = mGc->mUim;
+
+    for (int i = 0; i < (int) mButtons.size(); i++) {
+        bool isIn = mButtons[i]->IsMouseIn(mx, my);
+        
+        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Use) {
+            SDL_Log("item menu: use");
+            uim->PopBackUI();
+        }
+        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Equip) {
+            SDL_Log("item menu: equip");
+            Equipment* eq = static_cast<Equipment*>(mItem);
+            entm->EquipItem(*mGc, entm->mFocusedPc, eq);
+            uim->PopBackUI();
+        }
+        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Unequip) {
+            SDL_Log("item menu: unequip");
+            entm->UnequipItem(*mGc, entm->mFocusedPc, mItem->mId);
+            uim->PopBackUI();
+        }
+        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Modify) {
+            SDL_Log("item menu: modify");
+            uim->PopBackUI();
+        }
+        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Examine) {
+            SDL_Log("item menu: examine");
+            uim->PopBackUI();
+        }
+        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Dispose) {
+            SDL_Log("item menu: dispose");
+            uim->PopBackUI();
+        }
+    }
+}
+
+void ItemMenu::UpdatePos(int baseX, int baseY, int x, int y, int tl)
+{
+    mX = baseX + x + tl + 20;
+    mY = baseY + y + 20;
+}
+
+void ItemMenu::UpdatePos(Grid *grid, int baseX, int baseY, int pointX, int pointY)
+{
+    int tl = grid->mTileLen;
+    mX = baseX + grid->mOffsetX + (pointX + 1) * tl + 20;
+    mY = baseY + grid->mOffsetY + (pointY) * tl + 20;
 }
 
 void ItemMenu::Update(Consumable *cons)
 {
+    mItem = cons;
+
+    mBtnIdxs.clear();
     ClearButtons();
-    mButtons.push_back(new Button(0, 0, mW, 40, "사용하기", BtnType::Default));
-    mButtons.push_back(new Button(0, 40, mW, 40, "확인하기", BtnType::Default));
-    mButtons.push_back(new Button(0, 80, mW, 40, "버리기", BtnType::Default));
+
+    mButtons.push_back(new Button(mX, mY, mW, 40, "사용하기", BtnType::Default));
+    mBtnIdxs.push_back(ItemMenuBtnIdx::Use);
+    mButtons.push_back(new Button(mX, mY + 40, mW, 40, "확인하기", BtnType::Default));
+    mBtnIdxs.push_back(ItemMenuBtnIdx::Examine);
+    mButtons.push_back(new Button(mX, mY + 80, mW, 40, "버리기", BtnType::Default));
+    mBtnIdxs.push_back(ItemMenuBtnIdx::Dispose);
 }
 
-void ItemMenu::Update(Equipment *eq)
+void ItemMenu::Update(Equipment *eq, bool isEquipped)
 {
+    mItem = eq;
+
+    mBtnIdxs.clear();
     ClearButtons();
-    mButtons.push_back(new Button(0, 0, mW, 40, "장비하기", BtnType::Default));
-    mButtons.push_back(new Button(0, 40 + 40, mW, 40, "확인하기", BtnType::Default));
-    mButtons.push_back(new Button(0, 80, mW, 40, "버리기", BtnType::Default));
+
+    if (isEquipped) {
+        mButtons.push_back(new Button(mX, mY, mW, 40, "장비해제", BtnType::Default));
+        mBtnIdxs.push_back(ItemMenuBtnIdx::Unequip);
+    }
+    else {
+        mButtons.push_back(new Button(mX, mY, mW, 40, "장비하기", BtnType::Default));
+        mBtnIdxs.push_back(ItemMenuBtnIdx::Equip);
+    }
+    mButtons.push_back(new Button(mX, mY + 40, mW, 40, "개조하기", BtnType::Default));
+    mBtnIdxs.push_back(ItemMenuBtnIdx::Modify);
+    mButtons.push_back(new Button(mX, mY + 80, mW, 40, "확인하기", BtnType::Default));
+    mBtnIdxs.push_back(ItemMenuBtnIdx::Examine);
+    mButtons.push_back(new Button(mX, mY + 120, mW, 40, "버리기", BtnType::Default));
+    mBtnIdxs.push_back(ItemMenuBtnIdx::Dispose);
 }
 
 void ItemMenu::RenderThings()
@@ -1708,7 +1799,7 @@ void ItemMenu::RenderThings()
     t.Render(0.f, 0.f, nullptr, (float) mW, (float) mH);
 
     for (Button* btn : mButtons) {
-        btn->RenderThings(btn->mX, btn->mY);
+        btn->RenderThings(btn->mX  - mX, btn->mY - mY);
     }
 }
 

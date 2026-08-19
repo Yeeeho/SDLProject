@@ -138,6 +138,7 @@ bool System::HandleEvents(SDL_Event& e, GameContext& gc)
         gc.mGsm->mCurrentState->HandleEvent(e, gc, mouseX, mouseY);
         //플래그 복구
         if (sIsLeftMouseClicked && e.type == SDL_EVENT_MOUSE_BUTTON_UP) sIsLeftMouseClicked = false;
+        sIsActionPerformed = false;
     }
 
     return quit;

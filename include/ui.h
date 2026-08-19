@@ -353,6 +353,10 @@ class BottomCharacterUI : public UI{
     FramedTUI* mStatEffect {nullptr}; //상태이상들을 보여주는 ui 컴포넌트
 };
 
+enum class ItemMenuBtnIdx {
+    Equip, Unequip, Use, Modify, Examine, Dispose
+};
+
 class ItemMenu : public UI {
     public:
     ItemMenu(int x, int y, int w, int h, GameContext* gc);
@@ -364,14 +368,18 @@ class ItemMenu : public UI {
 
     void HandleEvent(SDL_Event& e, float mx, float my);
 
+    void UpdatePos(int baseX, int baseY, int x, int y, int tl);
+    void UpdatePos(Grid* grid, int baseX, int baseY, int pointX, int pointY);
     void Update(Consumable* cons);
-    void Update(Equipment* eq);
+    void Update(Equipment* eq, bool isEquipped);
 
     void RenderThings() override;
 
     GameContext* mGc {nullptr};
+    Item* mItem {nullptr};
 
     std::vector<Button*> mButtons;
+    std::vector<ItemMenuBtnIdx> mBtnIdxs;
 };
 
 class LogUI : public UI {
@@ -396,33 +404,37 @@ class UIManager {
 
     //ui 컨테이너, 삭제 고려
     std::map<std::string, UI*> uiMap;
-    std::vector<UI*> mUIStack;
-
+    
     void InitTopBar(); //탑 바를 초기화하는 녀석
     void InitUIs(); //게임 상태마다 초기화 할 ui들을 초기화
-
+    
     //파괴자
     void DestroyUIs();
     
     //이벤트 핸들링
     void HandleUIEvent(SDL_Event& e, GameContext& gc, float mouseX, float mousey);
     void HandleMapUIEvent(SDL_Event& e, GameContext& gc, Map* map, float mx, float my);
-
+    
     //렌더링
     void RenderUIs();
     void RenderMapUIs(Map* map); //맵상에 있을 ui들 렌더링
-    
-    //툴팁 관련
-    ToolTip* mToolTip{nullptr}; //툴팁
-    Grid* mToolTipGrid {nullptr};
 
+    void PopBackUI();
+    
     void LoadInvToolTip(Grid* grid, int tileId);
     void LoadMapToolTip(Map* map, int tileId);
     void UpdateGridToolTip(Grid* grid);
-
+    
     void HandleMapToolTipEvent(SDL_Event& e, GameStateManager& gsm, float mouseX, float mouseY);
     bool mCanHandleToolTip {true};
     void RenderMapToolTip(Grid* grid);
+    
+    //ui 스택
+    std::vector<UI*> mUIStack;
+
+    //툴팁 관련
+    ToolTip* mToolTip{nullptr}; //툴팁
+    Grid* mToolTipGrid {nullptr};
     
     //맵 관련 ui 객체
     IconUI* mFocusIcon {nullptr}; //맵 타일 포커스 아이콘

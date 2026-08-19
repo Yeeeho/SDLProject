@@ -511,6 +511,7 @@ void EntityManager::Update(ObjectManager &objm)
 
 void EntityManager::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mouseX, float mouseY)
 {   
+    if (!mCanHandleEvent) return;
     //카메라 오프셋 계산
     mouseX += map->mCam->mSight.x;
     mouseY += map->mCam->mSight.y;

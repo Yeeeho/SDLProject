@@ -111,6 +111,7 @@ void ItemManager::DespawnItemOnMap(Map * map, int tileId, int itemId)
 
 void ItemManager::HandleEvent(SDL_Event &e, GameContext *gc, float mx, float my)
 {
+    if (!mCanHandleEvent) return;
     Map* map = gc->mMapm->mCurrentMap;
 
     //마우스 오프셋

@@ -133,6 +133,7 @@ class EntityManager {
     //이벤트 핸들링
     void HandleEvent(SDL_Event& e, GameContext& gc, Map* map, float mouseX, float mouseY);
     void HandleEntityEvent(SDL_Event& e, GameContext& gc, Map* map, Entity* ent, float mx, float my);
+    bool mCanHandleEvent {true};
 
     void FocusEntity(GameContext& gc, Map* map, Entity* ent); //엔티티를 포커스로 설정함.
 

@@ -40,6 +40,7 @@ class System {
     inline static TTF_Font* sFont10 {nullptr};
     inline static TTF_Font* sFont40 {nullptr};
     //이벤트 핸들링 관련
+    inline static bool sIsActionPerformed {false}; //이벤트를 루프당 한번 실행시키기 위한 플래그
     inline static bool sIsLeftMouseClicked {false};
 
     /*함수 선언*/

@@ -36,6 +36,7 @@ class ItemManager {
     //이벤트 핸들링
     void HandleEvent(SDL_Event& e, GameContext* gc, float mx, float my);
     void HandleItemEvent(SDL_Event& e, GameContext* gc, Item* item, float mx, float my);
+    bool mCanHandleEvent {true};
 
     //아이템 렌더링
     void RenderItem(Item* item);
