@@ -8,6 +8,7 @@ class RenderManager;
 class ObjectManager;
 class UIManager;
 class SkillManager;
+struct EventContext;
 
 struct GameContext {
     GameContext();
@@ -19,4 +20,6 @@ struct GameContext {
     ObjectManager* mObjm {nullptr};
     UIManager* mUim {nullptr};
     SkillManager* mSkm {nullptr};
+
+    EventContext* mEvCtx {nullptr};
 };

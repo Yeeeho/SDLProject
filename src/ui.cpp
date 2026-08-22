@@ -20,6 +20,7 @@
 #include "item/item.h"
 #include "item/item_manager.h"
 #include "skill/skill.h"
+#include "event_context.h"
 
 void UI::HandleEvent(SDL_Event &e, GameContext &gc, float mouseX, float mouseY)
 {
@@ -184,7 +185,7 @@ UIManager::UIManager(GameContext& gc)
     int x = System::sWindowWidth - 300;
     int y = System::sWindowHeight - 100;
     
-    mTurnOverBtn = new Button(x, y, 100, 40, "턴 종료", BtnType::SubMapTurnOver);
+    mTurnOverBtn = new Button(x, y, 180, 40, "턴 종료(SPACE)", BtnType::SubMapTurnOver);
 
     mTileHLUI = new TileHLUI();
     mLogUI = new LogUI(System::sWindowWidth - 280, 100, 240, 800);
@@ -244,6 +245,7 @@ void UIManager::HandleMapUIEvent(SDL_Event &e, GameContext& gc, Map *map, float 
 {
     HandleMapToolTipEvent(e, *gc.mGsm, mx, my);
     mQSUI->HandleEvent(e, gc, map, mx, my);
+    gc.mTurnm->HandleEvent(e, mx, my);
 }
 
 void UIManager::RenderUIs()
@@ -1149,6 +1151,7 @@ void InventoryUI::HandleEqSlotEvent(SDL_Event &e, SlotInfo si, float mx, float m
     
     //클릭시
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
+    if (si.mEqId == 0) return; //참조 아이디가 없는 상태면 리턴한다.
     // mGc->mObjm->mEntm->UnequipItem(*mGc, p, si.mEqId);
     EntityUtil eu;
     ItemMenu* im = mGc->mUim->mItemMenu;
@@ -1402,8 +1405,10 @@ void CharacterSheetUI::Deactivate()
 void CharacterSheetUI::HandleEvent(SDL_Event &e, GameContext &gc, float mx, float my)
 {
     if (!mCanHandleEvent) return;
+    if (gc.mEvCtx->mIsEventHandled) return;
     mx -= (float) mX; my -= (float) mY; //오프셋
 
+    //서브 ui 이벤트 핸들링
     mCsUI->HandleEvent(e, &gc, mx, my);
     mInvUI->HandleEvent(e, mx, my);
 
@@ -1413,6 +1418,7 @@ void CharacterSheetUI::HandleEvent(SDL_Event &e, GameContext &gc, float mx, floa
         return;
     }
 
+    //캐릭터 시트 탭 이벤트 핸들링
     Pawn* p = static_cast<Pawn*>(ent);
     if (mInvTab->IsMouseIn(mx, my)) {
         if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
@@ -1699,6 +1705,7 @@ void ItemMenu::ClearButtons()
 
 void ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
 {
+    if (mGc->mEvCtx->mIsEventHandled) return;
     if (!mCanHandleEvent) return;
     Math mth;
 
@@ -1710,33 +1717,32 @@ void ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
     for (int i = 0; i < (int) mButtons.size(); i++) {
         bool isIn = mButtons[i]->IsMouseIn(mx, my);
         
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Use) {
-            SDL_Log("item menu: use");
+        if (isIn) {
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Use) {
+                SDL_Log("item menu: use");
+            }
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Equip) {
+                SDL_Log("item menu: equip");
+                Equipment* eq = static_cast<Equipment*>(mItem);
+                entm->EquipItem(*mGc, entm->mFocusedPc, eq);
+            }
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Unequip) {
+                SDL_Log("item menu: unequip");
+                entm->UnequipItem(*mGc, entm->mFocusedPc, mItem->mId);
+            }
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Modify) {
+                SDL_Log("item menu: modify");
+            }
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Examine) {
+                SDL_Log("item menu: examine");
+            }
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Dispose) {
+                SDL_Log("item menu: dispose");
+            }
             uim->PopBackUI();
+            mGc->mEvCtx->mIsEventHandled = true;
         }
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Equip) {
-            SDL_Log("item menu: equip");
-            Equipment* eq = static_cast<Equipment*>(mItem);
-            entm->EquipItem(*mGc, entm->mFocusedPc, eq);
-            uim->PopBackUI();
-        }
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Unequip) {
-            SDL_Log("item menu: unequip");
-            entm->UnequipItem(*mGc, entm->mFocusedPc, mItem->mId);
-            uim->PopBackUI();
-        }
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Modify) {
-            SDL_Log("item menu: modify");
-            uim->PopBackUI();
-        }
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Examine) {
-            SDL_Log("item menu: examine");
-            uim->PopBackUI();
-        }
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Dispose) {
-            SDL_Log("item menu: dispose");
-            uim->PopBackUI();
-        }
+
     }
 }
 

@@ -9,6 +9,8 @@ class TurnManager {
 
     void Enter(Map* map);
 
+    void HandleEvent(SDL_Event& e, float mx, float my);
+
     //업데이트
     void Update();
 

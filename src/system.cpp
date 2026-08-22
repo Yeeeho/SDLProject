@@ -9,6 +9,7 @@
 #include "entity.h"
 #include "city.h"
 #include "ui.h"
+#include "event_context.h"
 
 bool System::Init()
 {
@@ -131,6 +132,7 @@ bool System::HandleEvents(SDL_Event& e, GameContext& gc)
     //이벤트 큐에 이벤트가 있을때
     while (SDL_PollEvent(&e) == true) {
         if (e.type == SDL_EVENT_QUIT) quit = true;
+        gc.mEvCtx->mIsEventHandled = false;
 
         //현재 상태에 있는 매니저들의 이벤트 핸들링
         //왼쪽 마우스 클릭

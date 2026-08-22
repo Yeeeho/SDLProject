@@ -20,6 +20,12 @@ void TurnManager::Enter(Map *map)
     UpdateTurn();
 }
 
+void TurnManager::HandleEvent(SDL_Event &e, float mx, float my)
+{
+    if (e.type != SDL_EVENT_KEY_DOWN || e.key.key != SDLK_SPACE) return;
+    UpdateTurn();
+}
+
 void TurnManager::Update()
 {
 }

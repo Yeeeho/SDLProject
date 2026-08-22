@@ -7,6 +7,7 @@
 #include "game_json.h"
 #include "game_object.h"
 #include "ui.h"
+#include "event_context.h"
 #include "map.h"
 #include "entity.h"
 #include "camera.h"
@@ -586,6 +587,7 @@ void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
         //스킬 ui등을 표시.
         gc.mUim->mQSUI->Activate();
         gc.mUim->mCharacterSheet->Activate();
+        gc.mEvCtx->mIsEventHandled = true;
     }
 
     mPrevFocusedEnt = ent;
