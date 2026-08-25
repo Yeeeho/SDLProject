@@ -40,7 +40,6 @@ int main() {
 
     //메인 루프
     while (quit == false) {
-
         quit = sys.HandleEvents(e, gc);
 
         gc.mGsm->mCurrentState->Update(gc);
