@@ -1321,7 +1321,7 @@ void CharacterSkillUI::HandleSkillListEvent(SDL_Event &e, GameContext *gc, float
         SDL_Log(message.c_str());
         if (i >= (int) focused->mSkills.size()) continue;
         Skill* skill = focused->mSkills[i];
-        gc->mUim->mQSUI->AddSkill(skill);
+        gc->mUim->mQSUI->AddSkill(skill, i);
     }
 }
 
@@ -1457,7 +1457,7 @@ QuickSkillUI::QuickSkillUI(int x, int  y, int w, int h, GameContext& gc)
     mGc = &gc;
 }
 
-void QuickSkillUI::AddSkill(Skill* skill)
+void QuickSkillUI::AddSkill(Skill* skill, int skillIdx)
 {
     Entity* focused = mGc->mObjm->mEntm->mFocusedEnt;
     if (!focused) return;
@@ -1468,20 +1468,23 @@ void QuickSkillUI::AddSkill(Skill* skill)
     if (p->mQuickSkills.size() > System::sQuickSlotCap) {
         SDL_Log("quick skill ui: cannot add skill, size limit hit");
         return;
-    } 
+    }
+    int i = 0; 
     for (auto iter = p->mQuickSkills.begin(); iter != p->mQuickSkills.end();) {
         //삼입하려는 스킬 코드가 이미 퀵슬롯 ui에 있을 경우
         if (*iter == skill->mCode) {
             //해당 친구를 컨테이너에서 삭제하고 리턴한다.
             p->mQuickSkills.erase(iter);
+            mSkillIdxs.erase(mSkillIdxs.begin() + i);
             mIsRenderUpdate = true;
             SDL_Log("quick skill ui: erased skill code");
             return;
         }
-        iter++;
+        iter++; i++;
     }
 
     p->mQuickSkills.push_back(skill->mCode);
+    mSkillIdxs.push_back(skillIdx);
     mIsRenderUpdate = true;
     SDL_Log("quick skill ui: added skill code");
 }
@@ -1555,9 +1558,11 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
         //스킬 발동을 위한 준비 단계
         //인덱스에 따라서 스킬 코드를 가져온다.
         std::string skillCode = p->mQuickSkills[xPos];
+
         //TODO: 여기부터는 따로 함수로 래핑하는게 좋을듯
         //엔티티에 저장된 실제 스킬 객체를 찾아온다.
-        Skill* skill = gc.mObjm->mEntm->mFocusedEnt->mSkills[xPos];
+        int idx = *std::next(mSkillIdxs.begin(), xPos);
+        Skill* skill = gc.mObjm->mEntm->mFocusedEnt->mSkills[idx];
 
         //현재 스킬에 따라서 맵 타일 하이라이트 색을 바꿔준다.
         json skillTable = gc.mSkm->mSkillDb["items"];

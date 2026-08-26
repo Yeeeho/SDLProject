@@ -52,3 +52,8 @@ class FleeState : public AIState {
     FleeState(GameContext* gc);
     void TakeTurn(Entity* ent) override;
 };
+
+class AIHelper {
+    public:
+    static int GetThreatValue(Entity* ent);
+};

@@ -150,6 +150,7 @@ void Skill::Activate(SkillManager* skm)
             }
         }
         gc->mUim->mToolTip->mIsRenderUpdate = true;
+        skm->mTargets.clear();
     }
     else {
         SDL_Log("skill: cannot find skill type");

@@ -55,7 +55,8 @@
             "range" : 1,
             "dmg" : {
                 "mod" : {
-                    "str_mod" : 0.5
+                    "str_mod" : 0.3,
+                    "agi_mod" : 0.2
                 }
             },
 

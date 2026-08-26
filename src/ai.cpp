@@ -120,3 +120,18 @@ void AI::TakeTurn(Entity *ent)
 {
     mCurrentState->TakeTurn(ent);
 }
+
+int AIHelper::GetThreatValue(Entity *ent)
+{
+    int stat = 0;
+    stat += ent->mStr;
+    stat += ent->mEnd;
+    stat += ent->mDex;
+    stat += ent->mPer;
+    stat += ent->mAgi;
+    stat += ent->mWil;
+    stat += ent->mInt;
+    stat += ent->mSpd;
+
+    return stat;
+}
