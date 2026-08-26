@@ -172,11 +172,9 @@ void SkillManager::LoadJsonData()
 void SkillManager::SetSkill(Skill * skill)
 {
     mSkill = skill;
-}
 
-void SkillManager::SetSkillData(json skilldata)
-{
-    mSkillData = skilldata;
+    json skillTable = mGc->mSkm->mSkillDb["items"];
+    mSkillData = skillTable[skill->mCode];
 }
 
 void SkillManager::SetActor(Entity *actor)
@@ -208,7 +206,7 @@ void SkillManager::SetTarget(Entity* target)
     mTargets.push_back(target);
 }
 
-void SkillManager::SetTileIds(std::vector<int> tileIds)
+void SkillManager::SetTileIds(std::vector<int>& tileIds)
 {
     std::string message = "skill manager: tile id set as: " + std::to_string(tileIds.back());
     mTileIds = tileIds;

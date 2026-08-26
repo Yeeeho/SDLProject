@@ -270,6 +270,19 @@ int MapHelper::WhatTileOnPoint(float x, float y, Grid *grid)
     return id;
 }
 
+int MapHelper::WhatTileOnPoint(Point p, Grid *grid)
+{
+    int xPos = p.mX; int yPos = p.mY;
+
+    if (xPos >= grid->mXTiles) xPos = grid->mXTiles - 1;
+    if (yPos >= grid->mYTiles) yPos = grid->mYTiles - 1;
+    if (xPos < 0) xPos = 0;
+    if (yPos < 0) yPos = 0;
+    
+    int id = xPos + (grid->mXTiles * yPos);
+    return id;
+}
+
 std::vector<int> MapHelper::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile *tile2)
 {
     std::vector<int> ret;

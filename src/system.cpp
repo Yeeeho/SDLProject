@@ -87,14 +87,14 @@ bool System::LoadMedia()
     return success;
 }
 
-bool System::LoadObjects(ObjectManager& objm) //메인 루프 전에 한번만 호출함.
+bool System::LoadObjects(GameContext& gc) //메인 루프 전에 한번만 호출함.
 {
     bool success = true;
 
-    objm.mEntm = new EntityManager(objm); //엔티니 매니저 생성 
-    objm.mTeamm = new TeamManager(); //팀 매니저 생성
+    gc.mObjm->mEntm = new EntityManager(&gc); //엔티니 매니저 생성 
+    gc.mObjm->mTeamm = new TeamManager(); //팀 매니저 생성
 
-    objm.mCity = new City(5, 5); //도시 객체 생성
+    gc.mObjm->mCity = new City(5, 5); //도시 객체 생성
 
     return success;
 }

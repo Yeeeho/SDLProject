@@ -1571,7 +1571,6 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
             else if (stype == "attack") gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight_red.png");
             else gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight.png");
 
-            mGc->mSkm->SetSkillData(sd); //스킬 데이터 캐싱
             mGc->mSkm->mIsSkillReady = true; //스킬 사용 준비 완료
         }
 
