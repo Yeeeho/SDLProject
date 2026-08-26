@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include "game_random.h"
 #include "game_context.h"
 #include "game_state.h"
 #include "turn.h"
@@ -193,6 +194,9 @@ void SubMapState::Exit(GameContext& gc)
 
 void SubMapState::Update(GameContext& gc)
 {
+    //debug
+    // SDL_Log(std::to_string(Random::IDistribution(0, 10)).c_str());
+
     gc.mScm->Update(gc);
     gc.mTurnm->Update();
 
