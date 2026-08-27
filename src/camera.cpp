@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "system.h"
+#include "system/system.h"
 #include "camera.h"
 
 Camera::Camera(unsigned int velocity, int xlimit, int ylimit)

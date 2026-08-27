@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "game_random.h"
+#include "system/game_random.h"
 
 bool Random::BDistribution(float num)
 {

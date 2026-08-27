@@ -1,13 +1,14 @@
 #include "pch.h"
 
-#include "game_random.h"
+#include "system/game_random.h"
+#include "system/io.h"
 #include "game_context.h"
 #include "game_state.h"
 #include "turn.h"
 #include "skill/skill.h"
 #include "scenario.h"
 #include "game_object.h"
-#include "system.h"
+#include "system/system.h"
 #include "camera.h"
 #include "map.h"
 #include "entity.h"
@@ -170,6 +171,9 @@ void OverMapState::Render(GameContext& gc)
 void SubMapState::Enter(GameContext& gc) 
 {
     SDL_Log("enter submap");
+
+    //debug
+    IOHelper::MakeFile("save/test.json", "11");
 
     Map* map = gc.mMapm->mSubMap;
     gc.mMapm->mCurrentMap = map;

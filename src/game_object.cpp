@@ -2,7 +2,7 @@
 
 #include "game_context.h"
 #include "game_object.h"
-#include "game_json.h"
+#include "system/game_json.h"
 #include "item/item.h"
 #include "item/item_manager.h"
 #include "skill/skill.h"
@@ -12,7 +12,7 @@
 #include "city.h"
 #include "entity.h"
 #include "map.h"
-#include "system.h"
+#include "system/system.h"
 
 ObjectManager::ObjectManager(GameContext* gc)
 {

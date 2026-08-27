@@ -2,7 +2,7 @@
 
 #include "item/item.h"
 #include "item/item_manager.h"
-#include "game_json.h"
+#include "system/game_json.h"
 #include "game_object.h"
 
 int Item::GetValue()

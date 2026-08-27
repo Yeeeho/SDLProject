@@ -2,7 +2,7 @@
 
 #include "ai.h"
 #include "game_context.h"
-#include "game_random.h"
+#include "system/game_random.h"
 #include "map.h"
 #include "entity.h"
 #include "skill/skill.h"

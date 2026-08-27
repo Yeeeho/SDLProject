@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "ui.h"
 
-#include "system.h"
+#include "system/system.h"
 #include "render.h"
 #include "math.h"
 #include "game_context.h"
@@ -1712,8 +1712,8 @@ void ItemMenu::ClearButtons()
 
 bool ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
 {
-    if (mGc->mEvCtx->mIsEventHandled) return;
-    if (!mCanHandleEvent) return;
+    if (mGc->mEvCtx->mIsEventHandled) return false;
+    if (!mCanHandleEvent) return false;
     Math mth;
 
     bool isConsumed {false};

@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL.h> 
 
-#include "system.h"
+#include "system/system.h"
 #include "game_context.h"
 #include "scenario.h"
 #include "game_object.h"

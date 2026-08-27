@@ -1,8 +1,8 @@
 #include "pch.h"
 
-#include "system.h"
+#include "system/system.h"
 #include "game_context.h"
-#include "game_json.h"
+#include "system/game_json.h"
 #include "game_object.h"
 #include "game_state.h"
 #include "map.h"

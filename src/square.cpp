@@ -1,7 +1,7 @@
 #include "pch.h"
 #include <SDL3/SDL.h>
 
-#include "system.h"
+#include "system/system.h"
 #include "square.h"
 
 float Square::GetX()

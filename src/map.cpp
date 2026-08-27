@@ -11,7 +11,7 @@
 #include "camera.h"
 #include "text.h"
 #include "texture.h"
-#include "system.h"
+#include "system/system.h"
 #include "square.h"
 #include "entity.h"
 #include "skill/skill.h"

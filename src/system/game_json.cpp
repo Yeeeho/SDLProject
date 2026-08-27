@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "game_json.h"
+#include "system/game_json.h"
 
 bool JsonHelper::LoadJsonFile(json &j, std::string path)
 {
