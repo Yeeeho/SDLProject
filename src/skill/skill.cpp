@@ -150,6 +150,7 @@ void Skill::Activate(SkillManager* skm)
             }
         }
         gc->mUim->mToolTip->mIsRenderUpdate = true;
+        skm->mTargets.clear();
     }
     else {
         SDL_Log("skill: cannot find skill type");
@@ -172,11 +173,9 @@ void SkillManager::LoadJsonData()
 void SkillManager::SetSkill(Skill * skill)
 {
     mSkill = skill;
-}
 
-void SkillManager::SetSkillData(json skilldata)
-{
-    mSkillData = skilldata;
+    json skillTable = mGc->mSkm->mSkillDb["items"];
+    mSkillData = skillTable[skill->mCode];
 }
 
 void SkillManager::SetActor(Entity *actor)
@@ -208,7 +207,7 @@ void SkillManager::SetTarget(Entity* target)
     mTargets.push_back(target);
 }
 
-void SkillManager::SetTileIds(std::vector<int> tileIds)
+void SkillManager::SetTileIds(std::vector<int>& tileIds)
 {
     std::string message = "skill manager: tile id set as: " + std::to_string(tileIds.back());
     mTileIds = tileIds;
@@ -221,9 +220,8 @@ void SkillManager::SetMap(Map *map)
 
 void SkillManager::HandleEvent(SDL_Event &e, GameContext &gc)
 {
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
-    if (e.button.button == SDL_BUTTON_RIGHT) {
-        //오른쪽 마우스 버튼 클릭시
+    if (e.type != SDL_EVENT_KEY_DOWN) return;
+    if (e.key.key == SDLK_ESCAPE) {
         mIsSkillReady = false; //스킬 준비 해제
     }
 }

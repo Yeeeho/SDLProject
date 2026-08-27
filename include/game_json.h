@@ -22,7 +22,9 @@ class JsonHelper {
 
     //데이터 가져오는 메서드
     void SDLLogErrorMsg(json& data, std::string datatype, std::string what);
-    std::string GetDataType(json& data);
+    std::string GetDataType(json& data); //타입 확인
+
+    //정보 가져오기
     std::string GetString(json& data, std::string what);
     json GetJson(json& data, std::string what);
     int GetInt(json& data, std::string what);

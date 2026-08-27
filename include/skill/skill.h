@@ -29,12 +29,11 @@ class SkillManager {
 
     //세터 함수
     void SetSkill(Skill* skill); //실제 스킬 객체 설정
-    void SetSkillData(json skilldata); //데이터베이스 상의 스킬 데이터 설정
     void SetTargetItems(std::vector<Item*> targetItems);
     void SetTargetItem(Item* item);
     void SetTargets(std::vector<Entity*> targets);
     void SetTarget(Entity* target);
-    void SetTileIds(std::vector<int> tileIds);
+    void SetTileIds(std::vector<int>& tileIds);
     void SetActor(Entity* actor);
     void SetMap(Map* map);
     //이벤트 핸들링

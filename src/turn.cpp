@@ -3,11 +3,14 @@
 #include <string>
 
 #include "game_context.h"
+#include "game_object.h"
 #include "ui.h"
 #include "turn.h"
+#include "skill/skill.h"
 #include "combat.h"
 #include "map.h"
 #include "entity.h"
+#include "ai.h"
 
 TurnManager::TurnManager(GameContext *gc)
 {
@@ -17,6 +20,12 @@ TurnManager::TurnManager(GameContext *gc)
 void TurnManager::Enter(Map *map)
 {
     mCurrentMap = map;
+    UpdateTurn();
+}
+
+void TurnManager::HandleEvent(SDL_Event &e, float mx, float my)
+{
+    if (e.type != SDL_EVENT_KEY_DOWN || e.key.key != SDLK_SPACE) return;
     UpdateTurn();
 }
 
@@ -73,10 +82,23 @@ void TurnManager::TakeTurn(Entity *ent)
     CombatHelper ch;
     ch.RegenEntity(ent, *mGc);
 
+    EntityManager* entm = mGc->mObjm->mEntm;
+
+    entm->mFocusedEnt = nullptr;
+    entm->mPrevFocusedEnt = nullptr;
+    mGc->mSkm->mIsSkillReady = false;
+    mGc->mSkm->SetActor(nullptr);
+
+    //npc일때
     if (!ent->mIsPawn) {
-        //TODO: npc ai대로 행동 구현
+        AI* ai = entm->mEntAI;
+        ai->TakeTurn(ent);
         //행동 후 턴을 넘김.
         UpdateTurn();
+    }
+    //플레이어일때
+    else {
+        entm->FocusEntity(*mGc, mGc->mMapm->mCurrentMap, ent);
     }
 }
 

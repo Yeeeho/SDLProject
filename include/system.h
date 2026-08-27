@@ -51,7 +51,7 @@ class System {
     bool LoadData(ObjectManager&);
 
     bool LoadMedia(); //폰트, 사운드 등 로드
-    bool LoadObjects(ObjectManager&); //객체 로드
+    bool LoadObjects(GameContext& gc); //객체 로드
     bool LoadUIs(UIManager&, ObjectManager&); //ui 객체 로드
 
     void Close();

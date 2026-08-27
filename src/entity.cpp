@@ -7,6 +7,7 @@
 #include "game_json.h"
 #include "game_object.h"
 #include "ui.h"
+#include "event_context.h"
 #include "map.h"
 #include "entity.h"
 #include "camera.h"
@@ -16,6 +17,7 @@
 #include "item/item.h"
 #include "skill/skill.h"
 #include "skill/skill_enum.h"
+#include "ai.h"
 #include "util.h"
 
 using json = nlohmann::json;
@@ -183,15 +185,17 @@ void TeamManager::OutEntInTeam(Team *team, int id)
     SDL_Log(message.c_str());
 }
 
-EntityManager::EntityManager(ObjectManager& objm)
+EntityManager::EntityManager(GameContext* gc)
 {
     for (int i = 0; i < (int)EntitySetting::MaxEnt; i++) {
         mEntTable[i] = new Entity("null_entity", i);
     }
 
     for (int i = 0; i < (int)EntitySetting::MaxPawn; i++) {
-        mPawnTable[i] = new Pawn(objm, "null_pawn", PawnType::Null, i);
+        mPawnTable[i] = new Pawn(*gc->mObjm, "null_pawn", PawnType::Null, i);
     }
+
+    mEntAI = new AI(gc);
 
     TextureManager tm;
 }
@@ -202,6 +206,7 @@ void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, in
 
     json entData;
 
+    //엔티티 코드 확인
     if (entItems.contains(name)) {
         //json에 이름이 포함된 경우
         entData = entItems[name];
@@ -257,6 +262,7 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     json pawnData = pawnItems[name];
 
     Pawn* pawn = mPawnTable[id];
+
 
     pawn->mName = pawnData["name"].get<std::string>();
     pawn->mCustomName = pawn->mName;
@@ -575,7 +581,8 @@ void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
     //아군이 아닐 경우 타일 범위 렌더링 끔
     if (!ent->mIsPawn) gc.mUim->mTileHLUI->mIsRenderBetweenTiles = false;
     else mFocusedPc = static_cast<Pawn*>(ent);
-
+    gc.mUim->mQSUI->Activate();
+    
     //이전 엔티티와 같은 경우
     if (ent == mPrevFocusedEnt)  {
         //포커스된 엔티티를 한번 더 클릭했을 경우 
@@ -584,8 +591,8 @@ void EntityManager::FocusEntity(GameContext &gc, Map *map, Entity *ent)
         SDL_Log("one more click on focused pawn");
         Pawn* p = static_cast<Pawn*>(ent);
         //스킬 ui등을 표시.
-        gc.mUim->mQSUI->Activate();
         gc.mUim->mCharacterSheet->Activate();
+        gc.mEvCtx->mIsEventHandled = true;
     }
 
     mPrevFocusedEnt = ent;

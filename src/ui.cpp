@@ -20,6 +20,7 @@
 #include "item/item.h"
 #include "item/item_manager.h"
 #include "skill/skill.h"
+#include "event_context.h"
 
 void UI::HandleEvent(SDL_Event &e, GameContext &gc, float mouseX, float mouseY)
 {
@@ -184,7 +185,7 @@ UIManager::UIManager(GameContext& gc)
     int x = System::sWindowWidth - 300;
     int y = System::sWindowHeight - 100;
     
-    mTurnOverBtn = new Button(x, y, 100, 40, "턴 종료", BtnType::SubMapTurnOver);
+    mTurnOverBtn = new Button(x, y, 180, 40, "턴 종료(SPACE)", BtnType::SubMapTurnOver);
 
     mTileHLUI = new TileHLUI();
     mLogUI = new LogUI(System::sWindowWidth - 280, 100, 240, 800);
@@ -247,6 +248,7 @@ void UIManager::HandleMapUIEvent(SDL_Event &e, GameContext& gc, Map *map, float 
 {
     HandleMapToolTipEvent(e, *gc.mGsm, mx, my);
     mQSUI->HandleEvent(e, gc, map, mx, my);
+    gc.mTurnm->HandleEvent(e, mx, my);
 }
 
 void UIManager::RenderUIs()
@@ -1152,6 +1154,7 @@ void InventoryUI::HandleEqSlotEvent(SDL_Event &e, SlotInfo si, float mx, float m
     
     //클릭시
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
+    if (si.mEqId == 0) return; //참조 아이디가 없는 상태면 리턴한다.
     // mGc->mObjm->mEntm->UnequipItem(*mGc, p, si.mEqId);
     EntityUtil eu;
     ItemMenu* im = mGc->mUim->mItemMenu;
@@ -1321,7 +1324,7 @@ void CharacterSkillUI::HandleSkillListEvent(SDL_Event &e, GameContext *gc, float
         SDL_Log(message.c_str());
         if (i >= (int) focused->mSkills.size()) continue;
         Skill* skill = focused->mSkills[i];
-        gc->mUim->mQSUI->AddSkill(skill);
+        gc->mUim->mQSUI->AddSkill(skill, i);
     }
 }
 
@@ -1405,8 +1408,10 @@ void CharacterSheetUI::Deactivate()
 void CharacterSheetUI::HandleEvent(SDL_Event &e, GameContext &gc, float mx, float my)
 {
     if (!mCanHandleEvent) return;
+    if (gc.mEvCtx->mIsEventHandled) return;
     mx -= (float) mX; my -= (float) mY; //오프셋
 
+    //서브 ui 이벤트 핸들링
     mCsUI->HandleEvent(e, &gc, mx, my);
     mInvUI->HandleEvent(e, mx, my);
 
@@ -1416,6 +1421,7 @@ void CharacterSheetUI::HandleEvent(SDL_Event &e, GameContext &gc, float mx, floa
         return;
     }
 
+    //캐릭터 시트 탭 이벤트 핸들링
     Pawn* p = static_cast<Pawn*>(ent);
     if (mInvTab->IsMouseIn(mx, my)) {
         if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
@@ -1454,7 +1460,7 @@ QuickSkillUI::QuickSkillUI(int x, int  y, int w, int h, GameContext& gc)
     mGc = &gc;
 }
 
-void QuickSkillUI::AddSkill(Skill* skill)
+void QuickSkillUI::AddSkill(Skill* skill, int skillIdx)
 {
     Entity* focused = mGc->mObjm->mEntm->mFocusedEnt;
     if (!focused) return;
@@ -1465,20 +1471,23 @@ void QuickSkillUI::AddSkill(Skill* skill)
     if (p->mQuickSkills.size() > System::sQuickSlotCap) {
         SDL_Log("quick skill ui: cannot add skill, size limit hit");
         return;
-    } 
+    }
+    int i = 0; 
     for (auto iter = p->mQuickSkills.begin(); iter != p->mQuickSkills.end();) {
         //삼입하려는 스킬 코드가 이미 퀵슬롯 ui에 있을 경우
         if (*iter == skill->mCode) {
             //해당 친구를 컨테이너에서 삭제하고 리턴한다.
             p->mQuickSkills.erase(iter);
+            mSkillIdxs.erase(mSkillIdxs.begin() + i);
             mIsRenderUpdate = true;
             SDL_Log("quick skill ui: erased skill code");
             return;
         }
-        iter++;
+        iter++; i++;
     }
 
     p->mQuickSkills.push_back(skill->mCode);
+    mSkillIdxs.push_back(skillIdx);
     mIsRenderUpdate = true;
     SDL_Log("quick skill ui: added skill code");
 }
@@ -1552,9 +1561,11 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
         //스킬 발동을 위한 준비 단계
         //인덱스에 따라서 스킬 코드를 가져온다.
         std::string skillCode = p->mQuickSkills[xPos];
+
         //TODO: 여기부터는 따로 함수로 래핑하는게 좋을듯
         //엔티티에 저장된 실제 스킬 객체를 찾아온다.
-        Skill* skill = gc.mObjm->mEntm->mFocusedEnt->mSkills[xPos];
+        int idx = *std::next(mSkillIdxs.begin(), xPos);
+        Skill* skill = gc.mObjm->mEntm->mFocusedEnt->mSkills[idx];
 
         //현재 스킬에 따라서 맵 타일 하이라이트 색을 바꿔준다.
         json skillTable = gc.mSkm->mSkillDb["items"];
@@ -1568,7 +1579,6 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
             else if (stype == "attack") gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight_red.png");
             else gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight.png");
 
-            mGc->mSkm->SetSkillData(sd); //스킬 데이터 캐싱
             mGc->mSkm->mIsSkillReady = true; //스킬 사용 준비 완료
         }
 
@@ -1702,10 +1712,11 @@ void ItemMenu::ClearButtons()
 
 bool ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
 {
-    bool isConsumed = false;
-
-    if (!mCanHandleEvent) return isConsumed;
+    if (mGc->mEvCtx->mIsEventHandled) return;
+    if (!mCanHandleEvent) return;
     Math mth;
+
+    bool isConsumed {false};
 
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return isConsumed;
 
@@ -1714,25 +1725,24 @@ bool ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
 
     for (int i = 0; i < (int) mButtons.size(); i++) {
         bool isIn = mButtons[i]->IsMouseIn(mx, my);
-
+        
         if (isIn) {
-
             if (mBtnIdxs[i] == ItemMenuBtnIdx::Use) {
                 SDL_Log("item menu: use");
             }
-            if ( mBtnIdxs[i] == ItemMenuBtnIdx::Equip) {
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Equip) {
                 SDL_Log("item menu: equip");
                 Equipment* eq = static_cast<Equipment*>(mItem);
                 entm->EquipItem(*mGc, entm->mFocusedPc, eq);
             }
-            if ( mBtnIdxs[i] == ItemMenuBtnIdx::Unequip) {
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Unequip) {
                 SDL_Log("item menu: unequip");
                 entm->UnequipItem(*mGc, entm->mFocusedPc, mItem->mId);
             }
-            if ( mBtnIdxs[i] == ItemMenuBtnIdx::Modify) {
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Modify) {
                 SDL_Log("item menu: modify");
             }
-            if ( mBtnIdxs[i] == ItemMenuBtnIdx::Examine) {
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Examine) {
                 SDL_Log("item menu: examine");
             }
             if (mBtnIdxs[i] == ItemMenuBtnIdx::Dispose) {
@@ -1740,7 +1750,9 @@ bool ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
             }
             uim->PopBackUI();
             isConsumed = true;
+            mGc->mEvCtx->mIsEventHandled = true;
         }
+
     }
 
     return isConsumed;

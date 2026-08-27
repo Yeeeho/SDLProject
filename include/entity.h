@@ -91,6 +91,7 @@ class TeamManager {
     SDL_Texture* mTempTex{nullptr};
 };
 
+class AI;
 class Item;
 class Equipment;
 enum class PawnType;
@@ -104,7 +105,7 @@ enum class EntitySetting {
 
 class EntityManager {
     public:
-    EntityManager(ObjectManager& objm);
+    EntityManager(GameContext* gc);
     
     void KillEntityOnMap(GameContext& gc, Map* map, Entity* ent);
 
@@ -140,15 +141,17 @@ class EntityManager {
     //렌더링
     void RenderEntities(Map* map);
 
-    Uint64 mTick {0};
-    Uint64 mMaxMs {500};
+    AI* mEntAI {nullptr};
     
     Entity* mEntTable[static_cast<int>(EntitySetting::MaxEnt)];
     Pawn* mPawnTable[static_cast<int>(EntitySetting::MaxPawn)];
-
+    
     Entity* mPrevFocusedEnt {nullptr};
     Entity* mFocusedEnt {nullptr};
     Pawn* mFocusedPc {nullptr};
+
+    Uint64 mTick {0};
+    Uint64 mMaxMs {500};
 };
 
 enum class Demeanor {

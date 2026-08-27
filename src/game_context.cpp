@@ -8,6 +8,7 @@
 #include "scenario.h"
 #include "turn.h"
 #include "ui.h"
+#include "event_context.h"
 #include "skill/skill.h"
 
 GameContext::GameContext()
@@ -20,4 +21,6 @@ GameContext::GameContext()
     mUim = new UIManager(*this);
     mSkm = new SkillManager(*this);
     mGsm = new GameStateManager();
+
+    mEvCtx = new EventContext();
 }

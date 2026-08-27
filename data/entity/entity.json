@@ -41,7 +41,7 @@
             "kin" : "rodent",
             "img_path" : "images/entity/npc/rat.png",
             "skills" : [
-                "bite"
+                "bite", "move"
             ],
 
             "str" : 1,

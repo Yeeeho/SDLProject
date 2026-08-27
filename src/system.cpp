@@ -9,6 +9,7 @@
 #include "entity.h"
 #include "city.h"
 #include "ui.h"
+#include "event_context.h"
 
 bool System::Init()
 {
@@ -86,14 +87,14 @@ bool System::LoadMedia()
     return success;
 }
 
-bool System::LoadObjects(ObjectManager& objm) //메인 루프 전에 한번만 호출함.
+bool System::LoadObjects(GameContext& gc) //메인 루프 전에 한번만 호출함.
 {
     bool success = true;
 
-    objm.mEntm = new EntityManager(objm); //엔티니 매니저 생성 
-    objm.mTeamm = new TeamManager(); //팀 매니저 생성
+    gc.mObjm->mEntm = new EntityManager(&gc); //엔티니 매니저 생성 
+    gc.mObjm->mTeamm = new TeamManager(); //팀 매니저 생성
 
-    objm.mCity = new City(5, 5); //도시 객체 생성
+    gc.mObjm->mCity = new City(5, 5); //도시 객체 생성
 
     return success;
 }
@@ -131,6 +132,7 @@ bool System::HandleEvents(SDL_Event& e, GameContext& gc)
     //이벤트 큐에 이벤트가 있을때
     while (SDL_PollEvent(&e) == true) {
         if (e.type == SDL_EVENT_QUIT) quit = true;
+        gc.mEvCtx->mIsEventHandled = false;
 
         //현재 상태에 있는 매니저들의 이벤트 핸들링
         //왼쪽 마우스 클릭

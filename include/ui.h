@@ -326,7 +326,7 @@ class QuickSkillUI : public UI{
     public:
     QuickSkillUI(int x, int y, int w, int h, GameContext& gc);
     
-    void AddSkill(Skill* skill);
+    void AddSkill(Skill* skill, int skillIdx);
     
     void RenderThings() override;
     
@@ -335,6 +335,7 @@ class QuickSkillUI : public UI{
     void Deactivate() override;
     
     GameContext* mGc {nullptr};
+    std::vector<int> mSkillIdxs;
 };
 
 enum class BCUIMainStatIdx {
