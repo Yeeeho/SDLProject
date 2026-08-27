@@ -366,7 +366,7 @@ class ItemMenu : public UI {
 
     void ClearButtons();
 
-    void HandleEvent(SDL_Event& e, float mx, float my);
+    bool HandleEvent(SDL_Event& e, float mx, float my);
 
     void UpdatePos(int baseX, int baseY, int x, int y, int tl);
     void UpdatePos(Grid* grid, int baseX, int baseY, int pointX, int pointY);

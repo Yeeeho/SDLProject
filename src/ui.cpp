@@ -230,7 +230,10 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameContext& gc, float mouseX, float
         return;
     } 
 
-    mItemMenu->HandleEvent(e, mouseX, mouseY);
+    bool isConsumed {false};
+
+    isConsumed = mItemMenu->HandleEvent(e, mouseX, mouseY);
+    if (isConsumed) return;
     mCharacterSheet->HandleEvent(e, gc, mouseX, mouseY);
 
     for (auto ui : uiMap) {
@@ -1697,47 +1700,50 @@ void ItemMenu::ClearButtons()
     mButtons.clear();
 }
 
-void ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
+bool ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
 {
-    if (!mCanHandleEvent) return;
+    bool isConsumed = false;
+
+    if (!mCanHandleEvent) return isConsumed;
     Math mth;
 
-    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
+    if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return isConsumed;
 
     EntityManager* entm = mGc->mObjm->mEntm;
     UIManager* uim = mGc->mUim;
 
     for (int i = 0; i < (int) mButtons.size(); i++) {
         bool isIn = mButtons[i]->IsMouseIn(mx, my);
-        
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Use) {
-            SDL_Log("item menu: use");
+
+        if (isIn) {
+
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Use) {
+                SDL_Log("item menu: use");
+            }
+            if ( mBtnIdxs[i] == ItemMenuBtnIdx::Equip) {
+                SDL_Log("item menu: equip");
+                Equipment* eq = static_cast<Equipment*>(mItem);
+                entm->EquipItem(*mGc, entm->mFocusedPc, eq);
+            }
+            if ( mBtnIdxs[i] == ItemMenuBtnIdx::Unequip) {
+                SDL_Log("item menu: unequip");
+                entm->UnequipItem(*mGc, entm->mFocusedPc, mItem->mId);
+            }
+            if ( mBtnIdxs[i] == ItemMenuBtnIdx::Modify) {
+                SDL_Log("item menu: modify");
+            }
+            if ( mBtnIdxs[i] == ItemMenuBtnIdx::Examine) {
+                SDL_Log("item menu: examine");
+            }
+            if (mBtnIdxs[i] == ItemMenuBtnIdx::Dispose) {
+                SDL_Log("item menu: dispose");
+            }
             uim->PopBackUI();
-        }
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Equip) {
-            SDL_Log("item menu: equip");
-            Equipment* eq = static_cast<Equipment*>(mItem);
-            entm->EquipItem(*mGc, entm->mFocusedPc, eq);
-            uim->PopBackUI();
-        }
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Unequip) {
-            SDL_Log("item menu: unequip");
-            entm->UnequipItem(*mGc, entm->mFocusedPc, mItem->mId);
-            uim->PopBackUI();
-        }
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Modify) {
-            SDL_Log("item menu: modify");
-            uim->PopBackUI();
-        }
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Examine) {
-            SDL_Log("item menu: examine");
-            uim->PopBackUI();
-        }
-        if (isIn && mBtnIdxs[i] == ItemMenuBtnIdx::Dispose) {
-            SDL_Log("item menu: dispose");
-            uim->PopBackUI();
+            isConsumed = true;
         }
     }
+
+    return isConsumed;
 }
 
 void ItemMenu::UpdatePos(int baseX, int baseY, int x, int y, int tl)
