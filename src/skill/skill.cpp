@@ -166,8 +166,8 @@ SkillManager::SkillManager(GameContext& gc)
 
 void SkillManager::LoadJsonData()
 {
-    JsonHelper jh;
-    jh.LoadJsonFile(mSkillDb, "data/skill/skill.json");
+    
+    JsonHelper::LoadJsonFile(mSkillDb, "data/skill/skill.json");
 }
 
 void SkillManager::SetSkill(Skill * skill)

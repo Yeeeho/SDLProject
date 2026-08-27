@@ -173,7 +173,7 @@ void SubMapState::Enter(GameContext& gc)
     SDL_Log("enter submap");
 
     //debug
-    IOHelper::MakeFile("save/test.json", "11");
+    GameIO::Save(&gc, "debug");
 
     Map* map = gc.mMapm->mSubMap;
     gc.mMapm->mCurrentMap = map;
@@ -198,9 +198,6 @@ void SubMapState::Exit(GameContext& gc)
 
 void SubMapState::Update(GameContext& gc)
 {
-    //debug
-    // SDL_Log(std::to_string(Random::IDistribution(0, 10)).c_str());
-
     gc.mScm->Update(gc);
     gc.mTurnm->Update();
 

@@ -15,8 +15,7 @@ class JsonManager {
     json mPawnDb;
 };
 
-class JsonHelper {
-    public:
+namespace JsonHelper {
     //json 파일에서 json 객체로 파싱
     bool LoadJsonFile(json& j, std::string path);
 

@@ -15,5 +15,16 @@ namespace IOHelper {
 };
 
 namespace CharacterIO {
-    void Save(Pawn* p, GameContext* gc);
-}
+    using namespace std;
+    using json = nlohmann::json;
+
+    void SavePawn(GameContext* gc, string name);
+    json GetSkillData(Pawn* p);
+};
+
+namespace GameIO {
+    using namespace std;
+
+    void Save(GameContext* gc, string name);
+    void MakeUserSave(string name);
+};

@@ -42,24 +42,23 @@ void Scenario::UpdateScenario(GameContext& gc)
     SDL_Log("update scenario");
 
     ScenarioHelper snh;
-    JsonHelper jh;
     ItemHelper ih;
     json section = mData["items"][mScProgress];
 
-    std::string sType = jh.GetString(section, "type");
+    std::string sType = JsonHelper::GetString(section, "type");
     std::string message = "scenario type: " + sType;
     SDL_Log(message.c_str());
 
     if (sType == "dialogue") {
         //어느 섹션의 대화인지를 찾아서 가져온다.
-        jh.LoadJsonFile(mDialogue, jh.GetString(section, "path"));
+        JsonHelper::LoadJsonFile(mDialogue, JsonHelper::GetString(section, "path"));
         
-        std::string dSection = jh.GetString(section, "d_section");
+        std::string dSection = JsonHelper::GetString(section, "d_section");
         mDialogueSection = mDialogue["items"][dSection];
     }
     else if (sType == "continue_dialogue") {
         //로딩을 하지 않고 섹션만 다시 찾는다.
-        std::string dSection = jh.GetString(section, "d_section");
+        std::string dSection = JsonHelper::GetString(section, "d_section");
         mDialogueSection = mDialogue["items"][dSection];
 
         mIsDialogueUpdate = true;
@@ -68,19 +67,19 @@ void Scenario::UpdateScenario(GameContext& gc)
     else if (sType == "static_spawn") {
         Map* map {nullptr};
         
-        std::string where = jh.GetString(section, "where");
+        std::string where = JsonHelper::GetString(section, "where");
         //어떤 맵에 스폰할지 결정한다.
         map = snh.GetMap(gc, where);
 
         json items = section["items"];
         for (json item : items) {
             
-            if (jh.GetString(item, "type") == "single_ent") {
+            if (JsonHelper::GetString(item, "type") == "single_ent") {
                 SDL_Log("scenario: spawning single entity");
-                std::string code = jh.GetString(item, "code");
-                std::string demeanor = jh.GetString(item, "demeanor");
+                std::string code = JsonHelper::GetString(item, "code");
+                std::string demeanor = JsonHelper::GetString(item, "demeanor");
                 
-                int tileId = jh.GetInt(item, "tile_id");
+                int tileId = JsonHelper::GetInt(item, "tile_id");
             
                 gc.mObjm->mEntm->AllocEntityOnTable(*gc.mObjm, code, -1, -1, 0);
                 Entity* ent = gc.mObjm->mEntm->mEntTable[0];
@@ -90,13 +89,13 @@ void Scenario::UpdateScenario(GameContext& gc)
                 else if (demeanor == "neutral") ent->mDemeanor = Demeanor::Neutral;
                 gc.mObjm->mEntm->SpawnEntityOnMap(*gc.mObjm, map, ent, tileId);
             }
-            if (jh.GetString(item, "type") == "single_item") {
+            if (JsonHelper::GetString(item, "type") == "single_item") {
                 //시나리오 데이터에서 코드, 아이템타입, 타일 아이디를 구한다.
-                std::string code = jh.GetString(item, "code");
-                std::string itype = jh.GetString(item, "item_type");
+                std::string code = JsonHelper::GetString(item, "code");
+                std::string itype = JsonHelper::GetString(item, "item_type");
                 ItemType itemType = ih.GetItemType(itype);
-                int tileId = jh.GetInt(item, "tile_id");
-                int count = jh.GetInt(item, "count");
+                int tileId = JsonHelper::GetInt(item, "tile_id");
+                int count = JsonHelper::GetInt(item, "count");
                 
                 Item* it {nullptr};
                 if (itemType == ItemType::Equipment) {
@@ -123,12 +122,12 @@ void Scenario::UpdateScenario(GameContext& gc)
 void Scenario::UpdateDialogue(GameContext& gc, json data)
 {
     if (!mIsDialogueUpdate) return;
-    JsonHelper jh;
+    
 
     gc.mUim->mDialogueUI->mDialogueBody->mTui->ClearTexts();
     
     json d = data[mDialogueProgress];
-    std::string dType = jh.GetString(d, "type");
+    std::string dType = JsonHelper::GetString(d, "type");
     
     //색깔 캐싱
     SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
@@ -136,7 +135,7 @@ void Scenario::UpdateDialogue(GameContext& gc, json data)
 
     if (dType == "narration") {
                 
-        std::string text = jh.GetString(d, "text");
+        std::string text = JsonHelper::GetString(d, "text");
         gc.mUim->mDialogueUI->SetUI(text);
         mDialogueProgress += 1;
 
@@ -144,7 +143,7 @@ void Scenario::UpdateDialogue(GameContext& gc, json data)
     }
     else if (dType == "player_line") {
         TTFWord name = TTFWord("당신", white, System::sFont);
-        std::string text = jh.GetString(d, "text");
+        std::string text = JsonHelper::GetString(d, "text");
         gc.mUim->mDialogueUI->SetUI(gc.mUim->mDialogueUI->mSpkrBlankImg, name, text);
         mDialogueProgress += 1;
 
@@ -155,27 +154,27 @@ void Scenario::UpdateDialogue(GameContext& gc, json data)
         json speaker;
         std::string name = "";
 
-        if (jh.GetString(d, "ent_type") == "npc") {
+        if (JsonHelper::GetString(d, "ent_type") == "npc") {
             json entDb = gc.mObjm->mJsm->mEntDb["items"];
             
-            name = jh.GetString(d, "speaker");
+            name = JsonHelper::GetString(d, "speaker");
             speaker = entDb[name];
         }
-        else if (jh.GetString(d, "ent_type") == "pawn") {
+        else if (JsonHelper::GetString(d, "ent_type") == "pawn") {
             json pawnDb = gc.mObjm->mJsm->mPawnDb["items"];
             
-            name = jh.GetString(d, "speaker");
+            name = JsonHelper::GetString(d, "speaker");
             speaker = pawnDb[name];
         }
-        std::string imgPath = jh.GetString(speaker, "img_path");
+        std::string imgPath = JsonHelper::GetString(speaker, "img_path");
         gc.mUim->mDialogueUI->mSpeakerImg->LoadFromFile(imgPath);
 
-        name = jh.GetString(speaker, "name");
+        name = JsonHelper::GetString(speaker, "name");
 
         SDL_Color tc = {0x00, 0xB0, 0x00, 0xFF};
         TTFWord entName = TTFWord(name, tc, System::sFont);
 
-        std::string text = jh.GetString(d, "text");
+        std::string text = JsonHelper::GetString(d, "text");
 
         gc.mUim->mDialogueUI->SetUI(gc.mUim->mDialogueUI->mSpeakerImg, entName, text);
 
@@ -211,8 +210,8 @@ void Scenario::UpdateDialogue(GameContext& gc, json data)
 
 void NGScenario::LoadScenarioData(GameContext& gc)
 {
-    JsonHelper jh;
-    jh.LoadJsonFile(mData, "data/scenario/main.json");
+    
+    JsonHelper::LoadJsonFile(mData, "data/scenario/main.json");
 }
 
 void NGScenario::LoadSubMap(GameContext& gc)

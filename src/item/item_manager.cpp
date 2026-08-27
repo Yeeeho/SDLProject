@@ -57,21 +57,21 @@ void ItemManager::LoadSpriteSheets()
 
 void ItemManager::LoadItemData()
 {
-    JsonHelper jh;
-    jh.LoadJsonFile(mItemCodeTable, "data/item/item_code_table.json");
-    jh.LoadJsonFile(mWeaponDb, "data/item/weapon.json");
-    jh.LoadJsonFile(mUWeaponDb, "data/item/unique_weapon.json");
-    jh.LoadJsonFile(mWeaponSsMap, "images/item/weapon/weapon_ss.json");
+    
+    JsonHelper::LoadJsonFile(mItemCodeTable, "data/item/item_code_table.json");
+    JsonHelper::LoadJsonFile(mWeaponDb, "data/item/weapon.json");
+    JsonHelper::LoadJsonFile(mUWeaponDb, "data/item/unique_weapon.json");
+    JsonHelper::LoadJsonFile(mWeaponSsMap, "images/item/weapon/weapon_ss.json");
 
-    jh.LoadJsonFile(mGearDb, "data/item/gear.json");
-    jh.LoadJsonFile(mUGearDb, "data/item/unique_gear.json");
-    jh.LoadJsonFile(mGearSsMap, "images/item/gear/gear_ss.json");
+    JsonHelper::LoadJsonFile(mGearDb, "data/item/gear.json");
+    JsonHelper::LoadJsonFile(mUGearDb, "data/item/unique_gear.json");
+    JsonHelper::LoadJsonFile(mGearSsMap, "images/item/gear/gear_ss.json");
 
-    jh.LoadJsonFile(mUseItDb, "data/item/useable.json");
-    jh.LoadJsonFile(mConsumItDb, "data/item/consumable.json");
-    jh.LoadJsonFile(mConsumItSsMap, "images/item/consumable/consumable_ss.json");
+    JsonHelper::LoadJsonFile(mUseItDb, "data/item/useable.json");
+    JsonHelper::LoadJsonFile(mConsumItDb, "data/item/consumable.json");
+    JsonHelper::LoadJsonFile(mConsumItSsMap, "images/item/consumable/consumable_ss.json");
 
-    jh.LoadJsonFile(mSpecItDb, "data/item/special.json");
+    JsonHelper::LoadJsonFile(mSpecItDb, "data/item/special.json");
 }
 
 void ItemManager::SpawnItemOnMap(Map *map, int tileId, Item *item)

@@ -60,10 +60,10 @@ bool System::LoadData(ObjectManager& objm)
 {
     bool success = true;
     
-    JsonHelper jh;
     
-    jh.LoadJsonFile(objm.mJsm->mPawnDb, "data/entity/pawn.json");
-    jh.LoadJsonFile(objm.mJsm->mEntDb, "data/entity/entity.json");
+    
+    JsonHelper::LoadJsonFile(objm.mJsm->mPawnDb, "data/entity/pawn.json");
+    JsonHelper::LoadJsonFile(objm.mJsm->mEntDb, "data/entity/entity.json");
 
     return success;
 }
