@@ -75,6 +75,7 @@ Consumable::Consumable(const ObjectManager &objm, std::string code)
     json item = consumTb[code];
     mName = item["name"].get<std::string>();
     mValue = GetValue();
+    mWeight = ih.GetConsWeight(item);
 }
 
 void Consumable::Destroy(const ObjectManager &objm)

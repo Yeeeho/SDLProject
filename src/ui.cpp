@@ -2,6 +2,7 @@
 #include "ui.h"
 
 #include "system/system.h"
+#include "system/io.h"
 #include "render.h"
 #include "math.h"
 #include "game_context.h"
@@ -144,6 +145,12 @@ void Button::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mous
         gc.mScm->SetCurrentScenario(new NGScenario(), gc);
         gc.mGsm->mIsStateChange = true;
     }
+    else if (mType == BtnType::Debug) {
+        SDL_Log("sub map debug");
+        gc.mGsm->mNextState = gc.mGsm->mSms;
+        gc.mScm->SetCurrentScenario(new DefScenario(), gc);
+        gc.mGsm->mIsStateChange = true;
+    }
     else if (mType == BtnType::SubMapTurnOver) {
         SDL_Log("submap turn over button pressed");
         gc.mTurnm->UpdateTurn();
@@ -186,6 +193,8 @@ UIManager::UIManager(GameContext& gc)
     int y = System::sWindowHeight - 100;
     
     mTurnOverBtn = new Button(x, y, 180, 40, "턴 종료(SPACE)", BtnType::SubMapTurnOver);
+    mSaveBtn = new Button(x, y + 50, 180, 40, "저장", BtnType::Default);
+    mLoadBtn = new Button(100, 100, 180, 40, "불러오기", BtnType::Default);
 
     mTileHLUI = new TileHLUI();
     mLogUI = new LogUI(System::sWindowWidth - 280, 100, 240, 800);
@@ -242,6 +251,17 @@ void UIManager::HandleUIEvent(SDL_Event &e, GameContext& gc, float mouseX, float
     }
 
     if (!mDialogueUI->mIsRender) mTurnOverBtn->HandleEvent(e, gc, mouseX, mouseY);
+
+    if (mSaveBtn->IsMouseIn(mouseX, mouseY)) {
+        if (e.button.button != SDL_BUTTON_LEFT || e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+        GameIO::Save(&gc, "debug");
+        SDL_Log("[DEBUG] testing save");
+    }
+    if (mLoadBtn->IsMouseIn(mouseX, mouseY)) {
+        if (e.button.button != SDL_BUTTON_LEFT || e.type != SDL_EVENT_MOUSE_BUTTON_DOWN) return;
+        GameIO::Load(&gc, "debug");
+        SDL_Log("[DEBUG] testing load");
+    }
 }
 
 void UIManager::HandleMapUIEvent(SDL_Event &e, GameContext& gc, Map *map, float mx, float my)
@@ -289,6 +309,9 @@ void UIManager::RenderMapUIs(Map* map)
 
     mBCUI->mIsRender = true; //DEBUG
     mBCUI->Render();
+
+    mSaveBtn->Render();
+    mLoadBtn->Render();
 }
 
 void UIManager::PopBackUI()
@@ -1078,12 +1101,11 @@ void InventoryUI::Deactivate()
 
 void InventoryUI::UpdateEqToolTip(SlotInfo& si)
 {
-    EntityUtil eu;
     Pawn* p = mGc->mObjm->mEntm->mFocusedPc;
 
     //엔티티가 실제로 뭘 장비했는지 확인한다.
     //슬롯의 장비 아이디와 현재 장비 아이디를 조회
-    Equipment* eq = eu.GetEquipment(p, si.mEqId);
+    Equipment* eq = EntityHelper::GetEquipment(p, si.mEqId);
     
     ToolTip* tt = mToolTip;
     if (mPrevEqIdx != si.mId) {
@@ -1100,10 +1122,9 @@ void InventoryUI::UpdateEqToolTip(SlotInfo& si)
 
 void InventoryUI::LoadEqToolTip(SlotInfo &si)
 {
-    EntityUtil eu;
     Pawn* p = mGc->mObjm->mEntm->mFocusedPc;
     ToolTip* tt = mToolTip;
-    Equipment* eq = eu.GetEquipment(p, si.mEqId);
+    Equipment* eq = EntityHelper::GetEquipment(p, si.mEqId);
 
     tt->ClearContent();
     tt->mTui->AddWord(TTFWord(si.mInfo, System::kTc, System::sFont));
@@ -1156,10 +1177,9 @@ void InventoryUI::HandleEqSlotEvent(SDL_Event &e, SlotInfo si, float mx, float m
     if (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN || e.button.button != SDL_BUTTON_LEFT) return;
     if (si.mEqId == 0) return; //참조 아이디가 없는 상태면 리턴한다.
     // mGc->mObjm->mEntm->UnequipItem(*mGc, p, si.mEqId);
-    EntityUtil eu;
     ItemMenu* im = mGc->mUim->mItemMenu;
     im->UpdatePos(mX, mY, si.x, si.y, mGrid->mTileLen);
-    im->Update(eu.GetEquipment(p, si.mEqId), true);
+    im->Update(EntityHelper::GetEquipment(p, si.mEqId), true);
     im->Activate();
 }
 
@@ -1255,8 +1275,7 @@ void InventoryUI::RenderEqSlot(Texture &t, SlotInfo si)
     tui.mX = (float) si.x + rem * 0.5 - tui.mPadding; tui.mY = (float) (si.y + tl);
     tui.RenderWords();
 
-    EntityUtil eu;
-    Equipment* eq = eu.GetEquipment(mGc->mObjm->mEntm->mFocusedPc, si.mEqId);
+    Equipment* eq = EntityHelper::GetEquipment(mGc->mObjm->mEntm->mFocusedPc, si.mEqId);
     
     if (eq != nullptr) {
         mGc->mObjm->mItm->RenderItem(eq, si.x, si.y, tl, tl);
@@ -1715,6 +1734,7 @@ bool ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
     if (mGc->mEvCtx->mIsEventHandled) return false;
     if (!mCanHandleEvent) return false;
     Math mth;
+    ItemHelper ih;
 
     bool isConsumed {false};
 
@@ -1733,11 +1753,16 @@ bool ItemMenu::HandleEvent(SDL_Event &e, float mx, float my)
             if (mBtnIdxs[i] == ItemMenuBtnIdx::Equip) {
                 SDL_Log("item menu: equip");
                 Equipment* eq = static_cast<Equipment*>(mItem);
-                entm->EquipItem(*mGc, entm->mFocusedPc, eq);
+                bool success = entm->EquipItem(*mGc, entm->mFocusedPc, eq);
+                if (success) entm->EraseFromInv(entm->mFocusedPc, eq->mId); //아이템을 인벤토리에서 삭제한다.
             }
             if (mBtnIdxs[i] == ItemMenuBtnIdx::Unequip) {
                 SDL_Log("item menu: unequip");
-                entm->UnequipItem(*mGc, entm->mFocusedPc, mItem->mId);
+                Equipment* eq = EntityHelper::GetEquipment(entm->mFocusedPc, mItem->mId);
+                bool success = entm->UnequipItem(*mGc, entm->mFocusedPc, mItem->mId);
+                if (success) {
+                    entm->PickUpItem(*mGc, entm->mFocusedPc, eq);
+                } 
             }
             if (mBtnIdxs[i] == ItemMenuBtnIdx::Modify) {
                 SDL_Log("item menu: modify");

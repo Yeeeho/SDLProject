@@ -516,3 +516,9 @@ float ItemHelper::GetEqWeight(json eq) {
     if (eq.contains("base_weight")) return eq["base_weight"].get<float>();
     else return 0.f;
 }
+
+float ItemHelper::GetConsWeight(json cons)
+{
+    if (cons.contains("weight")) return cons["weight"].get<float>();
+    else return 0.f;
+}

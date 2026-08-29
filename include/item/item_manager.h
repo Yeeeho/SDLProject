@@ -88,6 +88,7 @@ class ItemHelper {
     EqType GetEqType(json eq);
     ItemType GetItemType(std::string iType);
     float GetEqWeight(json eq); 
+    float GetConsWeight(json cons);
 
     int GetEqDamage(json eq);
     int GetEqDamage(json eq, Entity* ent);

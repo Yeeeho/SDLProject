@@ -110,7 +110,7 @@ class FramedTUI {
 
 //버튼 기능 타입
 enum class BtnType {
-    Default,
+    Default, Debug,
     Title, 
     NewGame, LoadGame,
     OverMap, SubMap, City,
@@ -456,6 +456,10 @@ class UIManager {
 
     //턴 종료 버튼
     Button* mTurnOverBtn {nullptr};
+
+    Button* mSaveBtn {nullptr};
+    Button* mLoadBtn {nullptr};
+
     bool mWasMouseOnMap {false};
     
     //레이아웃 관련 변수

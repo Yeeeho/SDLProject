@@ -61,7 +61,7 @@ GameState::GameState()
 void IntroState::Enter(GameContext& gc)
 {
     SDL_Log("enter intro");
-    gc.mUim->uiMap["debugBtn"] = new Button(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 25, 200, 50, "디버그", BtnType::OverMap);
+    gc.mUim->uiMap["debugBtn"] = new Button(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 25, 200, 50, "디버그", BtnType::Debug);
     gc.mUim->uiMap["newGameBtn"] = new Button(System::sWindowWidth/2 - 100, System::sWindowHeight/2 - 150, 200, 50, "새 게임", BtnType::NewGame);
 }
 
@@ -171,9 +171,6 @@ void OverMapState::Render(GameContext& gc)
 void SubMapState::Enter(GameContext& gc) 
 {
     SDL_Log("enter submap");
-
-    //debug
-    GameIO::Save(&gc, "debug");
 
     Map* map = gc.mMapm->mSubMap;
     gc.mMapm->mCurrentMap = map;

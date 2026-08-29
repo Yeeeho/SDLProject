@@ -21,6 +21,7 @@ class Item {
     int mTileId {0}; //맵상에서 어느 위치에 있는지도 알려주고 인벤토리에 있을 경우 인벤토리 위치의 기준도 된다.
 
     int mValue {0}; //가치, 실제 계산 방식은 여러 변수들에 의해 동적으로 변한다.
+    float mWeight {0.f};
 };
 
 struct ItemStack {
@@ -41,13 +42,13 @@ class Equipment : public Item {
     EqType mEqType {EqType::Error};
     //기본 공격력 등은 데이터베이스를 참고하도록 한다.
     //아래에 정의된 변수들은 현재 상태에 관한 것이다.
-    float mWeight {0.f};
 
     int mDamage {0};
     int mArmor {0};
     //깡스탯 증가
     int mStrFlat {0};
     int mEndFlat {0};
+    int mPerFlat {0};
     int mDexFlat {0};
     int mAgiFlat {0};
     int mWilFlat {0};

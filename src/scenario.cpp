@@ -81,7 +81,7 @@ void Scenario::UpdateScenario(GameContext& gc)
                 
                 int tileId = JsonHelper::GetInt(item, "tile_id");
             
-                gc.mObjm->mEntm->AllocEntityOnTable(*gc.mObjm, code, -1, -1, 0);
+                gc.mObjm->mEntm->AllocEntityOnTable(&gc, code, -1, -1, 0);
                 Entity* ent = gc.mObjm->mEntm->mEntTable[0];
                 //태도를 결정한다.
                 if (demeanor == "hostile") ent->mDemeanor = Demeanor::Hostile;
@@ -217,7 +217,7 @@ void NGScenario::LoadScenarioData(GameContext& gc)
 void NGScenario::LoadSubMap(GameContext& gc)
 {
     SDL_Log("load entities for new game scenario at submap");
-    gc.mObjm->mEntm->AllocPawnOnTable(*gc.mObjm, "nameless_girl", PawnType::Unique, 0);
+    gc.mObjm->mEntm->AllocPawnOnTable(&gc, "nameless_girl", PawnType::Unique, 0);
     SDL_Log("entities loaded");
 
     gc.mObjm->mEntm->SpawnEntityOnMap(*gc.mObjm, gc.mMapm->mSubMap, gc.mObjm->mEntm->mPawnTable[0], 34);

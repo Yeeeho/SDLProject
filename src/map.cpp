@@ -46,9 +46,10 @@ void Grid::RenderTiles()
     }
 }
 
-Map::Map(int x, int y, int offsetX, int offsetY, int xTiles, int yTiles, int tileLen)
+Map::Map(int x, int y, int offsetX, int offsetY, int xTiles, int yTiles, int tileLen, MapType maptype)
 {
     mGridType = GridType::Map;
+    mMapType = maptype;
     mTileLen = tileLen;
     mXTiles = xTiles; mYTiles = yTiles;
 
@@ -344,7 +345,7 @@ Point MapHelper::GetPosPoint(int tileId, Grid *grid)
 MapManager::MapManager()
 {
     //오버맵에 도시 생성
-    mOverMap = new Map(0, 0, System::sWindowWidth/2 - 6 * 50 , 100, 6 ,6, 100); //월드 맵 객체 생성
+    mOverMap = new Map(0, 0, System::sWindowWidth/2 - 6 * 50 , 100, 6 ,6, 100, MapType::OverMap); //월드 맵 객체 생성
     mOverMap->GenerateMapTiles();
     
     int cityIdx = mOverMap->mXTiles * mOverMap->mYTiles * 0.5 - mOverMap->mXTiles * 0.5;
@@ -352,10 +353,10 @@ MapManager::MapManager()
 
     SDL_Color tc = {0xE0, 0xE0, 0xE0, 0xFF};
 
-    mSubMap = new Map(0, 0, System::sWindowWidth*0.5 - 6*40, 100, 16, 16, 80); //서브맵 객체 생성
+    mSubMap = new Map(0, 0, System::sWindowWidth*0.5 - 6*40, 100, 16, 16, 80, MapType::SubMap); //서브맵 객체 생성
     mSubMap->GenerateMapTiles();
 
-    mCityMap = new Map(0, 0, System::sWindowWidth*0.5 - 6*40, 100, 32, 32, 80);
+    mCityMap = new Map(0, 0, System::sWindowWidth*0.5 - 6*40, 100, 32, 32, 80, MapType::CityMap);
     mCityMap->GenerateCityTiles();
 }
 

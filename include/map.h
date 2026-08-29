@@ -49,10 +49,13 @@ class Grid {
     bool mIsRenderUpdate {false};
 };
 
-//월드맵 클래스
+enum class MapType {
+    Default, OverMap, SubMap, CityMap
+};
+
 class Map : public Grid {
     public:
-    Map(int x, int y, int offsetX, int offsetY, int xTiles, int yTiles, int tileLen);
+    Map(int x, int y, int offsetX, int offsetY, int xTiles, int yTiles, int tileLen, MapType);
     void GenerateMapTiles();
     void GenerateCityTiles();
     
@@ -67,12 +70,13 @@ class Map : public Grid {
     
     //렌더링 관련
     void RenderOnUpdate();
-    
+
     SDL_Texture* mTempTex {nullptr}; //베이킹용 임시 텍스처
         
     //턴 제어
     int mCurrentTurn {0};
-    
+    //타입
+    MapType mMapType {MapType::Default};
     std::vector<MapTile*> mMapTiles; //맵타일들 담는 컨테이너
 
     //엔티티

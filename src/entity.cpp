@@ -200,21 +200,21 @@ EntityManager::EntityManager(GameContext* gc)
     TextureManager tm;
 }
 
-void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, int subMapX, int subMapY, int id)
+void EntityManager::AllocEntityOnTable(GameContext* gctx, std::string code, int subMapX, int subMapY, int id)
 {
-    const json& entItems = objm.mJsm->mEntDb["items"]; //데이터베이스 가져오기
+    const json& entItems = gctx->mObjm->mJsm->mEntDb["items"]; //데이터베이스 가져오기
 
     json entData;
 
     //엔티티 코드 확인
-    if (entItems.contains(name)) {
+    if (entItems.contains(code)) {
         //json에 이름이 포함된 경우
-        entData = entItems[name];
+        entData = entItems[code];
     }
     else {
-        SDL_Log("entity name not found");
-        name = "error_entity";
-        entData = entItems[name];
+        SDL_Log("entity code not found");
+        code = "error_entity";
+        entData = entItems[code];
     }
 
     Entity* ent = mEntTable[id];
@@ -227,6 +227,8 @@ void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, in
 
     //데이터 읽고 가져오기
     ent->mName = entData["name"].get<std::string>();
+    ent->mCode = code;
+
     json entSkills = entData["skills"];
     for (json skill : entSkills) {
         std::string skillcode = skill.get<std::string>();
@@ -248,24 +250,24 @@ void EntityManager::AllocEntityOnTable(ObjectManager &objm, std::string name, in
 
     //선천적으로 방어력을 가진 경우 패시브 플래그에서 가져오는 걸루..
 
-    std::string message = "entity id: " + std::to_string(id) + " name: " + name + " is allocated";
+    std::string message = "entity id: " + std::to_string(id) + " code: " + code + " is allocated";
     SDL_Log(message.c_str());
 }
 
-void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, PawnType pType, int id)
+void EntityManager::AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType, int id)
 {
-    const json& pawnItems = objm.mJsm->mPawnDb["items"];
+    const json& pawnItems = gctx->mObjm->mJsm->mPawnDb["items"];
 
-    if (!pawnItems.contains(name)) {
-        name = "error_pawn";
+    if (!pawnItems.contains(code)) {
+        code = "error_pawn";
     }
-    json pawnData = pawnItems[name];
+    json pawnData = pawnItems[code];
 
     Pawn* pawn = mPawnTable[id];
-
+    pawn->mId = id;
 
     pawn->mName = pawnData["name"].get<std::string>();
-    pawn->mCustomName = pawn->mName;
+    pawn->mCode = code;
     pawn->mType = pType;
     pawn->mDemeanor = Demeanor::Friendly;
 
@@ -286,23 +288,24 @@ void EntityManager::AllocPawnOnTable(ObjectManager &objm, std::string name, Pawn
     pawn->mTexture->LoadFromFile(pawnData["img_path"].get<std::string>());
 
     //TODO:스킬 배우는 동작도 엔티티 생성자에서 언젠가 분리시켜야 한다.
-    pawn->mSkills.push_back(new Skill("move", "이동"));
-    pawn->mSkills.push_back(new Skill("punch", "주먹질"));
-    pawn->mSkills.push_back(new Skill("pickup", "줍기"));
+    namespace eh = EntityHelper;
+    eh::GetSkill(gctx, pawn, "move");
+    eh::GetSkill(gctx, pawn, "punch");
+    eh::GetSkill(gctx, pawn, "pickup");
 
-    std::string message = "pawn id: " + std::to_string(id) + " name: " + name + " is allocated";
+    std::string message = "pawn id: " + std::to_string(id) + " name: " + code + " is allocated";
     SDL_Log(message.c_str());
 }
 
-void EntityManager::DeallocEntityOnTable(ObjectManager& objm, int id)
+void EntityManager::DeallocEntityOnTable(GameContext* gctx, int id)
 {
-    AllocEntityOnTable(objm, "null_entity", -1, -1, id);
+    AllocEntityOnTable(gctx, "null_entity", -1, -1, id);
     SDL_Log("deallocated entity");
 }
 
-void EntityManager::DeallocPawnOnTable(ObjectManager &objm, int id)
+void EntityManager::DeallocPawnOnTable(GameContext* gctx, int id)
 {
-    AllocPawnOnTable(objm, "null_pawn", PawnType::Null, id);
+    AllocPawnOnTable(gctx, "null_pawn", PawnType::Null, id);
     SDL_Log("deallocated pawn");
 }
 
@@ -312,16 +315,16 @@ void EntityManager::KillEntityOnMap(GameContext& gc, Map* map, Entity* ent)
     if (ent->mIsOnMap) DespawnEntity(*gc.mObjm, map, ent);
 
     if (ent->mIsPawn) {
-        DeallocPawnOnTable(*gc.mObjm, ent->mId);
+        DeallocPawnOnTable(&gc, ent->mId);
     }
     else {
-        DeallocEntityOnTable(*gc.mObjm, ent->mId);
+        DeallocEntityOnTable(&gc, ent->mId);
     }
 }
 
 void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent)
 {
-
+    SpawnEntityOnMap(objm, map, ent, ent->mTileId);
 }
 
 void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent, int tileId)
@@ -445,9 +448,9 @@ bool EntityManager::EquipItem(GameContext &gc, Pawn* p, Equipment* eq)
         if (targetEq != nullptr) continue;
         //장비 슬롯이 비어있을 경우
         range.first->second = eq; //장비한게 없다면 mEq 맵에 매개변수 장비를 할당해준다.
-        EraseFromInv(p, eq->mId); //아이템을 인벤토리에서 삭제한다.
         break;
     }
+    SDL_Log("item equipped");
 
     //장비 슬롯 객체의 정보도 업데이트한다.
     CharacterSheetUI* cui = gc.mUim->mCharacterSheet;
@@ -461,8 +464,8 @@ bool EntityManager::EquipItem(GameContext &gc, Pawn* p, Equipment* eq)
         success = true;
         break;
     }
+    SDL_Log("equipment slot info updated");
 
-    SDL_Log("item equipped");
     cui->mIsRenderUpdate = true;
     return success;
 }
@@ -471,7 +474,7 @@ bool EntityManager::UnequipItem(GameContext &gc, Pawn *p, int itemId)
 {
     bool success = false;
 
-    EntityUtil eu;
+    namespace eh = EntityHelper;
     Equipment* eq = nullptr;
     
     //매개변수 아이디와 일치하는 장비를 찾는다.
@@ -500,9 +503,6 @@ bool EntityManager::UnequipItem(GameContext &gc, Pawn *p, int itemId)
             break;
         }
     }
-
-    //인벤토리에 다시 넣는다.
-    PickUpItem(gc, p, eq);
     CharacterSheetUI* cui = gc.mUim->mCharacterSheet;
     SDL_Log("item unequipped");
     cui->mInvUI->LoadEqToolTip(si);
@@ -747,7 +747,7 @@ int StatHelper::GetApRegen(Entity *ent)
     return ret;
 }
 
-SDL_Color EntityUtil::GetDemeanorColor(Entity *ent)
+SDL_Color EntityHelper::GetDemeanorColor(Entity *ent)
 {
     if (ent->mDemeanor == Demeanor::Friendly) return {0x40, 0xB0, 0x40, 0xFF};
     else if (ent->mDemeanor == Demeanor::Hostile) return {0xB0, 0x40, 0x40, 0xFF};
@@ -758,7 +758,7 @@ SDL_Color EntityUtil::GetDemeanorColor(Entity *ent)
     }
 }
 
-SDL_Color EntityUtil::GetRDemeanorColor(Entity *ent)
+SDL_Color EntityHelper::GetRDemeanorColor(Entity *ent)
 {
     if (ent->mDemeanor == Demeanor::Friendly) return {0xB0, 0x40, 0x40, 0xFF};
     else if (ent->mDemeanor == Demeanor::Hostile) return {0x40, 0xB0, 0x40, 0xFF};
@@ -769,7 +769,7 @@ SDL_Color EntityUtil::GetRDemeanorColor(Entity *ent)
     }
 }
 
-Equipment *EntityUtil::GetEquipment(Pawn *p, int itemId)
+Equipment *EntityHelper::GetEquipment(Pawn *p, int itemId)
 {
     Equipment* eq = nullptr;
     
@@ -782,4 +782,13 @@ Equipment *EntityUtil::GetEquipment(Pawn *p, int itemId)
     }
 
     return eq;
+}
+
+void EntityHelper::GetSkill(GameContext* gc, Entity* ent, std::string skillCode)
+{
+    SkillHelper sh;
+    json sd = sh.GetSkillData(gc->mSkm->mSkillDb, skillCode);
+    
+    Skill* skill = new Skill(skillCode, sd["name"].get<std::string>());
+    ent->mSkills.push_back(skill);
 }

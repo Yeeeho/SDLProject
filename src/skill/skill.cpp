@@ -29,7 +29,8 @@ void Skill::Activate(SkillManager* skm)
     CombatHelper ch;
     SkillHelper skh;
     StatHelper sh;
-    EntityUtil eu;
+
+    namespace eu = EntityHelper;
 
     GameContext* gc = skm->mGc;
     LogUI* log = gc->mUim->mLogUI;
@@ -54,9 +55,10 @@ void Skill::Activate(SkillManager* skm)
         //경로에 뭐가 있는지 구한다.
         for (int id : tids) {
             if (id == tids[0]) continue; //처음 아이디는 무시한다. 액터가 서있는 타일이니까..
+            
             bool entOn = map->mMapTiles[id]->mIsEntOn;
             if (entOn) {
-                log->AddMessage("이동 경로에 뭔가 있습니다!", y);
+                if (actor->mIsPawn) log->AddMessage("이동 경로에 뭔가 있습니다!", y);
                 return;
             }
         }
@@ -133,7 +135,7 @@ void Skill::Activate(SkillManager* skm)
         }
 
         std::string message = actor->mName + "이(가) " + skillName + "을(를) 사용합니다!";
-        log->AddMessage(message, eu.GetDemeanorColor(actor));
+        log->AddMessage(message, eu::GetDemeanorColor(actor));
 
         //액터의 스탯에서 소모량만큼 깐다.
         actor->mCurHp -= hpUse;

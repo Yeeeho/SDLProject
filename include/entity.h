@@ -110,11 +110,11 @@ class EntityManager {
     void KillEntityOnMap(GameContext& gc, Map* map, Entity* ent);
 
     //엔티티 할당 함수
-    void AllocEntityOnTable(ObjectManager& objm, std::string name, int xMapPos, int yMapPos, int id);
-    void AllocPawnOnTable(ObjectManager& objm, std::string name, PawnType pType, int id);
+    void AllocEntityOnTable(GameContext* gctx, std::string code, int xMapPos, int yMapPos, int id);
+    void AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType, int id);
     //엔티티 할당 해제 함수
-    void DeallocEntityOnTable(ObjectManager& objm, int id);
-    void DeallocPawnOnTable(ObjectManager& objm, int id);
+    void DeallocEntityOnTable(GameContext* gctx, int id);
+    void DeallocPawnOnTable(GameContext* gctx, int id);
 
     //맵 상호작용
     void SpawnEntityOnMap(ObjectManager& objm, Map* map, Entity* ent);
@@ -171,6 +171,7 @@ class Entity {
 
     //식별 정보
     std::string mName {""}; //이름
+    std::string mCode {""}; //데이터베이스 식별용 문자열
     Demeanor mDemeanor {Demeanor::Neutral}; //태도 (적대적, 중립..)
 
     int mId;
@@ -229,8 +230,6 @@ class Pawn : public Entity {
     public:
     Pawn(const ObjectManager& objm, std::string name, PawnType pType, int id);
 
-    std::string mCustomName {""};
-
     PawnType mType;
 
     std::map<int, Item*> mInventory; //int: item id
@@ -260,10 +259,11 @@ class StatHelper {
 };
 
 //엔티티용 유틸리티 클래스
-class EntityUtil {
-    public:
+namespace EntityHelper {
     SDL_Color GetDemeanorColor(Entity* ent);
     SDL_Color GetRDemeanorColor(Entity* ent);
 
     Equipment* GetEquipment(Pawn* p, int itemId);
+
+    void GetSkill(GameContext* gc, Entity* ent, std::string skillCode);
 };
