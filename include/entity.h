@@ -5,8 +5,9 @@
 
 //전방 선언
 struct GameContext;
+class AIManager;
 class Entity;
-class Map;
+class Map; class Grid;
 class Pawn;
 class UIManager;
 class ObjectManager;
@@ -111,6 +112,7 @@ class EntityManager {
 
     //엔티티 할당 함수
     void AllocEntityOnTable(GameContext* gctx, std::string code, int xMapPos, int yMapPos, int id);
+    void AllocEntityOnTable(GameContext* gctx, Grid* grid, int tileId, std::string code, int id);
     void AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType, int id);
     //엔티티 할당 해제 함수
     void DeallocEntityOnTable(GameContext* gctx, int id);
@@ -126,7 +128,8 @@ class EntityManager {
     bool PickUpItem(GameContext& gc, Pawn* p, Item* item);
     bool EraseFromInv(Pawn* p, int itemId);
     void DropItem();
-    bool EquipItem(GameContext& gc, Pawn* p, Equipment* eq);
+    bool EquipItem(GameContext& gc, Pawn* p, Equipment* eq); //ui동작까지 포함하는 메서드
+    bool EquipItem(GameContext* gctx, Entity* ent, Equipment* eq); //상위 오브젝트용 장비 메서드. ui 동작이 포함되어있지 않음.
     bool UnequipItem(GameContext& gc, Pawn* p, int itemId);
 
     //업데이트
@@ -141,6 +144,7 @@ class EntityManager {
     //렌더링
     void RenderEntities(Map* map);
 
+    AIManager* mAim {nullptr};
     AI* mEntAI {nullptr};
     
     Entity* mEntTable[static_cast<int>(EntitySetting::MaxEnt)];
@@ -238,8 +242,7 @@ class Pawn : public Entity {
 };
 
 //스탯 관련 연산을 보조해주는 헬퍼 클래스에용
-class StatHelper {
-    public:
+namespace StatHelper {
     int GetMaxHp(Entity* ent); //최대체력을 계산한다.
     int GetMaxSp(Entity* ent); //최대 sp를 계산한다.
     int GetMaxAp(Entity* ent); //최대 ap를 계산한다.

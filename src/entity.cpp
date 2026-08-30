@@ -195,6 +195,7 @@ EntityManager::EntityManager(GameContext* gc)
         mPawnTable[i] = new Pawn(*gc->mObjm, "null_pawn", PawnType::Null, i);
     }
 
+    mAim = new AIManager();
     mEntAI = new AI(gc);
 
     TextureManager tm;
@@ -203,6 +204,8 @@ EntityManager::EntityManager(GameContext* gc)
 void EntityManager::AllocEntityOnTable(GameContext* gctx, std::string code, int subMapX, int subMapY, int id)
 {
     const json& entItems = gctx->mObjm->mJsm->mEntDb["items"]; //데이터베이스 가져오기
+
+    namespace sh = StatHelper;
 
     json entData;
 
@@ -243,10 +246,9 @@ void EntityManager::AllocEntityOnTable(GameContext* gctx, std::string code, int 
     ent->mSpd = entData["spd"].get<int>();
 
     //최대체력, 최대행동력은 스탯에 따라 결정
-    StatHelper sh;
-    ent->mCurHp = sh.GetMaxHp(ent);
-    ent->mCurSp = sh.GetMaxSp(ent);
-    ent->mCurAp = sh.GetMaxAp(ent);
+    ent->mCurHp = sh::GetMaxHp(ent);
+    ent->mCurSp = sh::GetMaxSp(ent);
+    ent->mCurAp = sh::GetMaxAp(ent);
 
     //선천적으로 방어력을 가진 경우 패시브 플래그에서 가져오는 걸루..
 
@@ -254,9 +256,18 @@ void EntityManager::AllocEntityOnTable(GameContext* gctx, std::string code, int 
     SDL_Log(message.c_str());
 }
 
+void EntityManager::AllocEntityOnTable(GameContext *gctx, Grid* grid, int tileId, std::string code, int id)
+{
+    MapHelper mh;
+    Point xy = mh.GetPosPoint(tileId, grid);
+    AllocEntityOnTable(gctx, code, xy.mX, xy.mY, id);
+}
+
 void EntityManager::AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType, int id)
 {
     const json& pawnItems = gctx->mObjm->mJsm->mPawnDb["items"];
+
+    namespace sh = StatHelper;
 
     if (!pawnItems.contains(code)) {
         code = "error_pawn";
@@ -277,10 +288,9 @@ void EntityManager::AllocPawnOnTable(GameContext* gctx, std::string code, PawnTy
     pawn->mHand.mCount = 2;
     pawn->mFoot.mCount = 2;
 
-    StatHelper sh;
-    pawn->mCurHp = sh.GetMaxHp(pawn);
-    pawn->mCurSp = sh.GetMaxSp(pawn); 
-    pawn->mCurAp = sh.GetMaxAp(pawn); 
+    pawn->mCurHp = sh::GetMaxHp(pawn);
+    pawn->mCurSp = sh::GetMaxSp(pawn); 
+    pawn->mCurAp = sh::GetMaxAp(pawn); 
 
     pawn->mIsPawn = true;
     
@@ -470,6 +480,26 @@ bool EntityManager::EquipItem(GameContext &gc, Pawn* p, Equipment* eq)
     return success;
 }
 
+bool EntityManager::EquipItem(GameContext *gctx, Entity *ent, Equipment *eq)
+{
+    bool success = false;
+
+    //내가 장비한 장비들 중 같은 장비 타입인 것들을 순회한다.
+    for (auto range = ent->mEqs.equal_range(eq->mEqType); range.first != range.second;
+    range.first++) 
+    {
+        Equipment* targetEq = range.first->second;
+        //조건을 검색해 이미 장비하고 있는 무언가가 있다면 continue 한다.
+        if (targetEq != nullptr) continue;
+        //장비 슬롯이 비어있을 경우
+        range.first->second = eq; //장비한게 없다면 mEq 맵에 매개변수 장비를 할당해준다.
+        success = true;
+        break;
+    }
+    SDL_Log("item equipped");
+    return success;
+}
+
 bool EntityManager::UnequipItem(GameContext &gc, Pawn *p, int itemId)
 {
     bool success = false;
@@ -541,12 +571,12 @@ void EntityManager::HandleEntityEvent(SDL_Event &e, GameContext &gc, Map *map, E
     bool mouseIn = ph.IsPointInSquare(mx, my, tile->mX, tile->mY, tile->mW, tile->mH);
     if (!mouseIn) return;
 
-    SkillHelper skh;
+    namespace skh = SkillHelper;
     //스킬이 준비되었다면 클릭된 엔티티는 타겟이 된다.
     if (gc.mSkm->mIsSkillReady) {
         json sd = gc.mSkm->mSkillData;
         Skill* sk = gc.mSkm->mSkill;
-        int tn = skh.GetSkillTargetNum(sd, sk);
+        int tn = skh::GetSkillTargetNum(sd, sk);
 
         if (gc.mSkm->mTargets.size() > tn) {
             //최대 타겟 개수를 넘어가면 리턴함.
@@ -786,8 +816,7 @@ Equipment *EntityHelper::GetEquipment(Pawn *p, int itemId)
 
 void EntityHelper::GetSkill(GameContext* gc, Entity* ent, std::string skillCode)
 {
-    SkillHelper sh;
-    json sd = sh.GetSkillData(gc->mSkm->mSkillDb, skillCode);
+    json sd = SkillHelper::GetSkillData(gc->mSkm->mSkillDb, skillCode);
     
     Skill* skill = new Skill(skillCode, sd["name"].get<std::string>());
     ent->mSkills.push_back(skill);

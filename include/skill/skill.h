@@ -56,18 +56,16 @@ class SkillManager {
     bool mIsSkillReady {false};
 };
 
-class SkillHelper {
-    public:
-    //타겟팅 관련
-    json GetSkillData(const json& skillDb, std::string code);
+namespace SkillHelper {
+    json GetSkillData(const json& skillDb, std::string code); //스킬 데이터 자체 반환
+
+    std::string GetSkillType(GameContext* gctx, std::string code); //스킬 타입
+    std::string GetSkillName(json skillData, Skill* skill); //스킬 이름
     std::string GetSkillTargetType(json skillData, Skill* skill);
-    std::string GetSkillName(json skillData, Skill* skill);
     int GetSkillTargetNum(json skillData, Skill* skill); //멀티타겟의 경우는 아직 안만듬
 
-    //스킬 범위
-    int GetSkillRange(json skillData, Skill* skill);
-    //스킬 데미지 
-    int GetSkillDamage(json skillData, Skill* skill, Entity* ent);
+    int GetSkillRange(json skillData, Skill* skill); //스킬 범위
+    int GetSkillDamage(json skillData, Skill* skill, Entity* ent); //스킬 데미지
     //스킬 코스트
     int GetHpUse(json skillData, Skill* skill, Entity* ent);
     int GetSpUse(json skillData, Skill* skill, Entity* ent);

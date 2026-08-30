@@ -135,8 +135,7 @@ void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
     if (gc.mSkm->mIsSkillReady) { //스킬매니저가 스킬을 사용할 준비가 되었다면
         //범위에 따라 타일을 제한한다.
         //현재는 광역공격을 위한 계산식은 없다.
-        SkillHelper skh;
-        int range = skh.GetSkillRange(gc.mSkm->mSkillData, gc.mSkm->mSkill);
+        int range = SkillHelper::GetSkillRange(gc.mSkm->mSkillData, gc.mSkm->mSkill);
         
         if (range + 1 > tids.size()) {            
             //강조될 타일 개수보다 스킬 범위가 크면 타일 컨테이너를 조정하지 않는다.

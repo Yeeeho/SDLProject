@@ -29,11 +29,11 @@ void CombatManager::Update(UIManager &uim, ObjectManager &objm)
 
 void CombatHelper::TakeDamage(Entity *ent, GameContext& gc, int damageInput)
 {
-    StatHelper sh;
+    namespace sh = StatHelper;
     namespace eh = EntityHelper;
     LogUI* log = gc.mUim->mLogUI;
     // SDL_Color w = {0xB0, 0xB0, 0xB0, 0xFF};
-    int armor = sh.GetTotalArmor(ent);
+    int armor = sh::GetTotalArmor(ent);
 
     damageInput -= armor;
     ent->mCurHp -= damageInput;
@@ -61,13 +61,13 @@ bool CombatHelper::DeathCheck(Entity *ent)
 
 void CombatHelper::RegenEntity(Entity *ent, GameContext& gc)
 {
-    StatHelper sh;
-    int hpregen = sh.GetHpRegen(ent);
-    int spregen = sh.GetSpRegen(ent);
-    int apregen = sh.GetApRegen(ent);
-    int mxhp = sh.GetMaxHp(ent);
-    int mxsp = sh.GetMaxSp(ent);
-    int mxap = sh.GetMaxAp(ent);
+    namespace sh = StatHelper;
+    int hpregen = sh::GetHpRegen(ent);
+    int spregen = sh::GetSpRegen(ent);
+    int apregen = sh::GetApRegen(ent);
+    int mxhp = sh::GetMaxHp(ent);
+    int mxsp = sh::GetMaxSp(ent);
+    int mxap = sh::GetMaxAp(ent);
     
     std::string message {""};
     ent->mCurHp += hpregen;

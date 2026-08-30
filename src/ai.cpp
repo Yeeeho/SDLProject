@@ -1,11 +1,15 @@
 #include "pch.h"
 
 #include "ai.h"
+#include "game_object.h"
 #include "game_context.h"
+#include "system/game_json.h"
 #include "system/game_random.h"
 #include "map.h"
 #include "entity.h"
 #include "skill/skill.h"
+
+using json = nlohmann::json;
 
 void AIState::Destroy()
 {
@@ -87,6 +91,13 @@ CombatState::CombatState(GameContext *gc)
 
 void CombatState::TakeTurn(Entity *ent)
 {
+    json aidata = AIHelper::GetAIData(mGc, ent);
+    //세 가중치는 합쳐서 1이 되어야 한다.
+    float atkw = aidata["attack_weight"].get<float>();
+    float defw = aidata["defense_weight"].get<float>();
+    float movw = aidata["move_weight"].get<float>();
+
+    //캐릭터 밸류가 낮은 적부터 공격한다.
 }
 
 FleeState::FleeState(GameContext *gc)
@@ -116,9 +127,35 @@ void AI::Destroy()
     mGc = nullptr;
 }
 
+AIState *AI::Transition(GameContext* gctx, Entity *ent)
+{
+    json aidata = AIHelper::GetAIData(gctx, ent);
+    
+    float fleeHpMod = aidata["flee_hp"].get<float>();
+    if (ent->mCurHp < StatHelper::GetMaxHp(ent) * fleeHpMod) {
+        return new FleeState(gctx);
+    }
+
+    if (ent->mDemeanor == Demeanor::Hostile) {
+        return new CombatState(gctx);
+    }
+
+    else return new IdleState(gctx);
+}
+
 void AI::TakeTurn(Entity *ent)
 {
+    mCurrentState = Transition(mGc, ent);
     mCurrentState->TakeTurn(ent);
+}
+
+json AIHelper::GetAIData(GameContext *gctx, Entity *ent)
+{
+    json& entdata = gctx->mObjm->mJsm->mEntDb["items"][ent->mCode];
+    std::string kin = entdata["kin"].get<std::string>();
+
+    json& aidata = gctx->mObjm->mEntm->mAim->mAIDb["items"][kin];
+    return aidata;
 }
 
 int AIHelper::GetThreatValue(Entity *ent)
@@ -134,4 +171,9 @@ int AIHelper::GetThreatValue(Entity *ent)
     stat += ent->mSpd;
 
     return stat;
+}
+
+AIManager::AIManager()
+{
+    JsonHelper::LoadJsonFile(mAIDb, "data/ai/ai.json");
 }

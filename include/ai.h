@@ -3,8 +3,11 @@
 #include <vector>
 
 struct GameContext;
-class AIState;
+class AIState; class AIManager;
 class Entity;
+
+using json = nlohmann::json;
+
 
 class AI {
     public:
@@ -12,6 +15,8 @@ class AI {
     ~AI();
     void Destroy();
     
+    AIState* Transition(GameContext* gctx, Entity* ent);
+
     void TakeTurn(Entity* ent);
     
     AIState* mCurrentState;
@@ -37,6 +42,9 @@ class CombatState : public AIState {
     public:
     CombatState(GameContext* gc);
     void TakeTurn(Entity* ent) override;
+
+    void Attack(Entity* ent);
+    void Defense(Entity* ent);
 };
 
 class IdleState : public AIState {
@@ -53,7 +61,14 @@ class FleeState : public AIState {
     void TakeTurn(Entity* ent) override;
 };
 
-class AIHelper {
+class AIManager {
     public:
-    static int GetThreatValue(Entity* ent);
+    AIManager();
+    json mAIDb;
+};
+
+namespace AIHelper {
+    json GetAIData(GameContext* gctx, Entity* ent);
+
+    int GetThreatValue(Entity* ent);
 };

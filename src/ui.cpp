@@ -1665,16 +1665,16 @@ BottomCharacterUI::BottomCharacterUI(int x, int y, int w, int h)
 void BottomCharacterUI::UpdateUI(Entity *ent)
 {
     if (!ent) return;
-    StatHelper sh;
+    namespace sh = StatHelper;
 
     std::map<int, TTFWord> &words = mMainStat->mTui->mTexts;
     words[static_cast<int>(BCUIMainStatIdx::Name)].mMessage = ent->mName;
     words[static_cast<int>(BCUIMainStatIdx::CurHp)].mMessage = std::to_string(ent->mCurHp);
-    words[static_cast<int>(BCUIMainStatIdx::MaxHp)].mMessage = "/" + std::to_string(sh.GetMaxHp(ent));
+    words[static_cast<int>(BCUIMainStatIdx::MaxHp)].mMessage = "/" + std::to_string(sh::GetMaxHp(ent));
     words[static_cast<int>(BCUIMainStatIdx::CurSp)].mMessage = std::to_string(ent->mCurSp);
-    words[static_cast<int>(BCUIMainStatIdx::MaxSp)].mMessage = "/" + std::to_string(sh.GetMaxSp(ent));
+    words[static_cast<int>(BCUIMainStatIdx::MaxSp)].mMessage = "/" + std::to_string(sh::GetMaxSp(ent));
     words[static_cast<int>(BCUIMainStatIdx::CurAp)].mMessage = std::to_string(ent->mCurAp);
-    words[static_cast<int>(BCUIMainStatIdx::MaxAp)].mMessage = "/" + std::to_string(sh.GetMaxAp(ent));
+    words[static_cast<int>(BCUIMainStatIdx::MaxAp)].mMessage = "/" + std::to_string(sh::GetMaxAp(ent));
 
     mIsRenderUpdate = true;
 }
@@ -1905,21 +1905,21 @@ void UIHelper::AddEntityData(TextUI *tui, Entity *ent)
 
     TTFWord name = TTFWord(ent->mName, tc, System::sFont);
 
-    StatHelper sh;
+    namespace sh = StatHelper;
 
     tui->AddWord(name);
     tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
     tui->AddWord(TTFWord("HP:", red, System::sFont));
     tui->AddWord(TTFWord(System::sFont, TextType::Space));
     tui->AddWord(TTFWord(std::to_string(ent->mCurHp), white, System::sFont));
-    std::string maxHp = "/" + std::to_string(sh.GetMaxHp(ent));
+    std::string maxHp = "/" + std::to_string(sh::GetMaxHp(ent));
     tui->AddWord(TTFWord(maxHp, white, System::sFont));
     tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
 
     tui->AddWord(TTFWord("AP:", blue, System::sFont));
     tui->AddWord(TTFWord(System::sFont, TextType::Space));
     tui->AddWord(TTFWord(std::to_string(ent->mCurAp), white, System::sFont));
-    std::string maxAp = "/" + std::to_string(sh.GetMaxAp(ent));
+    std::string maxAp = "/" + std::to_string(sh::GetMaxAp(ent));
     tui->AddWord(TTFWord(maxAp, white, System::sFont));
     tui->AddWord(TTFWord(System::sFont, TextType::NewLine));
 }
