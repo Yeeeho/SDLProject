@@ -157,6 +157,13 @@ void Skill::Activate(SkillManager* skm)
     }
 }
 
+SkillContext::SkillContext(Skill *skill, std::vector<Item *> &targetItems, std::vector<Entity *> &targetEnts, std::vector<int> &targetTIds)
+{
+    mSkill = skill;
+    mTargetItems = targetItems;
+    mTargetEnts = targetEnts;
+    mTargetTIds = targetTIds;
+}
 
 SkillManager::SkillManager(GameContext& gc)
 {
@@ -170,7 +177,13 @@ void SkillManager::LoadJsonData()
     JsonHelper::LoadJsonFile(mSkillDb, "data/skill/skill.json");
 }
 
-void SkillManager::SetSkill(Skill * skill)
+void SkillManager::SetSkillContext(Npc *npc)
+{
+    SkillContext* skCtx = new SkillContext(mSkill, mTargetItems, mTargets, mTileIds);
+    npc->mSkillCtxQueue.push(skCtx);
+}
+
+void SkillManager::SetSkill(Skill *skill)
 {
     mSkill = skill;
 

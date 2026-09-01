@@ -24,7 +24,7 @@ void AIState::Exit()
 {
 }
 
-void AIState::TakeTurn(Entity *ent)
+void AIState::UpdateSkillQueue(Npc* npc)
 {
 }
 
@@ -38,10 +38,10 @@ void IdleState::Destroy()
     mGc = nullptr;
 }
 
-void IdleState::TakeTurn(Entity *ent)
+void IdleState::UpdateSkillQueue(Npc* npc)
 {
     Skill* currentSkill = nullptr;
-    for (Skill* skill : ent->mSkills) {
+    for (Skill* skill : npc->mSkills) {
         if (skill->mCode == "move") {
             currentSkill = skill;
         }
@@ -56,10 +56,10 @@ void IdleState::TakeTurn(Entity *ent)
     if (num == 0) return;
 
     std::vector<int> tileIds;
-    tileIds.push_back(ent->mTileId);
+    tileIds.push_back(npc->mTileId);
     Map* currentMap = mGc->mMapm->mCurrentMap;
     MapHelper mh;
-    Point p = mh.GetPosPoint(ent->mTileId, currentMap);
+    Point p = mh.GetPosPoint(npc->mTileId, currentMap);
     
     if (num == 1) p.mX -= 1; p.mY -= 1;  
     if (num == 2) p.mY -= 1;
@@ -77,11 +77,13 @@ void IdleState::TakeTurn(Entity *ent)
     json sd = skillTable[currentSkill->mCode];
 
     SkillManager* skm = mGc->mSkm;
-    skm->SetActor(ent);
+    skm->SetActor(npc);
     skm->SetMap(mGc->mMapm->mCurrentMap);
     skm->SetSkill(currentSkill);
     skm->SetTileIds(tileIds);
-    skm->ActivateSkill();
+    // skm->ActivateSkill();
+
+    skm->SetSkillContext(npc);
 }
 
 CombatState::CombatState(GameContext *gc)
@@ -89,9 +91,9 @@ CombatState::CombatState(GameContext *gc)
     mGc = gc;
 }
 
-void CombatState::TakeTurn(Entity *ent)
+void CombatState::UpdateSkillQueue(Npc* npc)
 {
-    json aidata = AIHelper::GetAIData(mGc, ent);
+    json aidata = AIHelper::GetAIData(mGc, npc);
     //세 가중치는 합쳐서 1이 되어야 한다.
     float atkw = aidata["attack_weight"].get<float>();
     float defw = aidata["defense_weight"].get<float>();
@@ -105,7 +107,7 @@ FleeState::FleeState(GameContext *gc)
     mGc = gc;
 }
 
-void FleeState::TakeTurn(Entity *ent)
+void FleeState::UpdateSkillQueue(Npc* npc)
 {
 }
 
@@ -127,26 +129,30 @@ void AI::Destroy()
     mGc = nullptr;
 }
 
-AIState *AI::Transition(GameContext* gctx, Entity *ent)
+AIState *AI::Transition(GameContext* gctx, Npc* npc)
 {
-    json aidata = AIHelper::GetAIData(gctx, ent);
+    json aidata = AIHelper::GetAIData(gctx, npc);
     
     float fleeHpMod = aidata["flee_hp"].get<float>();
-    if (ent->mCurHp < StatHelper::GetMaxHp(ent) * fleeHpMod) {
+    if (npc->mCurHp < StatHelper::GetMaxHp(npc) * fleeHpMod) {
         return new FleeState(gctx);
     }
 
-    if (ent->mDemeanor == Demeanor::Hostile) {
+    if (npc->mDemeanor == Demeanor::Hostile) {
         return new CombatState(gctx);
     }
 
     else return new IdleState(gctx);
 }
 
-void AI::TakeTurn(Entity *ent)
+void AI::TakeTurn(Npc* npc)
 {
-    mCurrentState = Transition(mGc, ent);
-    mCurrentState->TakeTurn(ent);
+    mCurrentState = Transition(mGc, npc);
+    mCurrentState->UpdateSkillQueue(npc);
+}
+
+void AI::UpdateSkillQueue(Npc *npc)
+{
 }
 
 json AIHelper::GetAIData(GameContext *gctx, Entity *ent)

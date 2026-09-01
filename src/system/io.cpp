@@ -59,6 +59,7 @@ void GameIO::Save(GameContext *gc, string name)
 
 void GameIO::Load(GameContext *gc, string name)
 {
+    //반드시 엔티티들을 우선 로드하고 난 후에 맵을 로드해야 한다.
     CharacterIO::LoadPawn(gc, name);
     CharacterIO::LoadNpc(gc, name);
     MapIO::LoadMaps(gc, name);
@@ -235,7 +236,7 @@ void CharacterIO::LoadNpc(GameContext *gc, string name)
     JsonHelper::LoadJsonFile(save, "save/userdata/" + name + "/npc.json");
 
     for (json entdata : save["items"]) {
-        gc->mObjm->mEntm->AllocEntityOnTable(
+        gc->mObjm->mEntm->AllocNpcOnTable(
             gc, entdata["code"].get<string>(), entdata["map_x"].get<int>(),
             entdata["map_y"].get<int>(), entdata["id"].get<int>()
         );

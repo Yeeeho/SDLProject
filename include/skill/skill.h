@@ -2,7 +2,7 @@
 
 class Item;
 class GameContext;
-class Entity;
+class Entity; class Npc;
 class ObjectManager;
 class UIManager;
 
@@ -14,10 +14,18 @@ class Skill {
     std::string mCode {""}; //스킬이 가지는 코드
     std::string mName {""}; //스킬의 실제 이름
 
-    //스킬을 사용하는 주체나 방법에 따라 메서드를 오버로딩 시킬 수 있다.
     void Activate(SkillManager* skm);
 };
 
+//스킬 큐에 넣기 위한 참고용 컨텍스트
+struct SkillContext {
+    public:
+    SkillContext(Skill*, std::vector<Item*>&, std::vector<Entity*>&, std::vector<int>&);
+    Skill* mSkill {nullptr};
+    std::vector<Item*> mTargetItems;
+    std::vector<Entity*> mTargetEnts;
+    std::vector<int> mTargetTIds;
+};
 
 class SkillManager {
     public:
@@ -28,6 +36,8 @@ class SkillManager {
     void ActivateSkill();
 
     //세터 함수
+    void SetSkillContext(Npc* npc); //npc에게 스킬 큐를 설정해주는 함수
+
     void SetSkill(Skill* skill); //실제 스킬 객체 설정
     void SetTargetItems(std::vector<Item*> targetItems);
     void SetTargetItem(Item* item);
@@ -39,13 +49,13 @@ class SkillManager {
     //이벤트 핸들링
     void HandleEvent(SDL_Event& e, GameContext& gc);
 
-    //스킬 사용을 위해 필요한 데이터들
+    //스킬 컨텍스트에 로드하기 위해 임시로 캐싱하는 목적
     json mSkillDb;
     json mSkillData;
+    Skill* mSkill {nullptr};
     std::vector<Item*> mTargetItems;
     std::vector<Entity*> mTargets;
     std::vector<int> mTileIds;
-    Skill* mSkill {nullptr};
     Entity* mActor {nullptr};
     Map* mMap {nullptr};
 

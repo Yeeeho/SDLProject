@@ -188,7 +188,7 @@ void TeamManager::OutEntInTeam(Team *team, int id)
 EntityManager::EntityManager(GameContext* gc)
 {
     for (int i = 0; i < (int)EntitySetting::MaxEnt; i++) {
-        mEntTable[i] = new Entity("null_entity", i);
+        mEntTable[i] = new Npc("null_entity", i);
     }
 
     for (int i = 0; i < (int)EntitySetting::MaxPawn; i++) {
@@ -201,7 +201,7 @@ EntityManager::EntityManager(GameContext* gc)
     TextureManager tm;
 }
 
-void EntityManager::AllocEntityOnTable(GameContext* gctx, std::string code, int subMapX, int subMapY, int id)
+void EntityManager::AllocNpcOnTable(GameContext* gctx, std::string code, int subMapX, int subMapY, int id)
 {
     const json& entItems = gctx->mObjm->mJsm->mEntDb["items"]; //데이터베이스 가져오기
 
@@ -256,11 +256,11 @@ void EntityManager::AllocEntityOnTable(GameContext* gctx, std::string code, int 
     SDL_Log(message.c_str());
 }
 
-void EntityManager::AllocEntityOnTable(GameContext *gctx, Grid* grid, int tileId, std::string code, int id)
+void EntityManager::AllocNpcOnTable(GameContext *gctx, Grid* grid, int tileId, std::string code, int id)
 {
     MapHelper mh;
     Point xy = mh.GetPosPoint(tileId, grid);
-    AllocEntityOnTable(gctx, code, xy.mX, xy.mY, id);
+    AllocNpcOnTable(gctx, code, xy.mX, xy.mY, id);
 }
 
 void EntityManager::AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType, int id)
@@ -309,7 +309,7 @@ void EntityManager::AllocPawnOnTable(GameContext* gctx, std::string code, PawnTy
 
 void EntityManager::DeallocEntityOnTable(GameContext* gctx, int id)
 {
-    AllocEntityOnTable(gctx, "null_entity", -1, -1, id);
+    AllocNpcOnTable(gctx, "null_entity", -1, -1, id);
     SDL_Log("deallocated entity");
 }
 
@@ -820,4 +820,9 @@ void EntityHelper::GetSkill(GameContext* gc, Entity* ent, std::string skillCode)
     
     Skill* skill = new Skill(skillCode, sd["name"].get<std::string>());
     ent->mSkills.push_back(skill);
+}
+
+Npc::Npc(std::string name, int id) :
+Entity(name, id)
+{
 }

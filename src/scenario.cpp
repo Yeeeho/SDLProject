@@ -81,7 +81,7 @@ void Scenario::UpdateScenario(GameContext& gc)
                 
                 int tileId = JsonHelper::GetInt(item, "tile_id");
             
-                gc.mObjm->mEntm->AllocEntityOnTable(&gc, code, -1, -1, 0);
+                gc.mObjm->mEntm->AllocNpcOnTable(&gc, code, -1, -1, 0);
                 Entity* ent = gc.mObjm->mEntm->mEntTable[0];
                 //태도를 결정한다.
                 if (demeanor == "hostile") ent->mDemeanor = Demeanor::Hostile;

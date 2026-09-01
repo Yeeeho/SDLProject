@@ -1,5 +1,6 @@
 #pragma once
 
+#include <queue>
 #include <string>
 #include <unordered_map>
 
@@ -97,8 +98,9 @@ class Item;
 class Equipment;
 enum class PawnType;
 enum class EqType;
-class Skill;
+class Skill; 
 enum class SkillCode;
+class Npc;
 
 enum class EntitySetting {
     MaxEnt = 64, MaxPawn = 16
@@ -111,8 +113,8 @@ class EntityManager {
     void KillEntityOnMap(GameContext& gc, Map* map, Entity* ent);
 
     //엔티티 할당 함수
-    void AllocEntityOnTable(GameContext* gctx, std::string code, int xMapPos, int yMapPos, int id);
-    void AllocEntityOnTable(GameContext* gctx, Grid* grid, int tileId, std::string code, int id);
+    void AllocNpcOnTable(GameContext* gctx, std::string code, int xMapPos, int yMapPos, int id);
+    void AllocNpcOnTable(GameContext* gctx, Grid* grid, int tileId, std::string code, int id);
     void AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType, int id);
     //엔티티 할당 해제 함수
     void DeallocEntityOnTable(GameContext* gctx, int id);
@@ -147,7 +149,7 @@ class EntityManager {
     AIManager* mAim {nullptr};
     AI* mEntAI {nullptr};
     
-    Entity* mEntTable[static_cast<int>(EntitySetting::MaxEnt)];
+    Npc* mEntTable[static_cast<int>(EntitySetting::MaxEnt)];
     Pawn* mPawnTable[static_cast<int>(EntitySetting::MaxPawn)];
     
     Entity* mPrevFocusedEnt {nullptr};
@@ -228,6 +230,14 @@ class Entity {
 
 enum class PawnType {
     Null, Unique, Procedural
+};
+
+struct SkillContext;
+
+class Npc : public Entity {
+    public:
+    Npc(std::string name, int id);
+    std::queue<SkillContext*> mSkillCtxQueue;
 };
 
 class Pawn : public Entity {

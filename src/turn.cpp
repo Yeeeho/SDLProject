@@ -19,6 +19,7 @@ TurnManager::TurnManager(GameContext *gc)
 
 void TurnManager::Enter(Map *map)
 {
+    SDL_Log("turnmanager enter map");
     mCurrentMap = map;
     UpdateTurn();
 }
@@ -92,7 +93,7 @@ void TurnManager::TakeTurn(Entity *ent)
     //npc일때
     if (!ent->mIsPawn) {
         AI* ai = entm->mEntAI;
-        ai->TakeTurn(ent);
+        ai->TakeTurn((Npc*) ent);
         //행동 후 턴을 넘김.
         UpdateTurn();
     }
@@ -129,6 +130,7 @@ void TurnManager::UpdateTurn()
     //pc가 턴을 모두 잡은 뒤에야 적이 턴을 잡는다.
     //TODO: 플레이어가 임의로 큐를 설정할 수 있게 만들어야함
     while (true) {
+        //TODO: 여기에서 모든 npc들의 스킬 큐를 계산한다.
         if (mPawnIdx < (int) mCurrentMap->mPawns.size()) {
             //pc가 턴을 잡음
             IncTurn();

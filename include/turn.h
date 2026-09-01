@@ -1,6 +1,7 @@
 #pragma once
 
-class Entity; class Map;
+class Entity; class Npc;
+class Map;
 struct GameContext;
 
 class TurnManager {
@@ -11,7 +12,6 @@ class TurnManager {
 
     void HandleEvent(SDL_Event& e, float mx, float my);
 
-    //업데이트
     void Update();
 
     //턴 제어 관련
@@ -27,13 +27,13 @@ class TurnManager {
     void UpdateEntityQueue();
     bool mIsQueueUpdate {true};
 
+    void UpdateSkillQueue(Npc* npc); //엔피시 스킬 큐 업데이트
     void UpdateTurn(); //턴 업데이트
 
     GameContext* mGc {nullptr};
 
     int mNpcIdx {0}; //맵에 있는 엔티티의 인덱스를 저장함.
     int mPawnIdx {0};
-
     
     Entity* mCurrentTarget {nullptr};
     Entity* mPrevTarget {nullptr}; //이전 객체 캐싱
