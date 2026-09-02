@@ -3,6 +3,7 @@
     "//" : "가중치는 합쳐서 1이 되어야 한다",
     "items" : {
         "rodent" : {
+            "//" : "겁쟁이 녀석들",
             "attack_weight" : 0.5,
             "defense_weight" : 0.1,
             "move_weight" : 0.4,

@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "game_object.h"
+#include "item/item_manager.h"
 #include "move.h"
 #include "ui.h"
 #include "map.h"
@@ -66,6 +67,7 @@ void MoveManager::MoveEntityTo(Map *map, Entity *ent, int currentTId, int target
     targetTile->mIsEntOn = true;
     //포커스 스프라이트 업데이트
     mUim->mFocusIcon->SetDimension(ent->mMapX, ent->mMapY, map->mTileLen, map->mTileLen);
+    mObjm->mItm->mIsRenderUpdate = true;
     //툴팁도 업데이트
     mUim->mToolTip->mIsRenderUpdate = true;
     //타일 강조 ui의 참조 타일 컨테이너도 비움

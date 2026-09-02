@@ -55,6 +55,11 @@ IdleState::IdleState(GameContext *gc)
     mGc = gc;
 }
 
+IdleState::~IdleState()
+{
+    Destroy();
+}
+
 void IdleState::Destroy()
 {
     mGc = nullptr;
@@ -124,6 +129,16 @@ CombatState::CombatState(GameContext *gc)
     mGc = gc;
 }
 
+CombatState::~CombatState()
+{
+    Destroy();
+}
+
+void CombatState::Destroy()
+{
+    mGc = nullptr;
+}
+
 void CombatState::UpdateSkillQueue(Npc* npc)
 {
     SDL_Log("update skill queue: combat");
@@ -148,15 +163,29 @@ FleeState::FleeState(GameContext *gc)
     mGc = gc;
 }
 
+FleeState::~FleeState()
+{
+    Destroy();
+}
+
+void FleeState::Destroy()
+{
+    mGc = nullptr;
+}
+
 void FleeState::UpdateSkillQueue(Npc* npc)
 {
 }
 
 AI::AI(GameContext* gc)
 {
-    mCurrentState = new IdleState(gc);
-
     mGc = gc;
+    
+    mIdleState = new IdleState(gc);
+    mCombatState = new CombatState(gc);
+    mFleeState = new FleeState(gc);
+
+    mCurrentState = mIdleState;
 }
 
 AI::~AI()
@@ -166,24 +195,28 @@ AI::~AI()
 
 void AI::Destroy()
 {
-    delete mCurrentState;
+    delete mIdleState;
+    delete mCombatState;
+    delete mFleeState;
     mGc = nullptr;
 }
 
-AIState *AI::Transition(GameContext* gctx, Npc* npc)
+void AI::Transition(GameContext* gctx, Npc* npc)
 {
     json aidata = AIHelper::GetAIData(gctx, npc);
     
     float fleeHpMod = aidata["flee_hp"].get<float>();
     if (npc->mCurHp < StatHelper::GetMaxHp(npc) * fleeHpMod) {
-        return new FleeState(gctx);
+        mCurrentState = mFleeState;
     }
 
     if (npc->mDemeanor == Demeanor::Hostile) {
-        return new CombatState(gctx);
+        mCurrentState = mCombatState;
     }
 
-    else return new IdleState(gctx);
+    else {
+        mCurrentState = mIdleState;
+    }
 }
 
 void AI::TakeTurn(GameContext* gctx, Npc* npc)
@@ -200,7 +233,8 @@ void AI::TakeTurn(GameContext* gctx, Npc* npc)
 
 void AI::UpdateSkillQueue(GameContext* gctx, Npc* npc)
 {
-    mCurrentState = Transition(gctx, npc);
+    Transition(gctx, npc);
+
     mCurrentState->UpdateSkillQueue(npc);
 }
 

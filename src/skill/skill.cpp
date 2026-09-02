@@ -224,7 +224,6 @@ void SkillManager::ActivateSkill()
     json skillData = skillDb[mSkill->mCode];
 
     mSkill->Activate(this);
-    //TODO: 스킬 발동 후 ai들의 스킬 큐를 일제히 업데이트 한다.
     EntityManager* entm = mGc->mObjm->mEntm;
     for (Entity* ent : mGc->mMapm->mCurrentMap->mNpcs) {
         Npc* npc = (Npc*) ent;

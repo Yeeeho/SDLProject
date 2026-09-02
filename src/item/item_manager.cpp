@@ -264,6 +264,7 @@ void ItemManager::RenderStoredTex()
     SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, &fr);
 }
 
+//TODO: 맵상에 있는 오브젝트들은 맵이 렌더링 책임을 지도록 바꾸는게 좋을거같다.
 void ItemManager::RenderItems()
 {
     ItemHelper ih;
@@ -271,6 +272,9 @@ void ItemManager::RenderItems()
     Map* currentMap = mGc->mMapm->mCurrentMap;
 
     for (auto stack : currentMap->mItemStackMap) {
+        if (currentMap->mMapTiles[stack.first]->mIsEntOn) {
+            continue; //엔티티가 있으면 엔티티를 우선 렌더링한다.
+        } 
         Item* item = stack.second->mStack.back();
         RenderItem(item);
     }
@@ -283,7 +287,6 @@ void ItemManager::RenderItem(Item* item)
     ItemHelper ih;
     Map* currentMap = mGc->mMapm->mCurrentMap;
     std::unordered_map<std::string, int> xy = MapHelper::PosXYByTileId(item->mTileId, mGc->mMapm->mCurrentMap);
-    //TODO: 이런것도 래핑해야 좌표 구하기 편해질거다.
     float itemX = (float) (xy["x"] * currentMap->mTileLen + currentMap->mOffsetX);
     float itemY = (float) (xy["y"] * currentMap->mTileLen + currentMap->mOffsetY);
 
