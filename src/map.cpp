@@ -96,7 +96,6 @@ void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
     //맵 이벤트 핸들러는 맵상에서의 범위 표시 등을 제어한다.
     //엔티티 자체의 포커스 여부 등은 제어하지 않는다.
 
-    MapHelper mh;
     mouseX += mCam->mSight.x; //카메라 보정
     mouseY += mCam->mSight.y;
 
@@ -107,7 +106,7 @@ void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
         return;
     }
 
-    int tid = mh.WhatTileOnPoint(mouseX, mouseY, this);
+    int tid = MapHelper::WhatTileOnPoint(mouseX, mouseY, this);
     MapTile* tile = mMapTiles[tid];
 
     //턴을 잡은 엔티티가 있을 경우 타겟을 금마로 설정
@@ -129,7 +128,7 @@ void Map::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
     //두 타일 사이의 아이디가 담긴 컨테이너를 구한다.
     MapTile* tile1 = mMapTiles[target->mTileId];
     MapTile* tile2 = tile;
-    std::vector<int> tids = mh.GetTilesIdBetween(this, tile1, tile2);
+    std::vector<int> tids = MapHelper::GetTilesIdBetween(this, tile1, tile2);
     
     //타일 ui 관련 세팅
     if (gc.mSkm->mIsSkillReady) { //스킬매니저가 스킬을 사용할 준비가 되었다면
@@ -318,7 +317,16 @@ std::vector<int> MapHelper::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile 
         }
     }
     return ret;
-}   
+}
+
+std::vector<int> MapHelper::GetTilesIdBetween(Map *map, int tileId1, int tileId2)
+{
+    using namespace std;
+    MapTile* tile1 = map->mMapTiles[tileId1];
+    MapTile* tile2 = map->mMapTiles[tileId2];
+
+    return GetTilesIdBetween(map, tile1, tile2);
+}
 
 std::unordered_map<std::string, int> MapHelper::PosXYByTileId(int id, Grid *grid)
 {

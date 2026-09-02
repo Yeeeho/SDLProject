@@ -417,8 +417,8 @@ void UIManager::UpdateGridToolTip(Grid* grid)
         tui->mTexts.clear();
         tui->mTotalWidth = 0; tui->mTotalHeight = 0;
 
-        MapHelper mh;
-        int id = mh.WhatTileOnPoint(mToolTip->mRefX, mToolTip->mRefY, grid);
+        
+        int id = MapHelper::WhatTileOnPoint(mToolTip->mRefX, mToolTip->mRefY, grid);
 
         if (grid->mGridType == GridType::Map) {
             Map* map = static_cast<Map*>(grid);
@@ -462,11 +462,10 @@ void UIManager::HandleMapToolTipEvent(SDL_Event &e, GameStateManager &gsm, float
     } 
 
     //mouseover 중인 타일의 id를 구함
-    MapHelper mh;
-    int id = mh.WhatTileOnPoint(mouseX, mouseY, mToolTipGrid);
+    int id = MapHelper::WhatTileOnPoint(mouseX, mouseY, mToolTipGrid);
 
     int tl = mToolTipGrid->mTileLen;
-    std::unordered_map<std::string, int> xy = mh.PosXYByTileId(id, mToolTipGrid);
+    std::unordered_map<std::string, int> xy = MapHelper::PosXYByTileId(id, mToolTipGrid);
     //타일 좌표를 툴팁의 참조 좌표에 할당해줌
     mToolTip->SetRefInfo(
         mToolTipGrid->mOffsetX + mToolTipGrid->mX + xy["x"]*tl,
@@ -1010,8 +1009,6 @@ void TileHLUI::Update()
 void TileHLUI::RenderBetweenTiles(Map* map)
 {
     if (!mIsRenderBetweenTiles) return;
-
-    MapHelper mh;
     
     for (int id : mTIds) {
         MapTile* tile = map->mMapTiles[id];
@@ -1185,8 +1182,8 @@ void InventoryUI::HandleEqSlotEvent(SDL_Event &e, SlotInfo si, float mx, float m
 
 void InventoryUI::HandleItemEvent(SDL_Event &e, Item* item, float mx, float my)
 {
-    MapHelper mh; Math mth;
-    Point p = mh.GetPosPoint(item->mTileId, mGrid);
+    Math mth;
+    Point p = MapHelper::GetPosPoint(item->mTileId, mGrid);
 
     int tl = mGrid->mTileLen;
     bool isIn = mth.IsPointInSquare(mx, my, 
@@ -1219,7 +1216,7 @@ void InventoryUI::HandleItemEvent(SDL_Event &e, Item* item, float mx, float my)
 
 void InventoryUI::RenderThings()
 {
-    ItemHelper ih; MapHelper mh;
+    ItemHelper ih;
 
     ItemManager* itm = mGc->mObjm->mItm;
     Pawn* focusedP = static_cast<Pawn*> (mGc->mObjm->mEntm->mFocusedEnt);
@@ -1233,7 +1230,7 @@ void InventoryUI::RenderThings()
     int x {0}; int y {0};
     for (auto itemPair : focusedP->mInventory) {
         Item* item = itemPair.second;
-        Point p = mh.GetPosPoint(item->mTileId, mGrid);
+        Point p = MapHelper::GetPosPoint(item->mTileId, mGrid);
 
         itm->RenderItem(item, 
             (float) p.mX * tl + mGrid->mOffsetX,

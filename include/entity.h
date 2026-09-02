@@ -237,6 +237,9 @@ struct SkillContext;
 class Npc : public Entity {
     public:
     Npc(std::string name, int id);
+
+    void ClearSkCtxQueue();
+
     std::queue<SkillContext*> mSkillCtxQueue;
 };
 

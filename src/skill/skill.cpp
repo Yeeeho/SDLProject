@@ -13,6 +13,7 @@
 #include "move.h"
 #include "map.h"
 #include "entity.h"
+#include "ai.h"
 #include "skill/skill.h"
 
 Skill::Skill(std::string code, std::string name)
@@ -48,49 +49,7 @@ void Skill::Activate(SkillManager* skm)
 
     //이동 스킬일 경우
     if (skillType == "movement") {
-        //TODO:나중에 스킬헬퍼 만들어서 함수로 래핑해라
-
-        //경로에 뭐가 있는지 구한다.
-        for (int id : tids) {
-            if (id == tids[0]) continue; //처음 아이디는 무시한다. 액터가 서있는 타일이니까..
-            
-            bool entOn = map->mMapTiles[id]->mIsEntOn;
-            if (entOn) {
-                if (actor->mIsPawn) log->AddMessage("이동 경로에 뭔가 있습니다!", y);
-                return;
-            }
-        }
-
-        //액터의 타일당 ap소모량을 구한다이
-        int apPerTile = StatHelper::GetApPerTileMove(skm->mActor); 
-        float apMod = 1.f;
-        if (skm->mSkillData["ap_per_tile"].contains("mod")){
-            apMod = skm->mSkillData["ap_per_tile"]["mod"].get<float>();
-        }
-        apPerTile = (int) (apPerTile * apMod);
-        
-        MapTile* targetTile = skm->mMap->mMapTiles[targetTileId];
-        if (targetTile->mIsEntOn) return; //타겟 타일에 엔티티가 있으면 리턴한다.
-
-        MoveManager mvm = MoveManager(gc->mUim, gc->mObjm);
-        MoveHelper mvh;
-
-        //대각선 이동 개수와 수직 이동 개수를 구한다.
-        int diaMoves = mvh.GetDiagonalMoves(tids, map);
-        int straightMoves = tids.size() - 1 - diaMoves;
-
-        int apCost = apPerTile * straightMoves + apPerTile * diaMoves * 1.5;
-        if (actor->mCurAp < apCost) {
-            log->AddMessage("AP가 부족합니다!", y);
-            return;
-        }        
-        else {
-            actor->mCurAp -= apCost;
-            gc->mUim->mBCUI->UpdateUI(actor);
-        }
-
-        //실제로 엔티티 정보를 옮기는 동작
-        mvm.MoveEntityTo(map, actor, actor->mTileId, targetTileId);
+        SkillAction::MoveAction(gc, actor, this, tids, map);
     }
 
     else if (skillType == "pickup") {
@@ -165,6 +124,23 @@ SkillContext::SkillContext(Skill *skill, std::vector<Item *> &targetItems, std::
     mTargetTIds = targetTIds;
 }
 
+SkillContext::SkillContext(Skill* skill, const std::vector<int> &tileIds, Map* map)
+{
+    mSkill = skill;
+    mTargetTIds = tileIds;
+    mMap = map;
+}
+
+void SkillContext::Activate(GameContext* gctx, Entity *actor)
+{
+    using namespace std;
+    
+    json sd = SkillHelper::GetSkillData(gctx->mSkm->mSkillDb, mSkill->mCode);
+    
+    string stype = sd["type"].get<string>();
+    if (stype == "movement") SkillAction::MoveAction(gctx, actor, this);
+}
+
 SkillManager::SkillManager(GameContext& gc)
 {
     mGc = &gc;
@@ -175,12 +151,6 @@ void SkillManager::LoadJsonData()
 {
     
     JsonHelper::LoadJsonFile(mSkillDb, "data/skill/skill.json");
-}
-
-void SkillManager::SetSkillContext(Npc *npc)
-{
-    SkillContext* skCtx = new SkillContext(mSkill, mTargetItems, mTargets, mTileIds);
-    npc->mSkillCtxQueue.push(skCtx);
 }
 
 void SkillManager::SetSkill(Skill *skill)
@@ -254,6 +224,12 @@ void SkillManager::ActivateSkill()
     json skillData = skillDb[mSkill->mCode];
 
     mSkill->Activate(this);
+    //TODO: 스킬 발동 후 ai들의 스킬 큐를 일제히 업데이트 한다.
+    EntityManager* entm = mGc->mObjm->mEntm;
+    for (Entity* ent : mGc->mMapm->mCurrentMap->mNpcs) {
+        Npc* npc = (Npc*) ent;
+        entm->mEntAI->UpdateSkillQueue(mGc, npc);
+    }
 }
 
 //나중에 스킬 객체에 있는 추가 보정치도 포함할 수 있다.
@@ -414,4 +390,73 @@ int SkillHelper::GetApUse(json skillData, Skill *skill, Entity *ent)
     }
 
     return apUse;
+}
+
+Skill *SkillHelper::GetMovementSkill(Entity *ent)
+{
+    Skill* ret = nullptr;
+    for (Skill* skill : ent->mSkills) {
+        if (skill->mCode == "move") {
+            ret = skill;
+        }
+    }
+
+    return ret;
+}
+
+bool SkillAction::MoveAction(GameContext* gctx, Entity *actor, SkillContext *skCtx)
+{
+    MoveAction(gctx, actor, skCtx->mSkill, skCtx->mTargetTIds, skCtx->mMap);
+    return false;
+}
+
+bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std::vector<int> &tileIds, Map* map)
+{
+    bool success {false};
+
+    LogUI* log = gctx->mUim->mLogUI;
+    json sd = SkillHelper::GetSkillData(gctx->mSkm->mSkillDb, skill->mCode);
+    //경로에 뭐가 있는지 구한다.
+    for (int id : tileIds) {
+        if (id == tileIds[0]) continue; //처음 아이디는 무시한다. 액터가 서있는 타일이니까..
+        
+        bool entOn = map->mMapTiles[id]->mIsEntOn;
+        if (entOn) {
+            if (actor->mIsPawn) log->AddMessage("이동 경로에 뭔가 있습니다!", System::kY);
+            SDL_Log("move action: something is already on tile");
+            return false;
+        }
+    }
+
+    //액터의 타일당 ap소모량을 구한다이
+    int apPerTile = StatHelper::GetApPerTileMove(actor); 
+    float apMod = 1.f;
+    if (sd["ap_per_tile"].contains("mod")){
+        apMod = sd["ap_per_tile"]["mod"].get<float>();
+    }
+    apPerTile = (int) (apPerTile * apMod);
+    
+    MapTile* targetTile = map->mMapTiles[tileIds.back()];
+    if (targetTile->mIsEntOn) return false; //타겟 타일에 엔티티가 있으면 리턴한다.
+
+    MoveManager mvm = MoveManager(gctx->mUim, gctx->mObjm);
+    MoveHelper mvh;
+
+    int apCost = mvh.GetApCost(tileIds, map, apPerTile);
+
+    if (actor->mCurAp < apCost) {
+        log->AddMessage("AP가 부족합니다!", System::kY);
+        SDL_Log("move action: not enough ap");
+        return false;
+    }        
+    else {
+        actor->mCurAp -= apCost;
+        gctx->mUim->mBCUI->UpdateUI(actor);
+    }
+
+    //실제로 엔티티 정보를 옮기는 동작
+    mvm.MoveEntityTo(map, actor, actor->mTileId, tileIds.back());
+    success = true;
+
+    return success;
 }

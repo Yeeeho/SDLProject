@@ -123,9 +123,8 @@ void TeamManager::SpawnTeamOnMap(Map *map, Team *team, int id)
     team->isOnMap = true;
 
     //아이디로 좌표를 구한다.
-    MapHelper mh;
     std::unordered_map<std::string, int> xy;
-    xy = mh.PosXYByTileId(id, map);
+    xy = MapHelper::PosXYByTileId(id, map);
 
     team->mMapPosX = map->mOffsetX + map->mTileLen * xy["x"];
     team->mMapPosY = map->mOffsetY + map->mTileLen * xy["y"];
@@ -140,8 +139,7 @@ void TeamManager::SpawnTeamOnMap(Map *map, Team *team, int x, int y)
     team->mMapPosX = x; team->mMapPosY = y;
 
     //타일 id 구함
-    MapHelper mh;
-    int id = mh.WhatTileOnPoint(x, y, map);
+    int id = MapHelper::WhatTileOnPoint(x, y, map);
     //타일 아이디 팀에 할당
     team->mTileId = id;
 
@@ -258,8 +256,7 @@ void EntityManager::AllocNpcOnTable(GameContext* gctx, std::string code, int sub
 
 void EntityManager::AllocNpcOnTable(GameContext *gctx, Grid* grid, int tileId, std::string code, int id)
 {
-    MapHelper mh;
-    Point xy = mh.GetPosPoint(tileId, grid);
+    Point xy = MapHelper::GetPosPoint(tileId, grid);
     AllocNpcOnTable(gctx, code, xy.mX, xy.mY, id);
 }
 
@@ -346,8 +343,7 @@ void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent,
     ent->mTileId = tileId;
 
     std::unordered_map<std::string, int> xy;
-    MapHelper mh;
-    xy = mh.PosXYByTileId(tileId, map);
+    xy = MapHelper::PosXYByTileId(tileId, map);
 
     ent->mMapX = map->mOffsetX + map->mTileLen * xy["x"];
     ent->mMapY = map->mOffsetY + map->mTileLen * xy["y"];
@@ -825,4 +821,13 @@ void EntityHelper::GetSkill(GameContext* gc, Entity* ent, std::string skillCode)
 Npc::Npc(std::string name, int id) :
 Entity(name, id)
 {
+}
+
+void Npc::ClearSkCtxQueue()
+{
+    while (!mSkillCtxQueue.empty()) {
+        delete mSkillCtxQueue.front();
+        mSkillCtxQueue.front() = nullptr;
+        mSkillCtxQueue.pop();
+    }
 }

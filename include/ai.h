@@ -5,6 +5,7 @@
 struct GameContext;
 class AIState; class AIManager;
 class Entity; class Npc;
+class Map;
 
 using json = nlohmann::json;
 
@@ -17,8 +18,8 @@ class AI {
     
     AIState* Transition(GameContext* gctx, Npc* npc);
 
-    void TakeTurn(Npc* npc);
-    void UpdateSkillQueue(Npc* npc);
+    void TakeTurn(GameContext* gctx, Npc* npc);
+    void UpdateSkillQueue(GameContext* gctx, Npc* npc);
 
     AIState* mCurrentState;
 
@@ -36,7 +37,10 @@ class AIState {
     virtual void Exit();
     virtual void UpdateSkillQueue(Npc* npc);
 
+    void NavigateQueue(Npc* npc, Map* map, int tileId);
+
     GameContext* mGc {nullptr};
+    int mPrevTileId {-1};
 };
 
 class CombatState : public AIState {

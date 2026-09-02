@@ -28,15 +28,15 @@ void MoveManager::MoveEntity(Map* map, Entity* ent) {
 //쓰지마라.
 void MoveManager::MoveEntityTo(Map *map, Entity *ent, MapTile *tile1, MapTile *tile2)
 {
-    MapHelper mh;
     std::vector<int> ids;
-    ids = mh.GetTilesIdBetween(map, tile1, tile2);
+    namespace mh = MapHelper;
+    ids = mh::GetTilesIdBetween(map, tile1, tile2);
     if (ids.size() < 2) return; //제자리
  
     //T이 반복문 하자있다.
     for (int i = 0; i < ids.size(); i++) {
-        std::unordered_map<std::string, int> xy1 = mh.PosXYByTileId(ids[i], map);
-        std::unordered_map<std::string, int> xy2 = mh.PosXYByTileId(ids[i+1], map);
+        std::unordered_map<std::string, int> xy1 = mh::PosXYByTileId(ids[i], map);
+        std::unordered_map<std::string, int> xy2 = mh::PosXYByTileId(ids[i+1], map);
         int xDiff = xy2["x"] - xy1["x"];
         int yDiff = xy2["y"] - xy2["y"];
 
@@ -76,9 +76,9 @@ bool MoveHelper::CheckDiagonalMove(int firstTileId, int lastTileId, Map* map)
 {
     bool isDiagonal = false;
 
-    MapHelper mh;
-    std::unordered_map<std::string, int> xy1 = mh.PosXYByTileId(firstTileId, map);
-    std::unordered_map<std::string, int> xy2 = mh.PosXYByTileId(lastTileId, map);
+    namespace mh = MapHelper;
+    std::unordered_map<std::string, int> xy1 = mh::PosXYByTileId(firstTileId, map);
+    std::unordered_map<std::string, int> xy2 = mh::PosXYByTileId(lastTileId, map);
     int xDiff = xy2["x"] - xy1["x"];
     int yDiff = xy2["y"] - xy1["y"];
 
@@ -103,4 +103,13 @@ int MoveHelper::GetDiagonalMoves(std::vector<int> tids, Map *map)
     }
 
     return count;
+}
+
+int MoveHelper::GetApCost(std::vector<int> tids, Map *map, int apPerTile)
+{
+    //대각선 이동 개수와 수직 이동 개수를 구한다.
+    int diaMoves = GetDiagonalMoves(tids, map);
+    int straightMoves = tids.size() - 1 - diaMoves;
+
+    return apPerTile * straightMoves + apPerTile * diaMoves * 1.5;
 }

@@ -36,6 +36,9 @@ void TurnManager::Update()
 
 void TurnManager::IncTurn()
 {
+    using namespace std;
+    string message = "current turn: " + to_string(mSubMapTurn);
+    SDL_Log(message.c_str());
 }
 
 void TurnManager::IncCurMapTurn()
@@ -85,6 +88,7 @@ void TurnManager::TakeTurn(Entity *ent)
 
     EntityManager* entm = mGc->mObjm->mEntm;
 
+    //초기화
     entm->mFocusedEnt = nullptr;
     entm->mPrevFocusedEnt = nullptr;
     mGc->mSkm->mIsSkillReady = false;
@@ -93,7 +97,7 @@ void TurnManager::TakeTurn(Entity *ent)
     //npc일때
     if (!ent->mIsPawn) {
         AI* ai = entm->mEntAI;
-        ai->TakeTurn((Npc*) ent);
+        ai->TakeTurn(mGc, (Npc*) ent);
         //행동 후 턴을 넘김.
         UpdateTurn();
     }
@@ -129,8 +133,14 @@ void TurnManager::UpdateTurn()
     Entity* target {nullptr};
     //pc가 턴을 모두 잡은 뒤에야 적이 턴을 잡는다.
     //TODO: 플레이어가 임의로 큐를 설정할 수 있게 만들어야함
+    
+    //일단 턴 시작하자마자 업데이트를 돌린다.
+    for (Entity* ent : mCurrentMap->mNpcs) {
+        Npc* npc = (Npc*) ent;
+        mGc->mObjm->mEntm->mEntAI->UpdateSkillQueue(mGc, npc);
+    }
+
     while (true) {
-        //TODO: 여기에서 모든 npc들의 스킬 큐를 계산한다.
         if (mPawnIdx < (int) mCurrentMap->mPawns.size()) {
             //pc가 턴을 잡음
             IncTurn();

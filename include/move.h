@@ -26,4 +26,6 @@ class MoveHelper {
     public:
     bool CheckDiagonalMove(int firstTileId, int lastTileId, Map* map);
     int GetDiagonalMoves(std::vector<int> tids, Map* map);
+
+    int GetApCost(std::vector<int> tids, Map* map, int apPerTile);
 };

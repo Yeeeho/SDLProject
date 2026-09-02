@@ -125,13 +125,13 @@ class MapManager {
     Map* mCurrentMap {nullptr};
 };
 
-class MapHelper {
-    public:
+namespace MapHelper {
     int WhatTileOnPoint(float x, float y, Grid* grid); //이 점은 맵의 어느 타일에 있는가?
     int WhatTileOnPoint(Point p, Grid* grid);
 
     //브레젠험 
     std::vector<int> GetTilesIdBetween(Map* map, MapTile* tile1, MapTile* tile2); //타일 두개를 이었을때 그 사이에 무슨 타일들이 있는지 구함.
+    std::vector<int> GetTilesIdBetween(Map* map, int tileId1, int tileId2);
 
     std::unordered_map<std::string, int> PosXYByTileId(int id, Grid* grid);
     Point GetPosPoint(int tileId, Grid* grid);

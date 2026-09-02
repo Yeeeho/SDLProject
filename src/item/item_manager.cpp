@@ -118,8 +118,7 @@ void ItemManager::HandleEvent(SDL_Event &e, GameContext *gc, float mx, float my)
     mx += map->mCam->mSight.x;
     my += map->mCam->mSight.y;
 
-    MapHelper mh;
-    int tileId = mh.WhatTileOnPoint(mx, my, map);
+    int tileId = MapHelper::WhatTileOnPoint(mx, my, map);
 
     //타일에 스택이 생성되지 않았다면 리턴함
     if (map->mItemStackMap.find(tileId) == map->mItemStackMap.end()) return;
@@ -282,9 +281,8 @@ void ItemManager::RenderItem(Item* item)
     SDL_Log("rendering an item");
     SDL_Log(std::to_string((int) item->mType).c_str());
     ItemHelper ih;
-    MapHelper mm;
     Map* currentMap = mGc->mMapm->mCurrentMap;
-    std::unordered_map<std::string, int> xy = mm.PosXYByTileId(item->mTileId, mGc->mMapm->mCurrentMap);
+    std::unordered_map<std::string, int> xy = MapHelper::PosXYByTileId(item->mTileId, mGc->mMapm->mCurrentMap);
     //TODO: 이런것도 래핑해야 좌표 구하기 편해질거다.
     float itemX = (float) (xy["x"] * currentMap->mTileLen + currentMap->mOffsetX);
     float itemY = (float) (xy["y"] * currentMap->mTileLen + currentMap->mOffsetY);
