@@ -223,7 +223,9 @@ MapTile::MapTile(int x, int y, int w, int h, std::string path)
     mX = x; mY = y;
     mW = w; mH = h;
 
+    //비트 필드 초기화
     mIsEntOn = false;
+    mIsReserved = false;
 
     mTileTex = new Texture();
 
@@ -280,6 +282,48 @@ int MapHelper::WhatTileOnPoint(Point p, Grid *grid)
     
     int id = xPos + (grid->mXTiles * yPos);
     return id;
+}
+
+int MapHelper::GetOffsetTileId(int tileId, Grid *grid, int xdis, int ydis)
+{
+    Point self = GetPosPoint(tileId, grid);
+    Point target = {self.mX + xdis, self.mY + ydis};
+
+    return WhatTileOnPoint(target, grid);
+}
+
+std::set<int> MapHelper::GetNearestTileIds(int centerTid, Map* map, unsigned int level)
+{
+    using namespace std;
+    std::set<int> res;
+
+    if (level <= 0) {
+        SDL_Log("[WARNING] get neareast tile ids: level cannot be 0 or less!");
+        return res;
+    }
+
+    SDL_Log("getting nearest tile ids, center id : %d", centerTid);
+
+    for (int xdis = -level; xdis <= level; xdis += level) {
+        for (int ydis = -level; ydis <= level; ydis += level) {
+            if (xdis == 0 && ydis == 0) continue;
+            int id = GetOffsetTileId(centerTid, map, xdis, ydis);
+            SDL_Log("%d, x: %d, y: %d", id, xdis, ydis);
+            res.insert(id);
+        }
+    }
+
+    int gap = level - 1;
+    if (gap > 0) {
+        //let us debug
+    }
+    
+    SDL_Log("neareast tile ids:");
+    for (int id : res) {
+        SDL_Log(std::to_string(id).c_str());
+    }
+
+    return res;
 }
 
 std::vector<int> MapHelper::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile *tile2)

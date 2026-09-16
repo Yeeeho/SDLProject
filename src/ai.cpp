@@ -43,6 +43,10 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
         return;
     }
     vector<int> tids = mh::GetTilesIdBetween(map, npc->mTileId, targetTileId);
+
+    //TODO: level을 1로 고정해놓고 테스트중이다.
+    mh::GetNearestTileIds(targetTileId, map, 1);
+
     tids.pop_back(); //엔티티가 서있을 타일은 제외한다.
 
     SkillContext* skctx = new SkillContext(moveskill, tids, map);

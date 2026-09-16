@@ -107,6 +107,7 @@ class MapTile {
     int mW, mH; 
 
     bool mIsEntOn : 1; //엔티티가 있는가?
+    bool mIsReserved : 1; //적 npc의 이동 목적지 등으로 선점되었는가?
 
     Texture* mTileTex{nullptr}; //타일 텍스처, 항상 렌더링됨.
 };
@@ -128,6 +129,11 @@ class MapManager {
 namespace MapHelper {
     int WhatTileOnPoint(float x, float y, Grid* grid); //이 점은 맵의 어느 타일에 있는가?
     int WhatTileOnPoint(Point p, Grid* grid);
+
+    int GetOffsetTileId(int tileId, Grid* grid, int xdis, int ydis);
+
+    std::set<int> GetNearestTileIds(int centerTid, Map* map, unsigned int level); //엔티티 주변의 타일을 구함.
+    //레벨이 높아질수록 더 바깥 범위의 타일들을 구함
 
     //브레젠험 
     std::vector<int> GetTilesIdBetween(Map* map, MapTile* tile1, MapTile* tile2); //타일 두개를 이었을때 그 사이에 무슨 타일들이 있는지 구함.
