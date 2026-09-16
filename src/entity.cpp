@@ -207,7 +207,7 @@ EntityManager::EntityManager(GameContext* gc)
     TextureManager tm;
 }
 
-void EntityManager::AllocNpcOnTable(GameContext* gctx, std::string code, int subMapX, int subMapY, int idparam)
+Npc* EntityManager::AllocNpcOnTable(GameContext* gctx, std::string code, int subMapX, int subMapY)
 {
     int id = GetValidNpcId();
 
@@ -228,7 +228,7 @@ void EntityManager::AllocNpcOnTable(GameContext* gctx, std::string code, int sub
         entData = entItems[code];
     }
 
-    Entity* ent = mEntTable[id];
+    Npc* ent = mEntTable[id];
 
     ent->mMapX = subMapX;
     ent->mMapY = subMapY;
@@ -262,12 +262,14 @@ void EntityManager::AllocNpcOnTable(GameContext* gctx, std::string code, int sub
 
     std::string message = "entity id: " + std::to_string(id) + " code: " + code + " is allocated";
     SDL_Log(message.c_str());
+
+    return ent;
 }
 
 void EntityManager::AllocNpcOnTable(GameContext *gctx, Grid* grid, int tileId, std::string code, int id)
 {
     Point xy = MapHelper::GetPosPoint(tileId, grid);
-    AllocNpcOnTable(gctx, code, xy.mX, xy.mY, id);
+    AllocNpcOnTable(gctx, code, xy.mX, xy.mY);
 }
 
 //TODO: 아이디 파라미터 이제 필요없다.
@@ -321,7 +323,7 @@ void EntityManager::DeallocEntityOnTable(GameContext* gctx, int id)
 {
     ReturnId(mEntTable[id], id);
 
-    AllocNpcOnTable(gctx, "null_entity", -1, -1, id);
+    AllocNpcOnTable(gctx, "null_entity", -1, -1);
     SDL_Log("deallocated entity");
 }
 

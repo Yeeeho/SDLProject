@@ -16,6 +16,12 @@
                     "type" : "single_ent",
                     "code" : "rat",
                     "demeanor" : "hostile",
+                    "tile_id" : 102
+                },
+                {
+                    "type" : "single_ent",
+                    "code" : "rat",
+                    "demeanor" : "hostile",
                     "tile_id" : 103
                 },
                 {
@@ -35,20 +41,6 @@
                 }
             ]
         },
-        
-        {
-            "type" : "static_spawn",
-            "where" : "submap",
-            "items" : [
-                {
-                    "type" : "single_ent",
-                    "code" : "rat",
-                    "demeanor" : "hostile",
-                    "tile_id" : 53
-                }
-            ]
-        },
-
         {
             "type" : "continue_dialogue",
             "d_section" : "rat_encounter"

@@ -238,7 +238,7 @@ void CharacterIO::LoadNpc(GameContext *gc, string name)
     for (json entdata : save["items"]) {
         gc->mObjm->mEntm->AllocNpcOnTable(
             gc, entdata["code"].get<string>(), entdata["map_x"].get<int>(),
-            entdata["map_y"].get<int>(), entdata["id"].get<int>()
+            entdata["map_y"].get<int>()
         );
 
         Entity* ent = gc->mObjm->mEntm->mEntTable[entdata["id"].get<int>()];

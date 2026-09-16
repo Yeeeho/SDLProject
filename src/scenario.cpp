@@ -81,13 +81,12 @@ void Scenario::UpdateScenario(GameContext& gc)
                 
                 int tileId = JsonHelper::GetInt(item, "tile_id");
             
-                gc.mObjm->mEntm->AllocNpcOnTable(&gc, code, -1, -1, 0);
-                Entity* ent = gc.mObjm->mEntm->mEntTable[0];
+                Npc* npc = gc.mObjm->mEntm->AllocNpcOnTable(&gc, code, -1, -1);
                 //태도를 결정한다.
-                if (demeanor == "hostile") ent->mDemeanor = Demeanor::Hostile;
-                else if (demeanor == "friendly") ent->mDemeanor = Demeanor::Friendly;
-                else if (demeanor == "neutral") ent->mDemeanor = Demeanor::Neutral;
-                gc.mObjm->mEntm->SpawnEntityOnMap(*gc.mObjm, map, ent, tileId);
+                if (demeanor == "hostile") npc->mDemeanor = Demeanor::Hostile;
+                else if (demeanor == "friendly") npc->mDemeanor = Demeanor::Friendly;
+                else if (demeanor == "neutral") npc->mDemeanor = Demeanor::Neutral;
+                gc.mObjm->mEntm->SpawnEntityOnMap(*gc.mObjm, map, npc, tileId);
             }
             if (JsonHelper::GetString(item, "type") == "single_item") {
                 //시나리오 데이터에서 코드, 아이템타입, 타일 아이디를 구한다.

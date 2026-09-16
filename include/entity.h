@@ -120,7 +120,7 @@ class EntityManager {
     void ReturnId(Pawn* pawn, int id);
 
     //엔티티 할당 함수
-    void AllocNpcOnTable(GameContext* gctx, std::string code, int xMapPos, int yMapPos, int id);
+    Npc* AllocNpcOnTable(GameContext* gctx, std::string code, int xMapPos, int yMapPos);
     void AllocNpcOnTable(GameContext* gctx, Grid* grid, int tileId, std::string code, int id);
     void AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType, int id);
     //엔티티 할당 해제 함수
