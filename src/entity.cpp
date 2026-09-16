@@ -185,6 +185,14 @@ void TeamManager::OutEntInTeam(Team *team, int id)
 
 EntityManager::EntityManager(GameContext* gc)
 {
+    for (int i = 0; i < (int)EntitySetting::MaxPawn; i++) {
+        mPawnIdTable.push_back(i);
+    }
+
+    for (int i = 0; i < (int)EntitySetting::MaxEnt; i++) {
+        mNpcIdTable.push_back(i);
+    }
+
     for (int i = 0; i < (int)EntitySetting::MaxEnt; i++) {
         mEntTable[i] = new Npc("null_entity", i);
     }
@@ -199,8 +207,10 @@ EntityManager::EntityManager(GameContext* gc)
     TextureManager tm;
 }
 
-void EntityManager::AllocNpcOnTable(GameContext* gctx, std::string code, int subMapX, int subMapY, int id)
+void EntityManager::AllocNpcOnTable(GameContext* gctx, std::string code, int subMapX, int subMapY, int idparam)
 {
+    int id = GetValidNpcId();
+
     const json& entItems = gctx->mObjm->mJsm->mEntDb["items"]; //데이터베이스 가져오기
 
     namespace sh = StatHelper;
@@ -260,8 +270,11 @@ void EntityManager::AllocNpcOnTable(GameContext *gctx, Grid* grid, int tileId, s
     AllocNpcOnTable(gctx, code, xy.mX, xy.mY, id);
 }
 
-void EntityManager::AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType, int id)
+//TODO: 아이디 파라미터 이제 필요없다.
+void EntityManager::AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType, int idparam)
 {
+    int id = GetValidPawnId();
+
     const json& pawnItems = gctx->mObjm->mJsm->mPawnDb["items"];
 
     namespace sh = StatHelper;
@@ -306,12 +319,16 @@ void EntityManager::AllocPawnOnTable(GameContext* gctx, std::string code, PawnTy
 
 void EntityManager::DeallocEntityOnTable(GameContext* gctx, int id)
 {
+    ReturnId(mEntTable[id], id);
+
     AllocNpcOnTable(gctx, "null_entity", -1, -1, id);
     SDL_Log("deallocated entity");
 }
 
 void EntityManager::DeallocPawnOnTable(GameContext* gctx, int id)
 {
+    ReturnId(mPawnTable[id], id);
+
     AllocPawnOnTable(gctx, "null_pawn", PawnType::Null, id);
     SDL_Log("deallocated pawn");
 }
@@ -327,6 +344,42 @@ void EntityManager::KillEntityOnMap(GameContext& gc, Map* map, Entity* ent)
     else {
         DeallocEntityOnTable(&gc, ent->mId);
     }
+}
+
+int EntityManager::GetValidPawnId()
+{
+    for (int i = 0; i < (int)EntitySetting::MaxPawn; i++) {
+        if (mPawnIdTable[i] == -1) continue;
+        int ret = mPawnIdTable[i];
+        mPawnIdTable[i] = -1;
+        return ret;
+    }
+
+    SDL_Log("[WARNING] ran out of pawn index!");
+    return -2;
+}
+
+int EntityManager::GetValidNpcId()
+{
+    for (int i = 0; i < (int)EntitySetting::MaxPawn; i++) {
+        if (mNpcIdTable[i] == -1) continue;
+        int ret = mNpcIdTable[i];
+        mNpcIdTable[i] = -1;
+        return ret;
+    }
+
+    SDL_Log("[WARNING] ran out of npc index!");
+    return -2;
+}
+
+void EntityManager::ReturnId(Entity *npc, int id)
+{
+    mNpcIdTable[id] += id + 1;
+}
+
+void EntityManager::ReturnId(Pawn *pawn, int id)
+{
+    mPawnIdTable[id] += id + 1;
 }
 
 void EntityManager::SpawnEntityOnMap(ObjectManager &objm, Map *map, Entity *ent)

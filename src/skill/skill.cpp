@@ -422,7 +422,7 @@ bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std
         bool entOn = map->mMapTiles[id]->mIsEntOn;
         if (entOn) {
             if (actor->mIsPawn) log->AddMessage("이동 경로에 뭔가 있습니다!", System::kY);
-            SDL_Log("move action: something is already on tile");
+            SDL_Log("[INFO] move action: something is already on tile");
             return false;
         }
     }
@@ -445,7 +445,7 @@ bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std
 
     if (actor->mCurAp < apCost) {
         log->AddMessage("AP가 부족합니다!", System::kY);
-        SDL_Log("move action: not enough ap");
+        SDL_Log("[INFO] move action: not enough ap");
         return false;
     }        
     else {

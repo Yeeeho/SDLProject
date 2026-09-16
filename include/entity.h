@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <queue>
 #include <string>
 #include <unordered_map>
@@ -112,6 +113,12 @@ class EntityManager {
     
     void KillEntityOnMap(GameContext& gc, Map* map, Entity* ent);
 
+    //엔티티 아이디 관리
+    int GetValidPawnId();
+    int GetValidNpcId();
+    void ReturnId(Entity* npc, int id);
+    void ReturnId(Pawn* pawn, int id);
+
     //엔티티 할당 함수
     void AllocNpcOnTable(GameContext* gctx, std::string code, int xMapPos, int yMapPos, int id);
     void AllocNpcOnTable(GameContext* gctx, Grid* grid, int tileId, std::string code, int id);
@@ -145,6 +152,10 @@ class EntityManager {
 
     //렌더링
     void RenderEntities(Map* map);
+
+    //아이디 관리
+    std::vector<int> mPawnIdTable;
+    std::vector<int> mNpcIdTable; 
 
     AIManager* mAim {nullptr};
     AI* mEntAI {nullptr};

@@ -37,7 +37,7 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
 
     Skill* moveskill = SkillHelper::GetMovementSkill(npc);
     if (!moveskill) {
-        message = npc->mName + "couldn't navigate to" + to_string(targetTileId);
+        message = "[INFO] " + npc->mName + "couldn't navigate to" + to_string(targetTileId);
         SDL_Log(message.c_str());
         SDL_Log("why: no movement skill");
         return;
@@ -117,7 +117,7 @@ void IdleState::UpdateSkillQueue(Npc* npc)
     mPrevTileId = targetTid;
     tileIds.push_back(targetTid);
 
-    json skillTable = mGc->mSkm->mSkillDb["items"];
+    json& skillTable = mGc->mSkm->mSkillDb["items"];
     json sd = skillTable[currentSkill->mCode];
 
     SkillContext* skctx = new SkillContext(currentSkill, tileIds, currentMap);
