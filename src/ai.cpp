@@ -45,7 +45,9 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     vector<int> tids = mh::GetTilesIdBetween(map, npc->mTileId, targetTileId);
 
     //TODO: level을 1로 고정해놓고 테스트중이다.
-    mh::GetNearestTileIds(targetTileId, map, 1);
+    std::set<int> candidateTids = mh::GetNearestTileIds(targetTileId, map, 1);
+
+    int closestTid = mh::GetClosestTileId(map, npc->mTileId, candidateTids);
 
     tids.pop_back(); //엔티티가 서있을 타일은 제외한다.
 

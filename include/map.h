@@ -135,6 +135,8 @@ namespace MapHelper {
     std::set<int> GetNearestTileIds(int centerTid, Map* map, unsigned int level); //엔티티 주변의 타일을 구함.
     //레벨이 높아질수록 더 바깥 범위의 타일들을 구함
 
+    int GetClosestTileId(Map* map, int selfTid, std::set<int>& candidateTileIds);
+
     //브레젠험 
     std::vector<int> GetTilesIdBetween(Map* map, MapTile* tile1, MapTile* tile2); //타일 두개를 이었을때 그 사이에 무슨 타일들이 있는지 구함.
     std::vector<int> GetTilesIdBetween(Map* map, int tileId1, int tileId2);

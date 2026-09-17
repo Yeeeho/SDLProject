@@ -324,6 +324,24 @@ std::set<int> MapHelper::GetNearestTileIds(int centerTid, Map* map, unsigned int
     return res;
 }
 
+int MapHelper::GetClosestTileId(Map *map, int selfTid, std::set<int> &candidateTileIds)
+{
+    MoveHelper mvh;
+
+    std::set<int> res;
+
+    for (int tid : candidateTileIds) {
+        std::vector<int> tids = GetTilesIdBetween(map, selfTid, tid);
+        int apCost = mvh.GetApCost(tids, map, 50);
+        res.insert(apCost);
+    }
+
+    int min = *res.begin();
+
+    //TODO: 아직 미완성임
+    return min;
+}
+
 std::vector<int> MapHelper::GetTilesIdBetween(Map *map, MapTile *tile1, MapTile *tile2)
 {
     std::vector<int> ret;
