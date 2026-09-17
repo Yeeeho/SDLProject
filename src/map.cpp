@@ -292,19 +292,22 @@ int MapHelper::GetOffsetTileId(int tileId, Grid *grid, int xdis, int ydis)
     return WhatTileOnPoint(target, grid);
 }
 
-std::set<int> MapHelper::GetNearestTileIds(int centerTid, Map* map, unsigned int level)
+std::set<int> MapHelper::GetNearestTileIds(int centerTid, Map* map, unsigned int levelParam)
 {
     using namespace std;
     std::set<int> res;
 
-    if (level <= 0) {
-        SDL_Log("[WARNING] get neareast tile ids: level cannot be 0 or less!");
+    int level = static_cast<int> (levelParam);
+
+    if (level == 0) {
+        SDL_Log("[WARNING] get neareast tile ids: level cannot be 0!");
         return res;
     }
 
     SDL_Log("getting nearest tile ids, center id : %d", centerTid);
 
     for (int xdis = -level; xdis <= level; xdis += level) {
+        SDL_Log("hey");
         for (int ydis = -level; ydis <= level; ydis += level) {
             if (xdis == 0 && ydis == 0) continue;
             int id = GetOffsetTileId(centerTid, map, xdis, ydis);
@@ -316,11 +319,6 @@ std::set<int> MapHelper::GetNearestTileIds(int centerTid, Map* map, unsigned int
     int gap = level - 1;
     if (gap > 0) {
         //let us debug
-    }
-    
-    SDL_Log("neareast tile ids:");
-    for (int id : res) {
-        SDL_Log(std::to_string(id).c_str());
     }
 
     return res;
