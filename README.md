@@ -14,14 +14,20 @@ cmake version 4.3.4
 
 픽셀 에디터
 pixilart.com
+
 스프라이트 시트
 sprite sheet maker by kevax
 
 - 사용된 외부 소스 목록
 
 외부 라이브러리:
+1. SDL
 SDL3, SDL3_ttf, SDL3_image, SDL_mixer
+2. nlohmann json
 nlohmann json.hpp
+
+Runtime Library:
+libstdc++-6.dll.. etc
 
 폰트:
 freesans.ttf, MaruMinyaFont.ttf
