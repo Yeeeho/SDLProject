@@ -1,0 +1,9 @@
+{
+    "type" : "log_message",
+    "items" : {
+        "lack_current_ap" : {
+            "eng" : "Need more AP!",
+            "kor" : "AP가 부족합니다!"
+        }
+    }
+}

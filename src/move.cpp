@@ -95,6 +95,24 @@ bool MoveHelper::CheckDiagonalMove(int firstTileId, int lastTileId, Map* map)
     return isDiagonal;
 }
 
+std::queue<bool> MoveHelper::GetDiagonalMoveQueue(std::vector<int> tids, Map *map)
+{
+    std::queue<bool> diaQueue;
+
+    //타일 아이디 컨테이너의 크기를 확인한다.
+    if ((int) tids.size() < 2) {
+        SDL_Log("[WARN] Get Diagonal Move Queue: tile ids size should more than 1!");
+        return diaQueue;
+    }
+
+    for (int i = 0; i < (int) tids.size()-1; i++) {
+        bool isDiagonal = CheckDiagonalMove(i, i+1, map);
+        diaQueue.push(isDiagonal);
+    }
+
+    return diaQueue;
+}
+
 int MoveHelper::GetDiagonalMoves(std::vector<int> tids, Map *map)
 {
     bool check = false;
@@ -115,3 +133,4 @@ int MoveHelper::GetApCost(std::vector<int> tids, Map *map, int apPerTile)
 
     return apPerTile * straightMoves + apPerTile * diaMoves * 1.5;
 }
+

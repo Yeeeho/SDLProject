@@ -1,5 +1,7 @@
 #pragma once
 
+#include <queue>
+
 class UIManager;
 class ObjectManager;
 class Entity;
@@ -25,6 +27,9 @@ class MoveManager {
 class MoveHelper {
     public:
     bool CheckDiagonalMove(int firstTileId, int lastTileId, Map* map);
+    //대각선 이동을 순서대로 큐에 집어넣음
+    std::queue<bool> GetDiagonalMoveQueue(std::vector<int> tids, Map* map);
+    //대각선 이동이 총 몇번 일어나는지만 구함
     int GetDiagonalMoves(std::vector<int> tids, Map* map);
 
     int GetApCost(std::vector<int> tids, Map* map, int apPerTile);

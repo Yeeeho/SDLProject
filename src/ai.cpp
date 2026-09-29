@@ -107,6 +107,7 @@ void IdleState::UpdateSkillQueue(Npc* npc)
     }
     SDL_Log(message.c_str());
 
+    //TODO: 랜덤 시스템 호출해서 써라 조건문 도배하지 말고
     if (num == 1) p.mX -= 1; p.mY -= 1;  
     if (num == 2) p.mY -= 1;
     if (num == 3) p.mX += 1; p.mY -= 1;

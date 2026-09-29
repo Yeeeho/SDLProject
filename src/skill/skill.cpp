@@ -411,6 +411,8 @@ bool SkillAction::MoveAction(GameContext* gctx, Entity *actor, SkillContext *skC
 
 bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std::vector<int> &tileIds, Map* map)
 {
+    if ((int) tileIds.size() < 2) return false; //타일 컨테이너에 최소 2개의 원소가 필요
+
     bool success {false};
 
     LogUI* log = gctx->mUim->mLogUI;
@@ -420,9 +422,11 @@ bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std
         if (id == tileIds[0]) continue; //처음 아이디는 무시한다. 액터가 서있는 타일이니까..
         
         bool entOn = map->mMapTiles[id]->mIsEntOn;
+        //플레이어블 캐릭터가 액터일 경우
         if (entOn) {
             if (actor->mIsPawn) log->AddMessage("이동 경로에 뭔가 있습니다!", System::kY);
             SDL_Log("[INFO] move action: something is already on tile");
+            SDL_Log("Actor: %s, Id : %d", actor->mCode, actor->mId);
             return false;
         }
     }
@@ -443,19 +447,56 @@ bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std
 
     int apCost = mvh.GetApCost(tileIds, map, apPerTile);
 
-    if (actor->mCurAp < apCost) {
-        log->AddMessage("AP가 부족합니다!", System::kY);
-        SDL_Log("[INFO] move action: not enough ap");
-        return false;
-    }        
-    else {
-        actor->mCurAp -= apCost;
-        gctx->mUim->mBCUI->UpdateUI(actor);
+    //ver1 한번에 옮기던 방식.
+    // if (actor->mCurAp < apCost) {
+    //     log->AddMessage("AP가 부족합니다!", System::kY);
+    //     SDL_Log("[INFO] move action: not enough ap");
+    //     return false;
+    // }        
+    // else {
+    //     actor->mCurAp -= apCost;
+    //     gctx->mUim->mBCUI->UpdateUI(actor);
+    // }
+
+    // //실제로 엔티티 정보를 옮기는 동작
+    // mvm.MoveEntityTo(map, actor, actor->mTileId, tileIds.back());
+
+    //ver2 타일을 하나씩 옮기는 것으로 로직을 변경함
+    for (int i = 0; i < (int) tileIds.size()-1; i++) {
+        bool isApSuffice = MoveOneTile(gctx, actor, skill, tileIds[i+1], apPerTile, map);
+        if (!isApSuffice) {
+            break;
+        }
     }
 
-    //실제로 엔티티 정보를 옮기는 동작
-    mvm.MoveEntityTo(map, actor, actor->mTileId, tileIds.back());
-    success = true;
+    gctx->mUim->mBCUI->UpdateUI(actor);    
 
+    success = true;
+    return success;
+}
+
+bool SkillAction::MoveOneTile(GameContext *gctx, Entity *actor, Skill *skill, int adjacentTid, int apPerTile, Map *map)
+{
+    bool success {false};
+    class MoveHelper mvh;
+    
+    bool isDiaMove = mvh.CheckDiagonalMove(actor->mTileId, adjacentTid, map);
+
+    if (isDiaMove) {
+        if (actor->mCurAp < apPerTile * 1.5) {
+            return success;
+        }
+        actor->mCurAp -= apPerTile * 1.5;
+    }
+    else {
+        if (actor->mCurAp < apPerTile) {
+            return success;
+        }
+        actor->mCurAp -= apPerTile;
+    }
+
+    MoveManager mvm = MoveManager(gctx->mUim, gctx->mObjm);
+    mvm.MoveEntityTo(map, actor, actor->mTileId, adjacentTid);
+    success = true;
     return success;
 }
