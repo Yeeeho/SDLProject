@@ -45,11 +45,23 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     vector<int> tids = mh::GetTilesIdBetween(map, npc->mTileId, targetTileId);
 
     //TODO: level을 1로 고정해놓고 테스트중이다.
+    //00
     std::set<int> candidateTids = mh::GetNearestTileIds(targetTileId, map, 1);
 
     int closestTid = mh::GetClosestTileId(map, npc->mTileId, candidateTids);
+    //00
 
     tids.pop_back(); //엔티티가 서있을 타일은 제외한다.
+
+    MoveHelper mvh;
+    int apPerTile = StatHelper::GetApPerTileMove(npc);
+    int maxReachTid = mvh.GetMaxReachTid(mGc, npc, tids, apPerTile, map);
+    
+    map->mMapTiles[npc->mReservedTid]->mIsReserved = false;
+    SDL_Log("[INFO] Navigate skill queue: tile unreserved, tile id: %d", npc->mReservedTid);
+    map->mMapTiles[maxReachTid]->mIsReserved = true;
+    npc->mReservedTid = maxReachTid;
+    SDL_Log("[INFO] Navigate skill queue: tile reserved, tile id: %d", maxReachTid);
 
     SkillContext* skctx = new SkillContext(moveskill, tids, map);
     npc->mSkillCtxQueue.push(skctx);
@@ -242,6 +254,7 @@ void AI::UpdateSkillQueue(GameContext* gctx, Npc* npc)
 {
     Transition(gctx, npc);
 
+    mCurrentState->mVirtualAp = npc->mCurAp;
     mCurrentState->UpdateSkillQueue(npc);
 }
 

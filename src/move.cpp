@@ -1,11 +1,13 @@
 #include "pch.h"
 
+#include "game_context.h"
 #include "game_object.h"
 #include "item/item_manager.h"
 #include "move.h"
 #include "ui.h"
 #include "map.h"
 #include "entity.h"
+#include "ai.h"
 
 MoveManager::MoveManager(UIManager* uim, ObjectManager* objm)
 {
@@ -123,6 +125,50 @@ int MoveHelper::GetDiagonalMoves(std::vector<int> tids, Map *map)
     }
 
     return count;
+}
+
+bool MoveHelper::CheckOneMove(GameContext *gctx, int firstTid, int adjacentTid, int apPerTile, Map *map)
+{
+    bool success {false};
+    class MoveHelper mvh;
+    
+    bool isDiaMove = mvh.CheckDiagonalMove(firstTid, adjacentTid, map);
+    AIState* curState = gctx->mObjm->mEntm->mEntAI->mCurrentState;
+
+    if (isDiaMove) {
+        if (curState->mVirtualAp < apPerTile * 1.5) {
+            return success;
+        }
+        curState->mVirtualAp -= apPerTile * 1.5;
+    }
+    else {
+        if (curState->mVirtualAp < apPerTile) {
+            return success;
+        }
+        curState->mVirtualAp -= apPerTile;
+    }
+
+    success = true;
+    return success;
+}
+
+int MoveHelper::GetMaxReachTid(GameContext *gctx, Npc* npc, std::vector<int> tids, int apPerTile, Map *map)
+{
+    if ((int) tids.size() < 2) {
+        SDL_Log("[INFO] Get max reach tild id: tile ids size less than 2");
+        return npc->mTileId;
+    }
+
+    int finalTid = tids.back();
+    for (int i = 0; i < (int) tids.size()-1; i++) {
+        bool isApSuffice = CheckOneMove(gctx, tids[i], tids[i+1], apPerTile, map);
+        if (!isApSuffice) {
+            finalTid = tids[i];
+            break;
+        }
+    }
+
+    return finalTid;
 }
 
 int MoveHelper::GetApCost(std::vector<int> tids, Map *map, int apPerTile)

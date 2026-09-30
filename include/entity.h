@@ -252,6 +252,8 @@ class Npc : public Entity {
     void ClearSkCtxQueue();
 
     std::queue<SkillContext*> mSkillCtxQueue;
+
+    int mReservedTid {0};
 };
 
 class Pawn : public Entity {

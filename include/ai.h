@@ -46,6 +46,8 @@ class AIState {
 
     GameContext* mGc {nullptr};
     int mPrevTileId {-1};
+
+    int mVirtualAp {0};
 };
 
 class CombatState : public AIState {

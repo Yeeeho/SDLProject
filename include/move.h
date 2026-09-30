@@ -2,6 +2,7 @@
 
 #include <queue>
 
+class Npc;
 class UIManager;
 class ObjectManager;
 class Entity;
@@ -31,6 +32,9 @@ class MoveHelper {
     std::queue<bool> GetDiagonalMoveQueue(std::vector<int> tids, Map* map);
     //대각선 이동이 총 몇번 일어나는지만 구함
     int GetDiagonalMoves(std::vector<int> tids, Map* map);
+
+    bool CheckOneMove(GameContext *gctx, int firstTid, int adjacentTid, int apPerTile, Map *map);
+    int GetMaxReachTid(GameContext *gctx, Npc* npc, std::vector<int> tids, int apPerTile, Map *map);
 
     int GetApCost(std::vector<int> tids, Map* map, int apPerTile);
 };

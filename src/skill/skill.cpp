@@ -447,20 +447,6 @@ bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std
 
     int apCost = mvh.GetApCost(tileIds, map, apPerTile);
 
-    //ver1 한번에 옮기던 방식.
-    // if (actor->mCurAp < apCost) {
-    //     log->AddMessage("AP가 부족합니다!", System::kY);
-    //     SDL_Log("[INFO] move action: not enough ap");
-    //     return false;
-    // }        
-    // else {
-    //     actor->mCurAp -= apCost;
-    //     gctx->mUim->mBCUI->UpdateUI(actor);
-    // }
-
-    // //실제로 엔티티 정보를 옮기는 동작
-    // mvm.MoveEntityTo(map, actor, actor->mTileId, tileIds.back());
-
     //ver2 타일을 하나씩 옮기는 것으로 로직을 변경함
     for (int i = 0; i < (int) tileIds.size()-1; i++) {
         bool isApSuffice = MoveOneTile(gctx, actor, skill, tileIds[i+1], apPerTile, map);
