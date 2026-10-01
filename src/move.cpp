@@ -127,29 +127,33 @@ int MoveHelper::GetDiagonalMoves(std::vector<int> tids, Map *map)
     return count;
 }
 
-bool MoveHelper::CheckOneMove(GameContext *gctx, int firstTid, int adjacentTid, int apPerTile, Map *map)
+MoveErrorCode MoveHelper::CheckOneMove(GameContext *gctx, int firstTid, int adjacentTid, int apPerTile, Map *map)
 {
-    bool success {false};
+    MoveErrorCode merr;
     class MoveHelper mvh;
     
     bool isDiaMove = mvh.CheckDiagonalMove(firstTid, adjacentTid, map);
     AIState* curState = gctx->mObjm->mEntm->mEntAI->mCurrentState;
 
+    if (map->mMapTiles[adjacentTid]->mIsReserved || map->mMapTiles[adjacentTid]->mIsEntOn) {
+        return MoveErrorCode::PreReserved;
+    }
+
     if (isDiaMove) {
         if (curState->mVirtualAp < apPerTile * 1.5) {
-            return success;
+            return MoveErrorCode::NoAp;
         }
         curState->mVirtualAp -= apPerTile * 1.5;
     }
     else {
         if (curState->mVirtualAp < apPerTile) {
-            return success;
+            return MoveErrorCode::NoAp;
         }
         curState->mVirtualAp -= apPerTile;
     }
 
-    success = true;
-    return success;
+    merr = MoveErrorCode::Success;
+    return merr;
 }
 
 int MoveHelper::GetMaxReachTid(GameContext *gctx, Npc* npc, std::vector<int> tids, int apPerTile, Map *map)
@@ -161,10 +165,18 @@ int MoveHelper::GetMaxReachTid(GameContext *gctx, Npc* npc, std::vector<int> tid
 
     int finalTid = tids.back();
     for (int i = 0; i < (int) tids.size()-1; i++) {
-        bool isApSuffice = CheckOneMove(gctx, tids[i], tids[i+1], apPerTile, map);
-        if (!isApSuffice) {
+        //이동이 성공하지 못하면 에러코드를 분석해서 다음 행동을 결정한다.
+        MoveErrorCode merr = CheckOneMove(gctx, tids[i], tids[i+1], apPerTile, map);
+        if (merr == MoveErrorCode::NoAp) {
             finalTid = tids[i];
             break;
+        }
+
+        if (merr == MoveErrorCode::PreReserved) {
+            //TODO: level 1로 하드코딩됨
+            //목적지와 현재 시뮬레이션 중인 타일 아이디의 포인트를 구하고 
+            Point p1 = MapHelper::GetPosPoint(tids[i], map);
+            Point p2 = MapHelper::GetPosPoint(tids.back(), map);
         }
     }
 

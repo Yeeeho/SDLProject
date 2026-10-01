@@ -426,7 +426,7 @@ bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std
         if (entOn) {
             if (actor->mIsPawn) log->AddMessage("이동 경로에 뭔가 있습니다!", System::kY);
             SDL_Log("[INFO] move action: something is already on tile");
-            SDL_Log("Actor: %s, Id : %d", actor->mCode, actor->mId);
+            SDL_Log("Actor: %s, Id : %d", actor->mCode.c_str(), actor->mId);
             return false;
         }
     }

@@ -42,39 +42,28 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
         SDL_Log("why: no movement skill");
         return;
     }
-    //ver1 npc와 타겟 사이의 직선거리 타일들을 구함
-    // vector<int> tids = mh::GetTilesIdBetween(map, npc->mTileId, targetTileId);
-    // tids.pop_back(); //엔티티가 서있을 타일은 제외한다.
-
-    //ver2 후보타일들을 구하고 그중에서 npc와 최소거리에 있는 타일을 구함, 그뒤에 이미 예약된 상태라면 차순위 타일을 구함
-    //TODO: level을 1로 고정해놓고 테스트중이다.
-    //00
-    std::set<int> candidateTids = mh::GetNearestTileIds(targetTileId, map, 1);
-
-    int closestTid = mh::GetClosestTileId(map, npc->mTileId, candidateTids);
-    SDL_Log("[INFO] closest tile ID: %d", closestTid);
-    //00
     
-    vector<int> closestTids = mh::GetTilesIdBetween(map, npc->mTileId, closestTid);
-
+    //npc와 타겟 사이의 직선거리 타일들을 구함
+    vector<int> tids = mh::GetTilesIdBetween(map, npc->mTileId, targetTileId);
+    tids.pop_back(); //엔티티가 서있을 타일은 제외한다.
+    
     MoveHelper mvh;
     int apPerTile = StatHelper::GetApPerTileMove(npc);
-    int maxReachTid = mvh.GetMaxReachTid(mGc, npc, closestTids, apPerTile, map);
-
+    int maxReachTid = mvh.GetMaxReachTid(mGc, npc, tids, apPerTile, map);
+    
     //예전에 이 npc가 예약했던 타일의 예약 상태를 초기화해준다.
     map->mMapTiles[npc->mReservedTid]->mIsReserved = false;
     SDL_Log("[INFO] Navigate skill queue: tile unreserved, tile id: %d", npc->mReservedTid);
-
-    //TODO:이미 예약된 타일이 끝거리 타일과 같다면 차순위 타일을 검색해야 한다.
-    // if (map->mMapTiles[maxReachTid]->mIsReserved) {
-        
-    // }
+    
+    //TODO:이미 예약된 타일이 끝거리 타일과 같다면 차순위 타일을 검색해야 한다
+    //TODO: 한칸씩 시뮬레이션 돌려서 구해라
 
     map->mMapTiles[maxReachTid]->mIsReserved = true;
     npc->mReservedTid = maxReachTid;
     SDL_Log("[INFO] Navigate skill queue: tile reserved, tile id: %d", maxReachTid);
 
-    SkillContext* skctx = new SkillContext(moveskill, closestTids, map);
+    //스킬 큐에 푸시하는 단계
+    SkillContext* skctx = new SkillContext(moveskill, tids, map);
     npc->mSkillCtxQueue.push(skctx);
     SDL_Log("navigate queued");
 }

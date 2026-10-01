@@ -25,6 +25,10 @@ class MoveManager {
     Uint64 mMaxFrameCapMs {500};
 };
 
+enum class MoveErrorCode {
+    Success, NoAp, PreReserved, 
+};
+
 class MoveHelper {
     public:
     bool CheckDiagonalMove(int firstTileId, int lastTileId, Map* map);
@@ -33,7 +37,8 @@ class MoveHelper {
     //대각선 이동이 총 몇번 일어나는지만 구함
     int GetDiagonalMoves(std::vector<int> tids, Map* map);
 
-    bool CheckOneMove(GameContext *gctx, int firstTid, int adjacentTid, int apPerTile, Map *map);
+    //한칸 이동을 시뮬레이션해서 이동이 유효한지 아닌지 반환해주는 녀석
+    MoveErrorCode CheckOneMove(GameContext *gctx, int firstTid, int adjacentTid, int apPerTile, Map *map);
     int GetMaxReachTid(GameContext *gctx, Npc* npc, std::vector<int> tids, int apPerTile, Map *map);
 
     int GetApCost(std::vector<int> tids, Map* map, int apPerTile);
