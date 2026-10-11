@@ -49,7 +49,8 @@ void Skill::Activate(SkillManager* skm)
 
     //이동 스킬일 경우
     if (skillType == "movement") {
-        SkillAction::MoveAction(gc, actor, this, tids, map);
+        SkillContext* skctx = new SkillContext(this, actor, tids, map);
+        gc->mObjm->mSkCtxUpdateQueue.push(skctx);
     }
 
     else if (skillType == "pickup") {
@@ -137,16 +138,6 @@ SkillContext::SkillContext(Skill* skill, Entity *actor, const std::vector<int> &
     mActor = actor;
     mTargetTIds = tileIds;
     mMap = map;
-}
-
-void SkillContext::Activate(GameContext* gctx, Entity *actor)
-{
-    using namespace std;
-    
-    json sd = SkillHelper::GetSkillData(gctx->mSkm->mSkillDb, mSkill->mCode);
-    
-    string stype = sd["type"].get<string>();
-    if (stype == "movement") SkillAction::MoveAction(gctx, actor, this);
 }
 
 bool SkillContext::Activate(GameContext *gctx)
@@ -511,6 +502,9 @@ bool SkillAction::MoveOneTile(GameContext *gctx, Entity *actor, Skill *skill, in
 
     MoveManager mvm = MoveManager(gctx->mUim, gctx->mObjm);
     mvm.MoveEntityTo(map, actor, actor->mTileId, adjacentTid);
+
+    gctx->mUim->mBCUI->UpdateUI(actor);
+    
     success = true;
     return success;
 }

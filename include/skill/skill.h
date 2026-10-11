@@ -24,7 +24,6 @@ struct SkillContext {
     SkillContext(Skill*, const std::vector<int>& tileIds, Map* map);
     SkillContext(Skill*, Entity* actor, const std::vector<int>& tileIds, Map* map);
 
-    void Activate(GameContext* gctx, Entity* actor);
     bool Activate(GameContext* gctx);
 
     Skill* mSkill {nullptr}; //해제하지마라
