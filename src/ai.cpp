@@ -63,7 +63,7 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     SDL_Log("[INFO] Navigate skill queue: tile reserved, tile id: %d", maxReachTid);
 
     //스킬 큐에 푸시하는 단계
-    SkillContext* skctx = new SkillContext(moveskill, tids, map);
+    SkillContext* skctx = new SkillContext(moveskill, npc, tids, map);
     npc->mSkillCtxQueue.push(skctx);
     SDL_Log("navigate queued");
 }
@@ -241,9 +241,11 @@ void AI::Transition(GameContext* gctx, Npc* npc)
 void AI::TakeTurn(GameContext* gctx, Npc* npc)
 {
     SDL_Log("ai taketurn");
+
+    gctx->mObjm->mUpdateInQueue = true;
     while (!npc->mSkillCtxQueue.empty()) {
-        npc->mSkillCtxQueue.front()->Activate(gctx, npc);
-        delete npc->mSkillCtxQueue.front();
+        gctx->mObjm->mSkCtxUpdateQueue.push(npc->mSkillCtxQueue.front());
+
         npc->mSkillCtxQueue.pop();
     }
 

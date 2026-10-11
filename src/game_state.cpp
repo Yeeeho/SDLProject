@@ -199,6 +199,7 @@ void SubMapState::Update(GameContext& gc)
     gc.mTurnm->Update();
 
     gc.mMapm->mSubMap->mCam->Move();
+    gc.mObjm->UpdateObjects();
 
     gc.mUim->UpdateGridToolTip(gc.mUim->mToolTipGrid);
 }

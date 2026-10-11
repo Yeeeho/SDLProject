@@ -131,6 +131,14 @@ SkillContext::SkillContext(Skill* skill, const std::vector<int> &tileIds, Map* m
     mMap = map;
 }
 
+SkillContext::SkillContext(Skill* skill, Entity *actor, const std::vector<int> &tileIds, Map *map)
+{
+    mSkill = skill;
+    mActor = actor;
+    mTargetTIds = tileIds;
+    mMap = map;
+}
+
 void SkillContext::Activate(GameContext* gctx, Entity *actor)
 {
     using namespace std;
@@ -139,6 +147,32 @@ void SkillContext::Activate(GameContext* gctx, Entity *actor)
     
     string stype = sd["type"].get<string>();
     if (stype == "movement") SkillAction::MoveAction(gctx, actor, this);
+}
+
+bool SkillContext::Activate(GameContext *gctx)
+{
+    using namespace std;
+    
+    json sd = SkillHelper::GetSkillData(gctx->mSkm->mSkillDb, mSkill->mCode);
+    
+    string stype = sd["type"].get<string>();
+
+    //TODO: 타일 지형도 계산하도록 변경하고 래핑해야됨
+    //타일당 ap를 구한다.
+    int apPerTile = StatHelper::GetApPerTileMove(mActor); 
+    float apMod = 1.f;
+    if (sd["ap_per_tile"].contains("mod")){
+        apMod = sd["ap_per_tile"]["mod"].get<float>();
+    }
+    apPerTile = (int) (apPerTile * apMod);
+
+    if (stype == "movement") {
+        if ((int) mTargetTIds.size() < 2) return false; //움직임을 멈춘다.
+        SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[1], apPerTile, mMap);
+        mTargetTIds.erase(mTargetTIds.begin());
+    };
+
+    return true;
 }
 
 SkillManager::SkillManager(GameContext& gc)
@@ -442,20 +476,14 @@ bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std
     MapTile* targetTile = map->mMapTiles[tileIds.back()];
     if (targetTile->mIsEntOn) return false; //타겟 타일에 엔티티가 있으면 리턴한다.
 
-    MoveManager mvm = MoveManager(gctx->mUim, gctx->mObjm);
-    MoveHelper mvh;
-
-    int apCost = mvh.GetApCost(tileIds, map, apPerTile);
-
     //ver2 타일을 하나씩 옮기는 것으로 로직을 변경함
     for (int i = 0; i < (int) tileIds.size()-1; i++) {
         bool isApSuffice = MoveOneTile(gctx, actor, skill, tileIds[i+1], apPerTile, map);
+        gctx->mUim->mBCUI->UpdateUI(actor);    
         if (!isApSuffice) {
             break;
         }
     }
-
-    gctx->mUim->mBCUI->UpdateUI(actor);    
 
     success = true;
     return success;

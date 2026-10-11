@@ -22,14 +22,17 @@ struct SkillContext {
     public:
     SkillContext(Skill*, std::vector<Item*>& targetItems, std::vector<Entity*>& targetEnts, std::vector<int>& tileIds);
     SkillContext(Skill*, const std::vector<int>& tileIds, Map* map);
+    SkillContext(Skill*, Entity* actor, const std::vector<int>& tileIds, Map* map);
 
     void Activate(GameContext* gctx, Entity* actor);
+    bool Activate(GameContext* gctx);
 
     Skill* mSkill {nullptr}; //해제하지마라
+    Map* mMap {nullptr};
+    Entity* mActor {nullptr};
     std::vector<Item*> mTargetItems;
     std::vector<Entity*> mTargetEnts;
     std::vector<int> mTargetTIds;
-    Map* mMap {nullptr}; //해제하지마라
 };
 
 namespace SkillAction {
