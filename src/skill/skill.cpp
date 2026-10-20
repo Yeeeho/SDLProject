@@ -431,9 +431,8 @@ Skill *SkillHelper::GetMovementSkill(Entity *ent)
 bool SkillAction::MoveOneTile(GameContext *gctx, Entity *actor, Skill *skill, int adjacentTid, int apPerTile, Map *map)
 {
     bool success {false};
-    class MoveHelper mvh;
     
-    bool isDiaMove = mvh.CheckDiagonalMove(actor->mTileId, adjacentTid, map);
+    bool isDiaMove = MoveHelper::CheckDiagonalMove(actor->mTileId, adjacentTid, map);
 
     if (isDiaMove) {
         if (actor->mCurAp < apPerTile * 1.5) {

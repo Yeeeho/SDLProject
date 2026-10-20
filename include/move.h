@@ -29,8 +29,7 @@ enum class MoveErrorCode {
     Success, NoAp, PreReserved, 
 };
 
-class MoveHelper {
-    public:
+namespace MoveHelper {
     bool CheckDiagonalMove(int firstTileId, int lastTileId, Map* map);
     //대각선 이동을 순서대로 큐에 집어넣음
     std::queue<bool> GetDiagonalMoveQueue(std::vector<int> tids, Map* map);

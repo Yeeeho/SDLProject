@@ -1,5 +1,7 @@
 #include "pch.h"
 
+#include "math.h"
+#include "shape/point.h"
 #include "ai.h"
 #include "game_object.h"
 #include "game_context.h"
@@ -47,19 +49,23 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     vector<int> tids = mh::GetTilesIdBetween(map, npc->mTileId, targetTileId);
     tids.pop_back(); //엔티티가 서있을 타일은 제외한다.
     
-    MoveHelper mvh;
     int apPerTile = StatHelper::GetApPerTileMove(npc);
-    int maxReachTid = mvh.GetMaxReachTid(mGc, npc, tids, apPerTile, map);
+    int finalTid = MoveHelper::GetMaxReachTid(mGc, npc, tids, apPerTile, map);
+
+    //DEBUGGING
+    int nextTID = AIMoveHelper::GetNextTID(mGc, map, npc, targetTileId);
+    SDL_Log("[INFO] next TID: %d", nextTID);
     
-    //예전에 이 npc가 예약했던 타일의 예약 상태를 초기화해준다.
-    map->mMapTiles[npc->mReservedTid]->mIsReserved = false;
+    //예약을 초기화하고 시뮬레이션으로 경로를 설정한 뒤 최종 목적지의 타일은 예약 상태로 변경한다.
+
+    map->mMapTiles[npc->mReservedTid]->mIsReserved = false; //이전 타일 예약 초기화
     SDL_Log("[INFO] Navigate skill queue: tile unreserved, tile id: %d", npc->mReservedTid);
     
     //TODO: 한칸씩 시뮬레이션 돌려서 구해라
 
-    map->mMapTiles[maxReachTid]->mIsReserved = true;
-    npc->mReservedTid = maxReachTid;
-    SDL_Log("[INFO] Navigate skill queue: tile reserved, tile id: %d", maxReachTid);
+    map->mMapTiles[finalTid]->mIsReserved = true; //최신 목적지 타일 예약
+    npc->mReservedTid = finalTid;
+    SDL_Log("[INFO] Navigate skill queue: tile reserved, tile id: %d", finalTid);
 
     //스킬 큐에 푸시하는 단계
     SkillContext* skctx = new SkillContext(moveskill, npc, tids, map);
@@ -284,4 +290,71 @@ int AIHelper::GetThreatValue(Entity *ent)
 AIManager::AIManager()
 {
     JsonHelper::LoadJsonFile(mAIDb, "data/ai/ai.json");
+}
+
+//WORK IN PROGRESS
+int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, Entity *actor, int targetTID)
+{
+    Vector2 vec = GetVectorFromTID(map, actor->mTileId, targetTID);
+    SDL_Log("[INFO] Get final melee TID: vector2: %d, %d", vec.x, vec.y);
+
+    //이미 바로 옆에 있다면 굳이 연산하지 않는다.
+    if (vec.x <= 1 && vec.y <= 1 && vec.x >= -1 && vec.y >= -1) {
+        SDL_Log("--> Target already adjacent");
+        return actor->mTileId;
+    }
+
+    //액터와 타겟 사이의 벡터를 구해 진행 방향을 결정한다.
+    if (vec.x > 0 && vec.y > 0) {
+        SDL_Log("--> Move south east");
+        return MapHelper::GetAdjacentTID(map, Direction::SE, actor->mTileId);
+    }
+    if (vec.x > 0 && vec.y < 0) {
+        SDL_Log("--> Move north east");
+        return MapHelper::GetAdjacentTID(map, Direction::NE, actor->mTileId);
+    }
+    if (vec.x < 0 && vec.y > 0) {
+        SDL_Log("--> Move south west");
+        return MapHelper::GetAdjacentTID(map, Direction::SW, actor->mTileId);
+    }
+    if (vec.x < 0 && vec.y < 0) {
+        SDL_Log("--> Move north west");
+        return MapHelper::GetAdjacentTID(map, Direction::NW, actor->mTileId);
+    }
+    if (vec.x == 0) {
+        //타겟과 액터가 y축에 나란히 있음
+        if (vec.y < 0) {
+            SDL_Log("--> Move up");
+            return MapHelper::GetAdjacentTID(map, Direction::North, actor->mTileId);
+        }
+        else {
+            SDL_Log("--> Move down");
+            return MapHelper::GetAdjacentTID(map, Direction::South, actor->mTileId);
+        }
+    }
+    if (vec.y == 0) {
+        //타겟과 액터가 x축에 나란히 있음
+        if (vec.x < 0) {
+            SDL_Log("--> Move left");
+            return MapHelper::GetAdjacentTID(map, Direction::West, actor->mTileId);
+        }
+        else {
+            SDL_Log("--> Move right");
+            return MapHelper::GetAdjacentTID(map, Direction::East, actor->mTileId);
+        }
+    }
+    //참고로 시스템상 벡터가 0,0이 나올수는 없음
+
+    return 0;
+}
+
+Vector2 AIMoveHelper::GetVectorFromTID(Map *map, int actorTID, int targetTID)
+{
+    Point p1 = MapHelper::GetPosPoint(actorTID, map);
+    Point p2 = MapHelper::GetPosPoint(targetTID, map);
+
+    int xdiff = p2.mX - p1.mX;
+    int ydiff = p2.mY - p1.mY;
+
+    return Vector2{xdiff, ydiff};
 }

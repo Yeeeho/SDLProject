@@ -130,9 +130,8 @@ int MoveHelper::GetDiagonalMoves(std::vector<int> tids, Map *map)
 MoveErrorCode MoveHelper::CheckOneMove(GameContext *gctx, int firstTid, int adjacentTid, int apPerTile, Map *map)
 {
     MoveErrorCode merr;
-    class MoveHelper mvh;
     
-    bool isDiaMove = mvh.CheckDiagonalMove(firstTid, adjacentTid, map);
+    bool isDiaMove = MoveHelper::CheckDiagonalMove(firstTid, adjacentTid, map);
     AIState* curState = gctx->mObjm->mEntm->mEntAI->mCurrentState;
 
     if (map->mMapTiles[adjacentTid]->mIsReserved || map->mMapTiles[adjacentTid]->mIsEntOn) {
@@ -156,6 +155,7 @@ MoveErrorCode MoveHelper::CheckOneMove(GameContext *gctx, int firstTid, int adja
     return merr;
 }
 
+//이제안쓴다.
 int MoveHelper::GetMaxReachTid(GameContext *gctx, Npc* npc, std::vector<int> tids, int apPerTile, Map *map)
 {
     if ((int) tids.size() < 2) {

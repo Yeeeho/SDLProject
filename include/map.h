@@ -126,6 +126,10 @@ class MapManager {
     Map* mCurrentMap {nullptr};
 };
 
+enum class Direction {
+    East, West, North, South, NE, NW, SE, SW
+};
+
 namespace MapHelper {
     int WhatTileOnPoint(float x, float y, Grid* grid); //이 점은 맵의 어느 타일에 있는가?
     int WhatTileOnPoint(Point p, Grid* grid);
@@ -143,4 +147,7 @@ namespace MapHelper {
 
     std::unordered_map<std::string, int> PosXYByTileId(int id, Grid* grid);
     Point GetPosPoint(int tileId, Grid* grid);
+
+    //바로 근접한 특정 방향에 있는 타일 아이디를 구하는 녀석
+    int GetAdjacentTID(Map* map, Direction dir, int initTID);
 };

@@ -7,7 +7,7 @@ class AIState; class AIManager;
 class CombatState; class IdleState; class FleeState;
 class Entity; class Npc;
 class Map;
-
+struct Vector2;
 using json = nlohmann::json;
 
 
@@ -87,4 +87,11 @@ namespace AIHelper {
     json GetAIData(GameContext* gctx, Entity* ent);
 
     int GetThreatValue(Entity* ent);
+};
+
+namespace AIMoveHelper {
+
+    int GetNextTID(GameContext* gctx, Map* map, Entity* actor, int targetTID);
+
+    Vector2 GetVectorFromTID(Map* map, int actorTID, int targetTID);
 };
