@@ -35,9 +35,7 @@ struct SkillContext {
 };
 
 namespace SkillAction {
-    bool MoveAction(GameContext* gctx, Entity* actor, SkillContext* skCtx);
-    bool MoveAction(GameContext* gctx, Entity* actor, Skill* skill, std::vector<int>& tileIds, Map* map);
-
+    
     //하나씩 이동시키는 함수
     bool MoveOneTile(GameContext* gctx, Entity* actor, Skill* skill, int adjacentTid, int apPerTile, Map* map);
 };

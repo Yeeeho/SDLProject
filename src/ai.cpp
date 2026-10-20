@@ -55,7 +55,6 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     map->mMapTiles[npc->mReservedTid]->mIsReserved = false;
     SDL_Log("[INFO] Navigate skill queue: tile unreserved, tile id: %d", npc->mReservedTid);
     
-    //TODO:이미 예약된 타일이 끝거리 타일과 같다면 차순위 타일을 검색해야 한다
     //TODO: 한칸씩 시뮬레이션 돌려서 구해라
 
     map->mMapTiles[maxReachTid]->mIsReserved = true;
@@ -83,7 +82,6 @@ void IdleState::Destroy()
     mGc = nullptr;
 }
 
-//TODO: 랜덤 이동도 나중에 써먹을수 있으니 재사용을 염두해라
 void IdleState::UpdateSkillQueue(Npc* npc)
 {
     SDL_Log("ai idle state: update skill queue");
@@ -119,7 +117,6 @@ void IdleState::UpdateSkillQueue(Npc* npc)
     }
     SDL_Log(message.c_str());
 
-    //TODO: 랜덤 시스템 호출해서 써라 조건문 도배하지 말고
     if (num == 1) p.mX -= 1; p.mY -= 1;  
     if (num == 2) p.mY -= 1;
     if (num == 3) p.mX += 1; p.mY -= 1;

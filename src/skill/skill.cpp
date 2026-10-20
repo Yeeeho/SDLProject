@@ -428,58 +428,6 @@ Skill *SkillHelper::GetMovementSkill(Entity *ent)
     return ret;
 }
 
-bool SkillAction::MoveAction(GameContext* gctx, Entity *actor, SkillContext *skCtx)
-{
-    MoveAction(gctx, actor, skCtx->mSkill, skCtx->mTargetTIds, skCtx->mMap);
-    return false;
-}
-
-bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std::vector<int> &tileIds, Map* map)
-{
-    if ((int) tileIds.size() < 2) return false; //타일 컨테이너에 최소 2개의 원소가 필요
-
-    bool success {false};
-
-    LogUI* log = gctx->mUim->mLogUI;
-    json sd = SkillHelper::GetSkillData(gctx->mSkm->mSkillDb, skill->mCode);
-    //경로에 뭐가 있는지 구한다.
-    for (int id : tileIds) {
-        if (id == tileIds[0]) continue; //처음 아이디는 무시한다. 액터가 서있는 타일이니까..
-        
-        bool entOn = map->mMapTiles[id]->mIsEntOn;
-        //플레이어블 캐릭터가 액터일 경우
-        if (entOn) {
-            if (actor->mIsPawn) log->AddMessage("이동 경로에 뭔가 있습니다!", System::kY);
-            SDL_Log("[INFO] move action: something is already on tile");
-            SDL_Log("Actor: %s, Id : %d", actor->mCode.c_str(), actor->mId);
-            return false;
-        }
-    }
-
-    //액터의 타일당 ap소모량을 구한다이
-    int apPerTile = StatHelper::GetApPerTileMove(actor); 
-    float apMod = 1.f;
-    if (sd["ap_per_tile"].contains("mod")){
-        apMod = sd["ap_per_tile"]["mod"].get<float>();
-    }
-    apPerTile = (int) (apPerTile * apMod);
-    
-    MapTile* targetTile = map->mMapTiles[tileIds.back()];
-    if (targetTile->mIsEntOn) return false; //타겟 타일에 엔티티가 있으면 리턴한다.
-
-    //ver2 타일을 하나씩 옮기는 것으로 로직을 변경함
-    for (int i = 0; i < (int) tileIds.size()-1; i++) {
-        bool isApSuffice = MoveOneTile(gctx, actor, skill, tileIds[i+1], apPerTile, map);
-        gctx->mUim->mBCUI->UpdateUI(actor);    
-        if (!isApSuffice) {
-            break;
-        }
-    }
-
-    success = true;
-    return success;
-}
-
 bool SkillAction::MoveOneTile(GameContext *gctx, Entity *actor, Skill *skill, int adjacentTid, int apPerTile, Map *map)
 {
     bool success {false};
