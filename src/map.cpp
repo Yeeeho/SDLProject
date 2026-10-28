@@ -253,6 +253,14 @@ void MapTile::ChangeTexture(std::string path)
     }
 }
 
+bool MapTile::IsPassable()
+{
+    if (mIsReserved) return false;
+    if (mIsEntOn) return false;
+
+    else return true;
+}
+
 int MapHelper::WhatTileOnPoint(float x, float y, Grid *grid)
 {
     float xDis = x - static_cast<float>(grid->mOffsetX + grid->mX);
@@ -443,6 +451,12 @@ int MapHelper::GetAdjacentTID(Map *map, Direction dir, int initTID)
         Point p = GetPosPoint(initTID, map);
         return WhatTileOnPoint(Point {p.mX - 1, p.mY + 1}, map);
     }
+    if (dir == Direction::None) {
+        SDL_Log("[INFO] GetAdjacentTID: direction none");
+        Point p = GetPosPoint(initTID, map);
+        return initTID;
+    }
+
     else {
         SDL_Log("[ERROR] Get adjacent TID");
         return -1;

@@ -53,6 +53,7 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     int finalTid = MoveHelper::GetMaxReachTid(mGc, npc, tids, apPerTile, map);
 
     //DEBUGGING
+    //액터를 기준으로 타겟의 방향을 산출하고 방향을 기준으로 다음 타일 아이디를 구한다.
     int nextTID = AIMoveHelper::GetNextTID(mGc, map, npc, targetTileId);
     SDL_Log("[INFO] next TID: %d", nextTID);
     
@@ -293,59 +294,38 @@ AIManager::AIManager()
 }
 
 //WORK IN PROGRESS
+//TODO: 목표 타일로 이동할수 없다면 우회하여 차순위 타일을 찾도록 만들어야 함.
 int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, Entity *actor, int targetTID)
 {
     Vector2 vec = GetVectorFromTID(map, actor->mTileId, targetTID);
     SDL_Log("[INFO] Get final melee TID: vector2: %d, %d", vec.x, vec.y);
 
     //이미 바로 옆에 있다면 굳이 연산하지 않는다.
-    if (vec.x <= 1 && vec.y <= 1 && vec.x >= -1 && vec.y >= -1) {
-        SDL_Log("--> Target already adjacent");
-        return actor->mTileId;
-    }
 
-    //액터와 타겟 사이의 벡터를 구해 진행 방향을 결정한다.
-    if (vec.x > 0 && vec.y > 0) {
-        SDL_Log("--> Move south east");
-        return MapHelper::GetAdjacentTID(map, Direction::SE, actor->mTileId);
-    }
-    if (vec.x > 0 && vec.y < 0) {
-        SDL_Log("--> Move north east");
-        return MapHelper::GetAdjacentTID(map, Direction::NE, actor->mTileId);
-    }
-    if (vec.x < 0 && vec.y > 0) {
-        SDL_Log("--> Move south west");
-        return MapHelper::GetAdjacentTID(map, Direction::SW, actor->mTileId);
-    }
-    if (vec.x < 0 && vec.y < 0) {
-        SDL_Log("--> Move north west");
-        return MapHelper::GetAdjacentTID(map, Direction::NW, actor->mTileId);
-    }
-    if (vec.x == 0) {
-        //타겟과 액터가 y축에 나란히 있음
-        if (vec.y < 0) {
-            SDL_Log("--> Move up");
-            return MapHelper::GetAdjacentTID(map, Direction::North, actor->mTileId);
+    std::set<Direction> direction8; //체크섬용 방향 배열
+    //체크섬 배열을 기반으로 이동 가능 방향을 하나씩 소거한다.
+    while ((int) direction8.size() < 8) {
+
+        if (vec.x <= 1 && vec.y <= 1 && vec.x >= -1 && vec.y >= -1) {
+            SDL_Log("--> Target already adjacent");
+            return actor->mTileId;
+        }
+    
+        //액터와 타겟 사이의 벡터를 구해 진행 방향을 결정한다.
+        //먼저 초기 방향을 설정한다.
+        Direction dir = Math().GetDirection8(vec.x, vec.y);
+    
+        //최초 방향을 기준으로 타일을 구하고 이동 가능 여부를 확인
+        int nextTID = MapHelper::GetAdjacentTID(map, dir, actor->mTileId);
+    
+        if (map->mMapTiles[nextTID]->IsPassable()) {
+            //이동 가능할 경우
+            return nextTID;
         }
         else {
-            SDL_Log("--> Move down");
-            return MapHelper::GetAdjacentTID(map, Direction::South, actor->mTileId);
-        }
+            return nextTID;
+        } 
     }
-    if (vec.y == 0) {
-        //타겟과 액터가 x축에 나란히 있음
-        if (vec.x < 0) {
-            SDL_Log("--> Move left");
-            return MapHelper::GetAdjacentTID(map, Direction::West, actor->mTileId);
-        }
-        else {
-            SDL_Log("--> Move right");
-            return MapHelper::GetAdjacentTID(map, Direction::East, actor->mTileId);
-        }
-    }
-    //참고로 시스템상 벡터가 0,0이 나올수는 없음
-
-    return 0;
 }
 
 Vector2 AIMoveHelper::GetVectorFromTID(Map *map, int actorTID, int targetTID)

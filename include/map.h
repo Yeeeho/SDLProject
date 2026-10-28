@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "shape/point.h"
+#include "math.h"
 
 //전방 선언
 struct GameContext;
@@ -101,6 +102,8 @@ class MapTile {
 
     void ChangeTexture(std::string path);
 
+    bool IsPassable();
+
     int mId = 0; //식별용 타일 아이디
 
     int mX {0}, mY {0}; //위치와 크기
@@ -124,10 +127,6 @@ class MapManager {
     Map* mCityMap {nullptr};
 
     Map* mCurrentMap {nullptr};
-};
-
-enum class Direction {
-    East, West, North, South, NE, NW, SE, SW
 };
 
 namespace MapHelper {
