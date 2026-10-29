@@ -91,7 +91,7 @@ namespace AIHelper {
 
 namespace AIMoveHelper {
 
-    int GetNextTID(GameContext* gctx, Map* map, Entity* actor, int targetTID);
+    int GetNextTID(GameContext* gctx, Map* map, int actorTID, int targetTID);
 
     Vector2 GetVectorFromTID(Map* map, int actorTID, int targetTID);
 };
