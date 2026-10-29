@@ -300,32 +300,42 @@ int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, Entity *actor, int tar
     Vector2 vec = GetVectorFromTID(map, actor->mTileId, targetTID);
     SDL_Log("[INFO] Get final melee TID: vector2: %d, %d", vec.x, vec.y);
 
-    //이미 바로 옆에 있다면 굳이 연산하지 않는다.
+    int dirChecksum {0}; //체크섬용 방향 배열
+    Direction dir = Math().GetDirection8(vec.x, vec.y); //초기 방향을 구한다.
+    Direction8 dir8 = Direction8(dir); //초기 방향 객체를 생성한다.
 
-    std::set<Direction> direction8; //체크섬용 방향 배열
-    //체크섬 배열을 기반으로 이동 가능 방향을 하나씩 소거한다.
-    while ((int) direction8.size() < 8) {
-
+    //체크섬을 기반으로 이동 가능 방향을 하나씩 소거한다.
+    while (dirChecksum < 8) {
+        
+        //이미 근접해 있다면 굳이 연산하지 않는다.
         if (vec.x <= 1 && vec.y <= 1 && vec.x >= -1 && vec.y >= -1) {
             SDL_Log("--> Target already adjacent");
             return actor->mTileId;
         }
     
         //액터와 타겟 사이의 벡터를 구해 진행 방향을 결정한다.
-        //먼저 초기 방향을 설정한다.
-        Direction dir = Math().GetDirection8(vec.x, vec.y);
-    
-        //최초 방향을 기준으로 타일을 구하고 이동 가능 여부를 확인
-        int nextTID = MapHelper::GetAdjacentTID(map, dir, actor->mTileId);
+
+        //현재 방향을 기준으로 타일을 구하고 이동 가능 여부를 확인
+        int nextTID = MapHelper::GetAdjacentTID(map, dir8.mDir, actor->mTileId);
     
         if (map->mMapTiles[nextTID]->IsPassable()) {
             //이동 가능할 경우
+            SDL_Log("--> Passable");
             return nextTID;
         }
         else {
-            return nextTID;
+            SDL_Log("--> Not Passable");
+            SDL_Log("--> Current direction: %d", (int) dir8.mDir);
+            dirChecksum += 1;
+            //DEBUGGIN 지금은 시계방향으로만 경로를 우회한다.
+            dir8.GoCW();
+            SDL_Log("--> Direction set to clockwise, direction: %d", (int) dir8.mDir);            
         } 
     }
+
+    //반복문을 다 돌았을 경우 이동할 수 없었다는 뜻이므로 액터가 서있는 타일 아이디를 반환한다.
+    SDL_Log("--> No passable tile nearby");
+    return actor->mTileId;
 }
 
 Vector2 AIMoveHelper::GetVectorFromTID(Map *map, int actorTID, int targetTID)
