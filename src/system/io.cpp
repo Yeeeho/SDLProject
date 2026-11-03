@@ -179,8 +179,7 @@ void CharacterIO::LoadPawn(GameContext *gc, string name)
 
     for (json pdata : save["items"]) {
         gc->mObjm->mEntm->AllocPawnOnTable(
-            gc, pdata["code"].get<string>(), pdata["type"].get<PawnType>(),
-            pdata["id"].get<int>()
+            gc, pdata["code"].get<string>(), pdata["type"].get<PawnType>()
         );
 
         Pawn* p = gc->mObjm->mEntm->mPawnTable[pdata["id"].get<int>()];

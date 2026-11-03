@@ -56,7 +56,7 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     //예약을 초기화하고 시뮬레이션으로 경로를 설정한 뒤 최종 목적지의 타일은 예약 상태로 변경한다.
 
     map->mMapTiles[npc->mReservedTid]->mIsReserved = false; //이전 타일 예약 초기화
-    SDL_Log("[INFO] Navigate skill queue: tile unreserved, tile id: %d", npc->mReservedTid);
+    SDL_Log("[INFO] Navigate queue: tile unreserved, tile id: %d", npc->mReservedTid);
     
     //한칸씩 시뮬레이션 돌린다
     std::vector<int> tids; //스킬 컨텍스트에 전달하기 위한 타일 아이디 컨테이너다.
@@ -70,8 +70,13 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
 
         nextTID = AIMoveHelper::GetNextTID(mGc, map, nextTID, targetTileId);
 
-        if (tids.back() != nextTID) tids.push_back(nextTID); //중복되지 않았다면 넣어준다.
-        SDL_Log("[INFO] next TID: %d", nextTID);
+        if (tids.back() != nextTID) {
+            tids.push_back(nextTID); //중복되지 않았다면 넣어준다.
+            SDL_Log("--> Next TID pushed: %d", nextTID);
+        }
+        else {
+            SDL_Log("--> TID duplicate, not pushing");
+        }
     }
 
     map->mMapTiles[nextTID]->mIsReserved = true; //최신 목적지 타일 예약
@@ -81,7 +86,7 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     //스킬 큐에 푸시하는 단계
     SkillContext* skctx = new SkillContext(moveskill, npc, tids, map);
     npc->mSkillCtxQueue.push(skctx);
-    SDL_Log("navigate queued");
+    SDL_Log("--> navigate queued");
 }
 
 IdleState::IdleState(GameContext *gc)
@@ -303,11 +308,11 @@ AIManager::AIManager()
     JsonHelper::LoadJsonFile(mAIDb, "data/ai/ai.json");
 }
 
-//TODO: 목표 타일로 이동할수 없다면 우회하여 차순위 타일을 찾도록 만들어야 함.
 int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, int actorTID, int targetTID)
 {
     Vector2 vec = GetVectorFromTID(map, actorTID, targetTID);
     SDL_Log("[INFO] Get final melee TID: vector2: %d, %d", vec.x, vec.y);
+    SDL_Log("--> Actor tile ID: %d", actorTID);
 
     int dirChecksum {0}; //체크섬용 방향 배열
     Direction dir = Math().GetDirection8(vec.x, vec.y); //초기 방향을 구한다.

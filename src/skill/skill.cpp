@@ -158,7 +158,18 @@ bool SkillContext::Activate(GameContext *gctx)
     apPerTile = (int) (apPerTile * apMod);
 
     if (stype == "movement") {
-        if ((int) mTargetTIds.size() < 2) return false; //움직임을 멈춘다.
+        //타겟 tid가 없을 경우
+        if ((int) mTargetTIds.size() < 1) return false; //움직임을 멈춘다.
+        
+        //TESTING..
+        //타겟 tid가 한개일 경우
+        if ((int) mTargetTIds.size() == 1) {
+            SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[0], apPerTile, mMap);
+            mTargetTIds.erase(mTargetTIds.begin());        
+            return true;
+        }
+
+        //타겟 tid가 2개 이상일 경우
         SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[1], apPerTile, mMap);
         mTargetTIds.erase(mTargetTIds.begin());
     };
