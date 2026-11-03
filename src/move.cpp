@@ -1,11 +1,13 @@
 #include "pch.h"
 
+#include "game_context.h"
 #include "game_object.h"
 #include "item/item_manager.h"
 #include "move.h"
 #include "ui.h"
 #include "map.h"
 #include "entity.h"
+#include "ai.h"
 
 MoveManager::MoveManager(UIManager* uim, ObjectManager* objm)
 {
@@ -123,6 +125,62 @@ int MoveHelper::GetDiagonalMoves(std::vector<int> tids, Map *map)
     }
 
     return count;
+}
+
+MoveErrorCode MoveHelper::CheckOneMove(GameContext *gctx, int firstTid, int adjacentTid, int apPerTile, Map *map)
+{
+    MoveErrorCode merr;
+    
+    bool isDiaMove = MoveHelper::CheckDiagonalMove(firstTid, adjacentTid, map);
+    AIState* curState = gctx->mObjm->mEntm->mEntAI->mCurrentState;
+
+    if (map->mMapTiles[adjacentTid]->mIsReserved || map->mMapTiles[adjacentTid]->mIsEntOn) {
+        return MoveErrorCode::PreReserved;
+    }
+
+    if (isDiaMove) {
+        if (curState->mVirtualAp < apPerTile * 1.5) {
+            return MoveErrorCode::NoAp;
+        }
+        curState->mVirtualAp -= apPerTile * 1.5;
+    }
+    else {
+        if (curState->mVirtualAp < apPerTile) {
+            return MoveErrorCode::NoAp;
+        }
+        curState->mVirtualAp -= apPerTile;
+    }
+
+    merr = MoveErrorCode::Success;
+    return merr;
+}
+
+//이제안쓴다.
+int MoveHelper::GetMaxReachTid(GameContext *gctx, Npc* npc, std::vector<int> tids, int apPerTile, Map *map)
+{
+    if ((int) tids.size() < 2) {
+        SDL_Log("[INFO] Get max reach tild id: tile ids size less than 2");
+        return npc->mTileId;
+    }
+
+    int finalTid = tids.back();
+    for (int i = 0; i < (int) tids.size()-1; i++) {
+        //이동이 성공하지 못하면 에러코드를 분석해서 다음 행동을 결정한다.
+        MoveErrorCode merr = CheckOneMove(gctx, tids[i], tids[i+1], apPerTile, map);
+        if (merr == MoveErrorCode::NoAp) {
+            finalTid = tids[i];
+            break;
+        }
+
+        if (merr == MoveErrorCode::PreReserved) {
+            //TODO: level 1로 하드코딩됨
+            //목적지와 현재 시뮬레이션 중인 타일 아이디의 포인트를 구하고 
+            Point p1 = MapHelper::GetPosPoint(tids[i], map);
+            Point p2 = MapHelper::GetPosPoint(tids.back(), map);
+        }
+    }
+
+    return finalTid;
 }
 
 int MoveHelper::GetApCost(std::vector<int> tids, Map *map, int apPerTile)

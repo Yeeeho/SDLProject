@@ -216,7 +216,7 @@ void NGScenario::LoadScenarioData(GameContext& gc)
 void NGScenario::LoadSubMap(GameContext& gc)
 {
     SDL_Log("load entities for new game scenario at submap");
-    gc.mObjm->mEntm->AllocPawnOnTable(&gc, "nameless_girl", PawnType::Unique, 0);
+    gc.mObjm->mEntm->AllocPawnOnTable(&gc, "nameless_girl", PawnType::Unique);
     SDL_Log("entities loaded");
 
     gc.mObjm->mEntm->SpawnEntityOnMap(*gc.mObjm, gc.mMapm->mSubMap, gc.mObjm->mEntm->mPawnTable[0], 34);

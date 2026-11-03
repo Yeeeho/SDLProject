@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "shape/point.h"
+#include "math.h"
 
 //전방 선언
 struct GameContext;
@@ -101,6 +102,8 @@ class MapTile {
 
     void ChangeTexture(std::string path);
 
+    bool IsPassable();
+
     int mId = 0; //식별용 타일 아이디
 
     int mX {0}, mY {0}; //위치와 크기
@@ -143,4 +146,7 @@ namespace MapHelper {
 
     std::unordered_map<std::string, int> PosXYByTileId(int id, Grid* grid);
     Point GetPosPoint(int tileId, Grid* grid);
+
+    //바로 근접한 특정 방향에 있는 타일 아이디를 구하는 녀석
+    int GetAdjacentTID(Map* map, Direction dir, int initTID);
 };

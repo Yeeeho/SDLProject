@@ -532,7 +532,6 @@ void ToolTip::SetToolTipFrame()
     maxW += mPadding * 2; //패딩 추가
     currentW = 0; //초기화
 
-    SDL_Log(std::to_string(maxW).c_str());
     mUIFrame->SetW(static_cast<int>(maxW));
     mUIFrame->SetH(static_cast<int>(maxH));
 }

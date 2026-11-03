@@ -266,14 +266,13 @@ Npc* EntityManager::AllocNpcOnTable(GameContext* gctx, std::string code, int sub
     return ent;
 }
 
-void EntityManager::AllocNpcOnTable(GameContext *gctx, Grid* grid, int tileId, std::string code, int id)
+void EntityManager::AllocNpcOnTable(GameContext *gctx, Grid* grid, int tileId, std::string code)
 {
     Point xy = MapHelper::GetPosPoint(tileId, grid);
     AllocNpcOnTable(gctx, code, xy.mX, xy.mY);
 }
 
-//TODO: 아이디 파라미터 이제 필요없다.
-void EntityManager::AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType, int idparam)
+void EntityManager::AllocPawnOnTable(GameContext* gctx, std::string code, PawnType pType)
 {
     int id = GetValidPawnId();
 
@@ -324,15 +323,15 @@ void EntityManager::DeallocEntityOnTable(GameContext* gctx, int id)
     ReturnId(mEntTable[id], id);
 
     AllocNpcOnTable(gctx, "null_entity", -1, -1);
-    SDL_Log("deallocated entity");
+    SDL_Log("deallocated entity, ID: %d", id);
 }
 
 void EntityManager::DeallocPawnOnTable(GameContext* gctx, int id)
 {
     ReturnId(mPawnTable[id], id);
 
-    AllocPawnOnTable(gctx, "null_pawn", PawnType::Null, id);
-    SDL_Log("deallocated pawn");
+    AllocPawnOnTable(gctx, "null_pawn", PawnType::Null);
+    SDL_Log("deallocated pawn, ID: %d", id);
 }
 
 void EntityManager::KillEntityOnMap(GameContext& gc, Map* map, Entity* ent)

@@ -253,6 +253,14 @@ void MapTile::ChangeTexture(std::string path)
     }
 }
 
+bool MapTile::IsPassable()
+{
+    if (mIsReserved) return false;
+    if (mIsEntOn) return false;
+
+    else return true;
+}
+
 int MapHelper::WhatTileOnPoint(float x, float y, Grid *grid)
 {
     float xDis = x - static_cast<float>(grid->mOffsetX + grid->mX);
@@ -324,21 +332,20 @@ std::set<int> MapHelper::GetNearestTileIds(int centerTid, Map* map, unsigned int
     return res;
 }
 
+//TODO: 미완성임
 int MapHelper::GetClosestTileId(Map *map, int selfTid, std::set<int> &candidateTileIds)
 {
-    MoveHelper mvh;
-
     std::set<int> res;
+    std::vector<int> tempTids;
 
     for (int tid : candidateTileIds) {
         std::vector<int> tids = GetTilesIdBetween(map, selfTid, tid);
-        int apCost = mvh.GetApCost(tids, map, 50);
+        int apCost = MoveHelper::GetApCost(tids, map, 50);
         res.insert(apCost);
     }
 
     int min = *res.begin();
 
-    //TODO: 아직 미완성임
     return min;
 }
 
@@ -407,6 +414,53 @@ Point MapHelper::GetPosPoint(int tileId, Grid *grid)
 
     Point p = {posX, posY};
     return p;
+}
+
+//예외 상황시 -1을 반환함.
+int MapHelper::GetAdjacentTID(Map *map, Direction dir, int initTID)
+{
+    if (dir == Direction::East) {
+        Point p = GetPosPoint(initTID, map);
+        return WhatTileOnPoint(Point {p.mX +1, p.mY}, map);
+    }
+    if (dir == Direction::West) {
+        Point p = GetPosPoint(initTID, map);
+        return WhatTileOnPoint(Point {p.mX -1, p.mY}, map);
+    }
+    if (dir == Direction::North) {
+        Point p = GetPosPoint(initTID, map);
+        return WhatTileOnPoint(Point {p.mX, p.mY - 1}, map);
+    }
+    if (dir == Direction::South) {
+        Point p = GetPosPoint(initTID, map);
+        return WhatTileOnPoint(Point {p.mX, p.mY + 1}, map);
+    }
+    if (dir == Direction::NE) {
+        Point p = GetPosPoint(initTID, map);
+        return WhatTileOnPoint(Point {p.mX + 1, p.mY - 1}, map);
+    }
+    if (dir == Direction::NW) {
+        Point p = GetPosPoint(initTID, map);
+        return WhatTileOnPoint(Point {p.mX - 1, p.mY - 1}, map);
+    }
+    if (dir == Direction::SE) {
+        Point p = GetPosPoint(initTID, map);
+        return WhatTileOnPoint(Point {p.mX + 1, p.mY + 1}, map);
+    }
+    if (dir == Direction::SW) {
+        Point p = GetPosPoint(initTID, map);
+        return WhatTileOnPoint(Point {p.mX - 1, p.mY + 1}, map);
+    }
+    if (dir == Direction::None) {
+        SDL_Log("[INFO] GetAdjacentTID: direction none");
+        Point p = GetPosPoint(initTID, map);
+        return initTID;
+    }
+
+    else {
+        SDL_Log("[ERROR] Get adjacent TID");
+        return -1;
+    }
 }
 
 MapManager::MapManager()

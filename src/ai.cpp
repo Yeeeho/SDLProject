@@ -1,5 +1,7 @@
 #include "pch.h"
 
+#include "math.h"
+#include "shape/point.h"
 #include "ai.h"
 #include "game_object.h"
 #include "game_context.h"
@@ -29,6 +31,7 @@ void AIState::UpdateSkillQueue(Npc* npc)
 {
 }
 
+//WORK IN PROGRESS
 void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
 {
     using namespace std;
@@ -42,18 +45,48 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
         SDL_Log("why: no movement skill");
         return;
     }
-    vector<int> tids = mh::GetTilesIdBetween(map, npc->mTileId, targetTileId);
+    
+    //npc와 타겟 사이의 직선거리 타일들을 구함
 
-    //TODO: level을 1로 고정해놓고 테스트중이다.
-    std::set<int> candidateTids = mh::GetNearestTileIds(targetTileId, map, 1);
+    int apPerTile = StatHelper::GetApPerTileMove(npc);
 
-    int closestTid = mh::GetClosestTileId(map, npc->mTileId, candidateTids);
+    //DEBUGGING
+    //액터를 기준으로 타겟의 방향을 산출하고 방향을 기준으로 다음 타일 아이디를 구한다.
+    
+    //예약을 초기화하고 시뮬레이션으로 경로를 설정한 뒤 최종 목적지의 타일은 예약 상태로 변경한다.
 
-    tids.pop_back(); //엔티티가 서있을 타일은 제외한다.
+    map->mMapTiles[npc->mReservedTid]->mIsReserved = false; //이전 타일 예약 초기화
+    SDL_Log("[INFO] Navigate queue: tile unreserved, tile id: %d", npc->mReservedTid);
+    
+    //한칸씩 시뮬레이션 돌린다
+    std::vector<int> tids; //스킬 컨텍스트에 전달하기 위한 타일 아이디 컨테이너다.
 
-    SkillContext* skctx = new SkillContext(moveskill, tids, map);
+    int nextTID = AIMoveHelper::GetNextTID(mGc, map, npc->mTileId, targetTileId); //초기 값
+    tids.push_back(nextTID); //일단 넣어
+
+    while (true) {
+        mVirtualAp -= apPerTile;
+        if (mVirtualAp < 0) break;
+
+        nextTID = AIMoveHelper::GetNextTID(mGc, map, nextTID, targetTileId);
+
+        if (tids.back() != nextTID) {
+            tids.push_back(nextTID); //중복되지 않았다면 넣어준다.
+            SDL_Log("--> Next TID pushed: %d", nextTID);
+        }
+        else {
+            SDL_Log("--> TID duplicate, not pushing");
+        }
+    }
+
+    map->mMapTiles[nextTID]->mIsReserved = true; //최신 목적지 타일 예약
+    npc->mReservedTid = nextTID;
+    SDL_Log("[INFO] Navigate skill queue: tile reserved, tile id: %d", nextTID);
+
+    //스킬 큐에 푸시하는 단계
+    SkillContext* skctx = new SkillContext(moveskill, npc, tids, map);
     npc->mSkillCtxQueue.push(skctx);
-    SDL_Log("navigate queued");
+    SDL_Log("--> navigate queued");
 }
 
 IdleState::IdleState(GameContext *gc)
@@ -71,7 +104,6 @@ void IdleState::Destroy()
     mGc = nullptr;
 }
 
-//TODO: 랜덤 이동도 나중에 써먹을수 있으니 재사용을 염두해라
 void IdleState::UpdateSkillQueue(Npc* npc)
 {
     SDL_Log("ai idle state: update skill queue");
@@ -107,7 +139,6 @@ void IdleState::UpdateSkillQueue(Npc* npc)
     }
     SDL_Log(message.c_str());
 
-    //TODO: 랜덤 시스템 호출해서 써라 조건문 도배하지 말고
     if (num == 1) p.mX -= 1; p.mY -= 1;  
     if (num == 2) p.mY -= 1;
     if (num == 3) p.mX += 1; p.mY -= 1;
@@ -229,9 +260,11 @@ void AI::Transition(GameContext* gctx, Npc* npc)
 void AI::TakeTurn(GameContext* gctx, Npc* npc)
 {
     SDL_Log("ai taketurn");
+
+    gctx->mObjm->mUpdateInQueue = true;
     while (!npc->mSkillCtxQueue.empty()) {
-        npc->mSkillCtxQueue.front()->Activate(gctx, npc);
-        delete npc->mSkillCtxQueue.front();
+        gctx->mObjm->mSkCtxUpdateQueue.push(npc->mSkillCtxQueue.front());
+
         npc->mSkillCtxQueue.pop();
     }
 
@@ -242,6 +275,7 @@ void AI::UpdateSkillQueue(GameContext* gctx, Npc* npc)
 {
     Transition(gctx, npc);
 
+    mCurrentState->mVirtualAp = npc->mCurAp;
     mCurrentState->UpdateSkillQueue(npc);
 }
 
@@ -272,4 +306,60 @@ int AIHelper::GetThreatValue(Entity *ent)
 AIManager::AIManager()
 {
     JsonHelper::LoadJsonFile(mAIDb, "data/ai/ai.json");
+}
+
+int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, int actorTID, int targetTID)
+{
+    Vector2 vec = GetVectorFromTID(map, actorTID, targetTID);
+    SDL_Log("[INFO] Get final melee TID: vector2: %d, %d", vec.x, vec.y);
+    SDL_Log("--> Actor tile ID: %d", actorTID);
+
+    int dirChecksum {0}; //체크섬용 방향 배열
+    Direction dir = Math().GetDirection8(vec.x, vec.y); //초기 방향을 구한다.
+    Direction8 dir8 = Direction8(dir); //초기 방향 객체를 생성한다.
+
+    //체크섬을 기반으로 이동 가능 방향을 하나씩 소거한다.
+    while (dirChecksum < 8) {
+        
+        //이미 근접해 있다면 굳이 연산하지 않는다.
+        if (vec.x <= 1 && vec.y <= 1 && vec.x >= -1 && vec.y >= -1) {
+            SDL_Log("--> Target already adjacent");
+            return actorTID;
+        }
+    
+        //액터와 타겟 사이의 벡터를 구해 진행 방향을 결정한다.
+
+        //현재 방향을 기준으로 타일을 구하고 이동 가능 여부를 확인
+        int nextTID = MapHelper::GetAdjacentTID(map, dir8.mDir, actorTID);
+    
+        if (map->mMapTiles[nextTID]->IsPassable()) {
+            //이동 가능할 경우
+            SDL_Log("--> Passable");
+            return nextTID;
+        }
+        else {
+            SDL_Log("--> Not Passable");
+            SDL_Log("--> Current direction: %d", (int) dir8.mDir);
+            dirChecksum += 1;
+            //DEBUGGIN 지금은 시계방향으로만 경로를 우회한다.
+            //TODO: 랜덤으로 시계 혹은 반시계로 탐색하도록 수정한다.
+            dir8.GoCW();
+            SDL_Log("--> Direction set to clockwise, direction: %d", (int) dir8.mDir);            
+        } 
+    }
+
+    //반복문을 다 돌았을 경우 이동할 수 없었다는 뜻이므로 액터가 서있는 타일 아이디를 반환한다.
+    SDL_Log("--> No passable tile nearby");
+    return actorTID;
+}
+
+Vector2 AIMoveHelper::GetVectorFromTID(Map *map, int actorTID, int targetTID)
+{
+    Point p1 = MapHelper::GetPosPoint(actorTID, map);
+    Point p2 = MapHelper::GetPosPoint(targetTID, map);
+
+    int xdiff = p2.mX - p1.mX;
+    int ydiff = p2.mY - p1.mY;
+
+    return Vector2{xdiff, ydiff};
 }

@@ -49,7 +49,8 @@ void Skill::Activate(SkillManager* skm)
 
     //이동 스킬일 경우
     if (skillType == "movement") {
-        SkillAction::MoveAction(gc, actor, this, tids, map);
+        SkillContext* skctx = new SkillContext(this, actor, tids, map);
+        gc->mObjm->mSkCtxUpdateQueue.push(skctx);
     }
 
     else if (skillType == "pickup") {
@@ -131,14 +132,49 @@ SkillContext::SkillContext(Skill* skill, const std::vector<int> &tileIds, Map* m
     mMap = map;
 }
 
-void SkillContext::Activate(GameContext* gctx, Entity *actor)
+SkillContext::SkillContext(Skill* skill, Entity *actor, const std::vector<int> &tileIds, Map *map)
+{
+    mSkill = skill;
+    mActor = actor;
+    mTargetTIds = tileIds;
+    mMap = map;
+}
+
+bool SkillContext::Activate(GameContext *gctx)
 {
     using namespace std;
     
     json sd = SkillHelper::GetSkillData(gctx->mSkm->mSkillDb, mSkill->mCode);
     
     string stype = sd["type"].get<string>();
-    if (stype == "movement") SkillAction::MoveAction(gctx, actor, this);
+
+    //TODO: 타일 지형도 계산하도록 변경하고 래핑해야됨
+    //타일당 ap를 구한다.
+    int apPerTile = StatHelper::GetApPerTileMove(mActor); 
+    float apMod = 1.f;
+    if (sd["ap_per_tile"].contains("mod")){
+        apMod = sd["ap_per_tile"]["mod"].get<float>();
+    }
+    apPerTile = (int) (apPerTile * apMod);
+
+    if (stype == "movement") {
+        //타겟 tid가 없을 경우
+        if ((int) mTargetTIds.size() < 1) return false; //움직임을 멈춘다.
+        
+        //TESTING..
+        //타겟 tid가 한개일 경우
+        if ((int) mTargetTIds.size() == 1) {
+            SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[0], apPerTile, mMap);
+            mTargetTIds.erase(mTargetTIds.begin());        
+            return true;
+        }
+
+        //타겟 tid가 2개 이상일 경우
+        SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[1], apPerTile, mMap);
+        mTargetTIds.erase(mTargetTIds.begin());
+    };
+
+    return true;
 }
 
 SkillManager::SkillManager(GameContext& gc)
@@ -403,84 +439,11 @@ Skill *SkillHelper::GetMovementSkill(Entity *ent)
     return ret;
 }
 
-bool SkillAction::MoveAction(GameContext* gctx, Entity *actor, SkillContext *skCtx)
-{
-    MoveAction(gctx, actor, skCtx->mSkill, skCtx->mTargetTIds, skCtx->mMap);
-    return false;
-}
-
-bool SkillAction::MoveAction(GameContext *gctx, Entity *actor, Skill *skill, std::vector<int> &tileIds, Map* map)
-{
-    if ((int) tileIds.size() < 2) return false; //타일 컨테이너에 최소 2개의 원소가 필요
-
-    bool success {false};
-
-    LogUI* log = gctx->mUim->mLogUI;
-    json sd = SkillHelper::GetSkillData(gctx->mSkm->mSkillDb, skill->mCode);
-    //경로에 뭐가 있는지 구한다.
-    for (int id : tileIds) {
-        if (id == tileIds[0]) continue; //처음 아이디는 무시한다. 액터가 서있는 타일이니까..
-        
-        bool entOn = map->mMapTiles[id]->mIsEntOn;
-        //플레이어블 캐릭터가 액터일 경우
-        if (entOn) {
-            if (actor->mIsPawn) log->AddMessage("이동 경로에 뭔가 있습니다!", System::kY);
-            SDL_Log("[INFO] move action: something is already on tile");
-            SDL_Log("Actor: %s, Id : %d", actor->mCode, actor->mId);
-            return false;
-        }
-    }
-
-    //액터의 타일당 ap소모량을 구한다이
-    int apPerTile = StatHelper::GetApPerTileMove(actor); 
-    float apMod = 1.f;
-    if (sd["ap_per_tile"].contains("mod")){
-        apMod = sd["ap_per_tile"]["mod"].get<float>();
-    }
-    apPerTile = (int) (apPerTile * apMod);
-    
-    MapTile* targetTile = map->mMapTiles[tileIds.back()];
-    if (targetTile->mIsEntOn) return false; //타겟 타일에 엔티티가 있으면 리턴한다.
-
-    MoveManager mvm = MoveManager(gctx->mUim, gctx->mObjm);
-    MoveHelper mvh;
-
-    int apCost = mvh.GetApCost(tileIds, map, apPerTile);
-
-    //ver1 한번에 옮기던 방식.
-    // if (actor->mCurAp < apCost) {
-    //     log->AddMessage("AP가 부족합니다!", System::kY);
-    //     SDL_Log("[INFO] move action: not enough ap");
-    //     return false;
-    // }        
-    // else {
-    //     actor->mCurAp -= apCost;
-    //     gctx->mUim->mBCUI->UpdateUI(actor);
-    // }
-
-    // //실제로 엔티티 정보를 옮기는 동작
-    // mvm.MoveEntityTo(map, actor, actor->mTileId, tileIds.back());
-
-    //ver2 타일을 하나씩 옮기는 것으로 로직을 변경함
-    for (int i = 0; i < (int) tileIds.size()-1; i++) {
-        bool isApSuffice = MoveOneTile(gctx, actor, skill, tileIds[i+1], apPerTile, map);
-        if (!isApSuffice) {
-            break;
-        }
-    }
-
-    gctx->mUim->mBCUI->UpdateUI(actor);    
-
-    success = true;
-    return success;
-}
-
 bool SkillAction::MoveOneTile(GameContext *gctx, Entity *actor, Skill *skill, int adjacentTid, int apPerTile, Map *map)
 {
     bool success {false};
-    class MoveHelper mvh;
     
-    bool isDiaMove = mvh.CheckDiagonalMove(actor->mTileId, adjacentTid, map);
+    bool isDiaMove = MoveHelper::CheckDiagonalMove(actor->mTileId, adjacentTid, map);
 
     if (isDiaMove) {
         if (actor->mCurAp < apPerTile * 1.5) {
@@ -497,6 +460,9 @@ bool SkillAction::MoveOneTile(GameContext *gctx, Entity *actor, Skill *skill, in
 
     MoveManager mvm = MoveManager(gctx->mUim, gctx->mObjm);
     mvm.MoveEntityTo(map, actor, actor->mTileId, adjacentTid);
+
+    gctx->mUim->mBCUI->UpdateUI(actor);
+    
     success = true;
     return success;
 }
