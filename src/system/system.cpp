@@ -11,6 +11,24 @@
 #include "ui.h"
 #include "event_context.h"
 
+void Log::LogInfo(std::string message, bool option)
+{
+    if (System::sLogInfoOn && option)
+    SDL_Log("%s%s", "[INFO] ", message.c_str());
+}
+
+void Log::LogVerbose(std::string message, bool option)
+{
+    if (System::sLogVerboseOn && option)
+    SDL_Log("%s%s", "--> ", message.c_str());
+}
+
+void Log::LogWarn(std::string message, bool option)
+{
+    if (System::sLogWarnOn && option)
+    SDL_Log("%s%s", "[WARN] ", message.c_str());
+}
+
 bool System::Init()
 {
     bool success = true;
@@ -56,11 +74,41 @@ bool System::Init()
     return success;
 }
 
+bool System::LoadConfig()
+{
+    bool success = true;
+
+    json config;
+    JsonHelper::LoadJsonFile(config, "data/config/devconfig.json");
+
+    if (JsonHelper::GetBool(config, "log_info")) {
+        SDL_Log("[INFO] Log info on");
+        sLogInfoOn = true;
+    }
+    if (JsonHelper::GetBool(config, "log_verbose")) {
+        SDL_Log("--> Log verbose on");
+        sLogVerboseOn = true;
+    }
+    if (JsonHelper::GetBool(config, "log_warn")) {
+        SDL_Log("[WARN] Log warn on");
+        sLogVerboseOn = true;
+    }
+
+    if (JsonHelper::GetBool(config, "log_option_ai")) {
+        SDL_Log("--> Log option AI on");
+        sLogOptionAIOn = true;
+    }
+    if (JsonHelper::GetBool(config, "log_option_math")) {
+        SDL_Log("--> Log option Math on");
+        sLogOptionMathOn = true;
+    }
+
+    return success;
+}
+
 bool System::LoadData(ObjectManager& objm)
 {
     bool success = true;
-    
-    
     
     JsonHelper::LoadJsonFile(objm.mJsm->mPawnDb, "data/entity/pawn.json");
     JsonHelper::LoadJsonFile(objm.mJsm->mEntDb, "data/entity/entity.json");

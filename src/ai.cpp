@@ -5,6 +5,7 @@
 #include "ai.h"
 #include "game_object.h"
 #include "game_context.h"
+#include "system/system.h"
 #include "system/game_json.h"
 #include "system/game_random.h"
 #include "map.h"
@@ -31,7 +32,6 @@ void AIState::UpdateSkillQueue(Npc* npc)
 {
 }
 
-//WORK IN PROGRESS
 void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
 {
     using namespace std;
@@ -311,19 +311,22 @@ AIManager::AIManager()
 int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, int actorTID, int targetTID)
 {
     Vector2 vec = GetVectorFromTID(map, actorTID, targetTID);
-    SDL_Log("[INFO] Get final melee TID: vector2: %d, %d", vec.x, vec.y);
-    SDL_Log("--> Actor tile ID: %d", actorTID);
+    Log::LogInfo("Get final melee TID: vector2: " + std::to_string(vec.x) + ", " + std::to_string(vec.y), System::sLogOptionAIOn);
+    Log::LogVerbose("Actor tile ID: " + std::to_string(actorTID), System::sLogOptionAIOn);
 
     int dirChecksum {0}; //체크섬용 방향 배열
     Direction dir = Math().GetDirection8(vec.x, vec.y); //초기 방향을 구한다.
     Direction8 dir8 = Direction8(dir); //초기 방향 객체를 생성한다.
+
+    //경로 우회시 어떤 방향으로 차순위 경로를 탐색할지
+    bool isCW = Random::BDistribution(0.5);
 
     //체크섬을 기반으로 이동 가능 방향을 하나씩 소거한다.
     while (dirChecksum < 8) {
         
         //이미 근접해 있다면 굳이 연산하지 않는다.
         if (vec.x <= 1 && vec.y <= 1 && vec.x >= -1 && vec.y >= -1) {
-            SDL_Log("--> Target already adjacent");
+            Log::LogVerbose("Target already adjacent", System::sLogOptionAIOn);
             return actorTID;
         }
     
@@ -331,25 +334,34 @@ int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, int actorTID, int targ
 
         //현재 방향을 기준으로 타일을 구하고 이동 가능 여부를 확인
         int nextTID = MapHelper::GetAdjacentTID(map, dir8.mDir, actorTID);
-    
+
         if (map->mMapTiles[nextTID]->IsPassable()) {
             //이동 가능할 경우
-            SDL_Log("--> Passable");
+            Log::LogVerbose("Passable", System::sLogOptionAIOn);
             return nextTID;
         }
         else {
-            SDL_Log("--> Not Passable");
-            SDL_Log("--> Current direction: %d", (int) dir8.mDir);
+            Log::LogVerbose("Not passable", System::sLogOptionAIOn);
+            Log::LogVerbose("Current direction" + std::to_string((int) dir8.mDir), System::sLogOptionAIOn);
             dirChecksum += 1;
+
             //DEBUGGIN 지금은 시계방향으로만 경로를 우회한다.
             //TODO: 랜덤으로 시계 혹은 반시계로 탐색하도록 수정한다.
-            dir8.GoCW();
-            SDL_Log("--> Direction set to clockwise, direction: %d", (int) dir8.mDir);            
+
+            if (isCW) {
+                dir8.GoCW();
+                Log::LogVerbose("Direction set to clockwise, direction: " + std::to_string((int) dir8.mDir), System::sLogOptionAIOn);
+            }
+            else {
+                dir8.GoCCW();
+                Log::LogVerbose("Direction set to counter clockwise, direction: " + std::to_string((int) dir8.mDir), System::sLogOptionAIOn);
+            } 
+
         } 
     }
 
     //반복문을 다 돌았을 경우 이동할 수 없었다는 뜻이므로 액터가 서있는 타일 아이디를 반환한다.
-    SDL_Log("--> No passable tile nearby");
+    Log::LogVerbose("No passable tile nearby", System::sLogOptionAIOn);
     return actorTID;
 }
 

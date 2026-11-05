@@ -14,6 +14,15 @@ using json = nlohmann::json;
 class System {
     public:
 
+    //로그 출력 옵션
+    //로그 중요도
+    inline static bool sLogInfoOn {false};
+    inline static bool sLogVerboseOn {false};
+    inline static bool sLogWarnOn {false};
+    //로그 옵션
+    inline static bool sLogOptionAIOn {false};
+    inline static bool sLogOptionMathOn {false};
+
     //기본 색깔
     inline const static SDL_Color kTc {0x00, 0xB0, 0x00, 0xFF};
     inline const static SDL_Color kWh {0xF0, 0xF0, 0xF0, 0xFF};
@@ -47,6 +56,9 @@ class System {
 
     bool Init();
 
+    //초기 설정 로드
+    bool LoadConfig();
+
     //외부 데이터(json등) 로드
     bool LoadData(ObjectManager&);
 
@@ -58,6 +70,13 @@ class System {
     bool HandleEvents(SDL_Event& e, GameContext& gc);
 
     private:
+};
+
+namespace Log {
+    //정보 로그
+    void LogInfo(std::string message, bool option);
+    void LogVerbose(std::string message, bool option);
+    void LogWarn(std::string message, bool option);
 };
 
 class Timer {

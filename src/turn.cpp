@@ -101,10 +101,7 @@ void TurnManager::TakeTurn(Entity *ent)
         //행동 후 턴을 넘김.
         UpdateTurn();
     }
-    //플레이어일때
-    else {
-        entm->FocusEntity(*mGc, mGc->mMapm->mCurrentMap, ent);
-    }
+    entm->FocusEntity(*mGc, mGc->mMapm->mCurrentMap, ent);
 }
 
 void TurnManager::ClearTargets()

@@ -1,8 +1,8 @@
 #include "pch.h"
 
 #include "math.h"
+#include "system/system.h"
 
-//제곧내
 bool Math::IsPointInSquare(float mouseX, float mouseY, float mX, float mY, float mW, float mH)
 {
     bool pointIn = false;
@@ -22,41 +22,41 @@ Direction Math::GetDirection8(int vectorX, int vectorY)
     Direction direction = Direction::None;
 
     if (vectorX > 0 && vectorY > 0) {
-        SDL_Log("--> Move south east");
+        Log::LogVerbose("Move south east", System::sLogOptionMathOn);
         direction = Direction::SE;
     }
     if (vectorX > 0 && vectorY < 0) {
-        SDL_Log("--> Move north east");
+        Log::LogVerbose("Move north east", System::sLogOptionMathOn);
         direction = Direction::NE;
     }
     if (vectorX < 0 && vectorY > 0) {
-        SDL_Log("--> Move south west");
+        Log::LogVerbose("Move south west", System::sLogOptionMathOn);
         direction = Direction::SW;
     }
     if (vectorX < 0 && vectorY < 0) {
-        SDL_Log("--> Move north west");
+        Log::LogVerbose("Move north west", System::sLogOptionMathOn);
         direction = Direction::NW;
     }
     if (vectorX == 0) {
         //타겟과 액터가 y축에 나란히 있음
         if (vectorY < 0) {
-            SDL_Log("--> Move up");
-                direction = Direction::North;
+        Log::LogVerbose("Move north", System::sLogOptionMathOn);
+            direction = Direction::North;
         }
         if (vectorY > 0) {
-            SDL_Log("--> Move down");
-                direction = Direction::South;
+        Log::LogVerbose("Move south", System::sLogOptionMathOn);
+            direction = Direction::South;
         }
     }
     if (vectorY == 0) {
         //타겟과 액터가 x축에 나란히 있음
         if (vectorX < 0) {
-            SDL_Log("--> Move left");
-                direction = Direction::West;
+        Log::LogVerbose("Move west", System::sLogOptionMathOn);
+            direction = Direction::West;
         }
         if (vectorX > 0) {
-            SDL_Log("--> Move right");
-                direction = Direction::East;
+        Log::LogVerbose("Move east", System::sLogOptionMathOn);
+            direction = Direction::East;
         }
     }
 

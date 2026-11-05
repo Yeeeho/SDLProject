@@ -173,8 +173,6 @@ int MoveHelper::GetMaxReachTid(GameContext *gctx, Npc* npc, std::vector<int> tid
         }
 
         if (merr == MoveErrorCode::PreReserved) {
-            //TODO: level 1로 하드코딩됨
-            //목적지와 현재 시뮬레이션 중인 타일 아이디의 포인트를 구하고 
             Point p1 = MapHelper::GetPosPoint(tids[i], map);
             Point p2 = MapHelper::GetPosPoint(tids.back(), map);
         }
