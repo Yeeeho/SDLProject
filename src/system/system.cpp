@@ -91,7 +91,7 @@ bool System::LoadConfig()
     }
     if (JsonHelper::GetBool(config, "log_warn")) {
         SDL_Log("[WARN] Log warn on");
-        sLogVerboseOn = true;
+        sLogWarnOn = true;
     }
 
     if (JsonHelper::GetBool(config, "log_option_ai")) {

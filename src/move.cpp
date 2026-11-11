@@ -97,6 +97,14 @@ bool MoveHelper::CheckDiagonalMove(int firstTileId, int lastTileId, Map* map)
     return isDiagonal;
 }
 
+int MoveHelper::GetMoveCost(int firstTID, int lastTID, int apPerTile, Map *map)
+{
+    bool isDia = CheckDiagonalMove(firstTID, lastTID, map);
+
+    if (isDia) return (int) apPerTile * 1.5;
+    else return apPerTile;
+}
+
 std::queue<bool> MoveHelper::GetDiagonalMoveQueue(std::vector<int> tids, Map *map)
 {
     std::queue<bool> diaQueue;

@@ -42,7 +42,7 @@ void ObjectManager::UpdateEntities(GameContext *gc)
     mCurrentSkCtx = mSkCtxUpdateQueue.front();
     mSkCtxUpdateQueue.pop();
 
-    SDL_Log("[INFO] updated entity");
+    // SDL_Log("[INFO] updated entity");
 }
 
 void ObjectManager::UpdateSkCtx()
@@ -58,5 +58,5 @@ void ObjectManager::UpdateSkCtx()
     }
 
     //이동에 성공했다면 다음 업데이트 루프에 다시 이 메서드를 실행.
-    SDL_Log("[INFO] updated skctx");
+    // SDL_Log("[INFO] updated skctx");
 }

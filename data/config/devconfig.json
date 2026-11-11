@@ -1,8 +1,8 @@
 {
     "log_info" : true,
-    "log_verbose" : true,
+    "log_verbose" : false,
     "log_warn" : true,
 
-    "log_option_ai" : false,
+    "log_option_ai" : true,
     "log_option_math" : false
 }

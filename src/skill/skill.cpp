@@ -442,6 +442,9 @@ bool SkillAction::MoveOneTile(GameContext *gctx, Entity *actor, Skill *skill, in
 {
     bool success {false};
     
+    //목적 타일과 액터 타일이 같다면 동작 수행하지 않고 반환한다.
+    if (actor->mTileId == adjacentTid) return false; 
+
     bool isDiaMove = MoveHelper::CheckDiagonalMove(actor->mTileId, adjacentTid, map);
 
     if (isDiaMove) {

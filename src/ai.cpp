@@ -36,6 +36,7 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
 {
     using namespace std;
     namespace mh = MapHelper;
+    namespace mvh = MoveHelper;
     string message {""};
 
     Skill* moveskill = SkillHelper::GetMovementSkill(npc);
@@ -48,6 +49,7 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     
     //npc와 타겟 사이의 직선거리 타일들을 구함
 
+    //TODO: npc의 이동력만 볼게 아니라 지형도 봐야한다.
     int apPerTile = StatHelper::GetApPerTileMove(npc);
 
     //DEBUGGING
@@ -61,26 +63,38 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     //한칸씩 시뮬레이션 돌린다
     std::vector<int> tids; //스킬 컨텍스트에 전달하기 위한 타일 아이디 컨테이너다.
 
-    int nextTID = AIMoveHelper::GetNextTID(mGc, map, npc->mTileId, targetTileId); //초기 값
-    tids.push_back(nextTID); //일단 넣어
+    int currentTID = npc->mTileId; //캐싱용 tid
+    int nextTID = npc->mTileId; //초기 값
 
     while (true) {
-        mVirtualAp -= apPerTile;
-        if (mVirtualAp < 0) break;
-
-        nextTID = AIMoveHelper::GetNextTID(mGc, map, nextTID, targetTileId);
-
-        if (tids.back() != nextTID) {
-            tids.push_back(nextTID); //중복되지 않았다면 넣어준다.
+        if (mVirtualAp <= 0) break; //가상 ap가 0이하면 반복문을 탈출한다.
+        
+        nextTID = AIMoveHelper::GetNextTID(mGc, map, currentTID, targetTileId); //이전 tid값을 계승하여 다음 tid값을 계산한다.
+        
+        if (tids.empty()) {
+            //컨테이너가 비었을 경우 정상 작동한다.
+            tids.push_back(nextTID); 
             SDL_Log("--> Next TID pushed: %d", nextTID);
+            mVirtualAp -= mvh::GetMoveCost(currentTID, nextTID, apPerTile, map);
+            currentTID = nextTID; //동작 완료후 tid를 계승
         }
-        else {
+
+        else if (tids.back() != nextTID) {
+            //컨테이너의 back이 중복되지 않은 tid일 경우 정상 작동한다.
+            tids.push_back(nextTID); 
+            SDL_Log("--> Next TID pushed: %d", nextTID);
+            mVirtualAp -= mvh::GetMoveCost(currentTID, nextTID, apPerTile, map);
+            currentTID = nextTID; //동작 완료후 tid를 계승
+        }
+        else if (tids.back() == nextTID) {
+            //중복되었을 경우 tid 컨테이너에 푸시하지 않고 탈출한다.
             SDL_Log("--> TID duplicate, not pushing");
+            break;
         }
     }
 
     map->mMapTiles[nextTID]->mIsReserved = true; //최신 목적지 타일 예약
-    npc->mReservedTid = nextTID;
+    npc->mReservedTid = nextTID; //npc의 예약 타일 아이디 캐싱
     SDL_Log("[INFO] Navigate skill queue: tile reserved, tile id: %d", nextTID);
 
     //스킬 큐에 푸시하는 단계
@@ -257,7 +271,7 @@ void AI::Transition(GameContext* gctx, Npc* npc)
     }
 }
 
-void AI::TakeTurn(GameContext* gctx, Npc* npc)
+void AI:: TakeTurn(GameContext* gctx, Npc* npc)
 {
     SDL_Log("ai taketurn");
 
@@ -282,6 +296,7 @@ void AI::UpdateSkillQueue(GameContext* gctx, Npc* npc)
 json AIHelper::GetAIData(GameContext *gctx, Entity *ent)
 {
     json& entdata = gctx->mObjm->mJsm->mEntDb["items"][ent->mCode];
+    //종족 필드의 문자열 데이터를 기반으로 ai를 결정한다.
     std::string kin = entdata["kin"].get<std::string>();
 
     json& aidata = gctx->mObjm->mEntm->mAim->mAIDb["items"][kin];
@@ -341,12 +356,10 @@ int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, int actorTID, int targ
             return nextTID;
         }
         else {
+            //이동이 불가할 경우
             Log::LogVerbose("Not passable", System::sLogOptionAIOn);
             Log::LogVerbose("Current direction" + std::to_string((int) dir8.mDir), System::sLogOptionAIOn);
             dirChecksum += 1;
-
-            //DEBUGGIN 지금은 시계방향으로만 경로를 우회한다.
-            //TODO: 랜덤으로 시계 혹은 반시계로 탐색하도록 수정한다.
 
             if (isCW) {
                 dir8.GoCW();

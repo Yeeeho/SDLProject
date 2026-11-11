@@ -81,8 +81,8 @@ void CombatHelper::RegenEntity(Entity *ent, GameContext& gc)
     if (ent->mCurSp > mxsp) ent->mCurSp = mxsp;
 
     ent->mCurAp += apregen;
-    // message = std::to_string(apregen) + " 만큼 AP를 회복했습니다.";
-    // SDL_Log(message.c_str());
+    message = std::to_string(apregen) + " 만큼 AP를 회복했습니다.";
+    SDL_Log(message.c_str());
     if (ent->mCurAp > mxap) ent->mCurAp = mxap;
     
     gc.mUim->mBCUI->UpdateUI(ent);
