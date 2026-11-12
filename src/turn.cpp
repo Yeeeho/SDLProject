@@ -86,11 +86,6 @@ void TurnManager::TakeTurn(Entity *ent)
     std::string message = ent->mName + "의 차례입니다!";
     mGc->mUim->mLogUI->AddMessage(message, tc);
 
-    //턴당 회복
-    CombatHelper ch;
-    ch.RegenEntity(ent, *mGc);
-
-
     //초기화
     entm->mFocusedEnt = nullptr;
     entm->mPrevFocusedEnt = nullptr;
@@ -131,9 +126,14 @@ void TurnManager::UpdateTurn()
     //pc가 턴을 모두 잡은 뒤에야 적이 턴을 잡는다.
     //TODO: 플레이어가 임의로 큐를 설정할 수 있게 만들어야함
     
+    //턴당 회복
+    CombatHelper ch;
+
+
     //일단 턴 시작하자마자 업데이트를 돌린다.
     for (Entity* ent : mCurrentMap->mNpcs) {
         Npc* npc = (Npc*) ent;
+        ch.RegenEntity(ent, *mGc);
         mGc->mObjm->mEntm->mEntAI->UpdateSkillQueue(mGc, npc);
     }
 

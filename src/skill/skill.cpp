@@ -169,7 +169,7 @@ bool SkillContext::Activate(GameContext *gctx)
         }
 
         //타겟 tid가 2개 이상일 경우
-        SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[1], apPerTile, mMap);
+        SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[0], apPerTile, mMap);
         mTargetTIds.erase(mTargetTIds.begin());
     };
 
@@ -460,8 +460,10 @@ bool SkillAction::MoveOneTile(GameContext *gctx, Entity *actor, Skill *skill, in
         actor->mCurAp -= apPerTile;
     }
 
+    SDL_Log("Current ap: %d", actor->mCurAp);
+
     MoveManager mvm = MoveManager(gctx->mUim, gctx->mObjm);
-    mvm.MoveEntityTo(map, actor, actor->mTileId, adjacentTid);
+    mvm.MoveEntityTo(map, actor, actor->mTileId, adjacentTid); //실제 이동
 
     gctx->mUim->mBCUI->UpdateUI(actor);
     

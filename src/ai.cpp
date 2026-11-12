@@ -66,24 +66,33 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     int currentTID = npc->mTileId; //캐싱용 tid
     int nextTID = npc->mTileId; //초기 값
 
-    while (true) {
-        if (mVirtualAp <= 0) break; //가상 ap가 0이하면 반복문을 탈출한다.
-        
+    while (true) {        
         nextTID = AIMoveHelper::GetNextTID(mGc, map, currentTID, targetTileId); //이전 tid값을 계승하여 다음 tid값을 계산한다.
         
         if (tids.empty()) {
             //컨테이너가 비었을 경우 정상 작동한다.
+            int apcost = mvh::GetMoveCost(currentTID, nextTID, apPerTile, map);
+            if (mVirtualAp < apcost) {
+                //엔티티 ap 유효성 검사
+                SDL_Log("Ap insufficient");
+                break;
+            }
             tids.push_back(nextTID); 
             SDL_Log("--> Next TID pushed: %d", nextTID);
-            mVirtualAp -= mvh::GetMoveCost(currentTID, nextTID, apPerTile, map);
+            mVirtualAp -= apcost;
             currentTID = nextTID; //동작 완료후 tid를 계승
         }
 
         else if (tids.back() != nextTID) {
             //컨테이너의 back이 중복되지 않은 tid일 경우 정상 작동한다.
+            int apCost = mvh::GetMoveCost(currentTID, nextTID, apPerTile, map);
+            if (mVirtualAp < apCost) {
+                SDL_Log("Ap insufficient");
+                break;
+            }
             tids.push_back(nextTID); 
             SDL_Log("--> Next TID pushed: %d", nextTID);
-            mVirtualAp -= mvh::GetMoveCost(currentTID, nextTID, apPerTile, map);
+            mVirtualAp -= apCost;
             currentTID = nextTID; //동작 완료후 tid를 계승
         }
         else if (tids.back() == nextTID) {
@@ -93,9 +102,9 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
         }
     }
 
-    map->mMapTiles[nextTID]->mIsReserved = true; //최신 목적지 타일 예약
-    npc->mReservedTid = nextTID; //npc의 예약 타일 아이디 캐싱
-    SDL_Log("[INFO] Navigate skill queue: tile reserved, tile id: %d", nextTID);
+    map->mMapTiles[currentTID]->mIsReserved = true; //최신 목적지 타일 예약
+    npc->mReservedTid = currentTID; //npc의 예약 타일 아이디 캐싱
+    SDL_Log("[INFO] Navigate skill queue: tile reserved, tile id: %d", currentTID);
 
     //스킬 큐에 푸시하는 단계
     SkillContext* skctx = new SkillContext(moveskill, npc, tids, map);
