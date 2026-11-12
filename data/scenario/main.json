@@ -25,6 +25,18 @@
                     "tile_id" : 103
                 },
                 {
+                    "type" : "single_ent",
+                    "code" : "rat",
+                    "demeanor" : "hostile",
+                    "tile_id" : 104
+                },
+                {
+                    "type" : "single_ent",
+                    "code" : "rat",
+                    "demeanor" : "hostile",
+                    "tile_id" : 105
+                },
+                {
                     "type" : "single_item",
                     "item_type" : "consumable",
                     "code" : "apple",

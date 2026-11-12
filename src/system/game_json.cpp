@@ -62,3 +62,12 @@ int JsonHelper::GetInt(json &data, std::string what)
     }
     return data[what].get<int>();
 }
+
+bool JsonHelper::GetBool(json &data, std::string what)
+{
+    if (!data.contains(what)) {
+        SDLLogErrorMsg(data, "bool", what);
+        return 0;
+    }
+    return data[what].get<bool>();
+}

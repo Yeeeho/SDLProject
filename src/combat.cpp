@@ -71,13 +71,13 @@ void CombatHelper::RegenEntity(Entity *ent, GameContext& gc)
     
     std::string message {""};
     ent->mCurHp += hpregen;
-    message = std::to_string(hpregen) + " 만큼 HP를 회복했습니다.";
-    SDL_Log(message.c_str());
+    // message = std::to_string(hpregen) + " 만큼 HP를 회복했습니다.";
+    // SDL_Log(message.c_str());
     if (ent->mCurHp > mxhp) ent->mCurHp = mxhp; 
 
     ent->mCurSp += spregen;
-    message = std::to_string(spregen) + " 만큼 SP를 회복했습니다.";
-    SDL_Log(message.c_str());
+    // message = std::to_string(spregen) + " 만큼 SP를 회복했습니다.";
+    // SDL_Log(message.c_str());
     if (ent->mCurSp > mxsp) ent->mCurSp = mxsp;
 
     ent->mCurAp += apregen;

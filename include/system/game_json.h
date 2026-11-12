@@ -27,4 +27,5 @@ namespace JsonHelper {
     std::string GetString(json& data, std::string what);
     json GetJson(json& data, std::string what);
     int GetInt(json& data, std::string what);
+    bool GetBool(json& data, std::string what);
 };

@@ -31,10 +31,12 @@ enum class MoveErrorCode {
 
 namespace MoveHelper {
     bool CheckDiagonalMove(int firstTileId, int lastTileId, Map* map);
+    int GetMoveCost(int firstTID, int lastTID, int apPerTile, Map* map); //대각선 이동을 판별해서 ap코스트를 결정해준다.
+
     //대각선 이동을 순서대로 큐에 집어넣음
     std::queue<bool> GetDiagonalMoveQueue(std::vector<int> tids, Map* map);
-    //대각선 이동이 총 몇번 일어나는지만 구함
-    int GetDiagonalMoves(std::vector<int> tids, Map* map);
+    
+    int GetDiagonalMoves(std::vector<int> tids, Map* map); //대각선 이동이 총 몇번 일어나는지만 구함
 
     //한칸 이동을 시뮬레이션해서 이동이 유효한지 아닌지 반환해주는 녀석
     MoveErrorCode CheckOneMove(GameContext *gctx, int firstTid, int adjacentTid, int apPerTile, Map *map);

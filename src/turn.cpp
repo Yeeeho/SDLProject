@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "system/system.h"
 #include "game_context.h"
 #include "game_object.h"
 #include "ui.h"
@@ -71,6 +72,9 @@ int TurnManager::GetGlobalTurn()
 
 void TurnManager::TakeTurn(Entity *ent)
 {
+    EntityManager* entm = mGc->mObjm->mEntm;
+    entm->FocusEntity(*mGc, mGc->mMapm->mCurrentMap, ent);
+
     mCurrentTarget = ent;
     mPrevTarget = ent;
 
@@ -86,7 +90,6 @@ void TurnManager::TakeTurn(Entity *ent)
     CombatHelper ch;
     ch.RegenEntity(ent, *mGc);
 
-    EntityManager* entm = mGc->mObjm->mEntm;
 
     //초기화
     entm->mFocusedEnt = nullptr;
@@ -98,12 +101,6 @@ void TurnManager::TakeTurn(Entity *ent)
     if (!ent->mIsPawn) {
         AI* ai = entm->mEntAI;
         ai->TakeTurn(mGc, (Npc*) ent);
-        //행동 후 턴을 넘김.
-        UpdateTurn();
-    }
-    //플레이어일때
-    else {
-        entm->FocusEntity(*mGc, mGc->mMapm->mCurrentMap, ent);
     }
 }
 
@@ -157,7 +154,6 @@ void TurnManager::UpdateTurn()
             target = mCurrentMap->mNpcs[mNpcIdx];
             mNpcIdx += 1;
             TakeTurn(target);
-            break;
         } 
         else {
             //모두가 턴을 잡음

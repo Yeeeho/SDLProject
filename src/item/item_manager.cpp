@@ -38,7 +38,7 @@ Item *ItemManager::MakeItem(ObjectManager& objm, std::string code, ItemType it)
         return new Consumable(objm, code);
     }
     else {
-        SDL_Log("item manager: cannot make item from code");
+        SDL_Log("[WARN] item manager: cannot make item from code");
         return new Item();
     }
 }
@@ -245,7 +245,7 @@ Item* ItemManager::PopItemStack(Map *map, int tileId)
 void ItemManager::StoreTexture()
 {
     if (!mIsRenderUpdate) return;
-    SDL_Log("item manager: storing texture");
+    // SDL_Log("item manager: storing texture");
     RenderManager rm;
     rm.SetRenderTarget(System::sRenderer, mTempTex);
 
@@ -253,7 +253,7 @@ void ItemManager::StoreTexture()
 
     SDL_SetRenderTarget(System::sRenderer, nullptr);
     mIsRenderUpdate = false;
-    SDL_Log("item manager: stored texture");
+    // SDL_Log("item manager: stored texture");
 }
 
 void ItemManager::RenderStoredTex()

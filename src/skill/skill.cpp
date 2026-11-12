@@ -161,7 +161,6 @@ bool SkillContext::Activate(GameContext *gctx)
         //타겟 tid가 없을 경우
         if ((int) mTargetTIds.size() < 1) return false; //움직임을 멈춘다.
         
-        //TESTING..
         //타겟 tid가 한개일 경우
         if ((int) mTargetTIds.size() == 1) {
             SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[0], apPerTile, mMap);
@@ -443,6 +442,9 @@ bool SkillAction::MoveOneTile(GameContext *gctx, Entity *actor, Skill *skill, in
 {
     bool success {false};
     
+    //목적 타일과 액터 타일이 같다면 동작 수행하지 않고 반환한다.
+    if (actor->mTileId == adjacentTid) return false; 
+
     bool isDiaMove = MoveHelper::CheckDiagonalMove(actor->mTileId, adjacentTid, map);
 
     if (isDiaMove) {

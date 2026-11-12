@@ -5,6 +5,7 @@
 #include "ai.h"
 #include "game_object.h"
 #include "game_context.h"
+#include "system/system.h"
 #include "system/game_json.h"
 #include "system/game_random.h"
 #include "map.h"
@@ -31,11 +32,11 @@ void AIState::UpdateSkillQueue(Npc* npc)
 {
 }
 
-//WORK IN PROGRESS
 void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
 {
     using namespace std;
     namespace mh = MapHelper;
+    namespace mvh = MoveHelper;
     string message {""};
 
     Skill* moveskill = SkillHelper::GetMovementSkill(npc);
@@ -48,6 +49,7 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     
     //npc와 타겟 사이의 직선거리 타일들을 구함
 
+    //TODO: npc의 이동력만 볼게 아니라 지형도 봐야한다.
     int apPerTile = StatHelper::GetApPerTileMove(npc);
 
     //DEBUGGING
@@ -61,26 +63,38 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     //한칸씩 시뮬레이션 돌린다
     std::vector<int> tids; //스킬 컨텍스트에 전달하기 위한 타일 아이디 컨테이너다.
 
-    int nextTID = AIMoveHelper::GetNextTID(mGc, map, npc->mTileId, targetTileId); //초기 값
-    tids.push_back(nextTID); //일단 넣어
+    int currentTID = npc->mTileId; //캐싱용 tid
+    int nextTID = npc->mTileId; //초기 값
 
     while (true) {
-        mVirtualAp -= apPerTile;
-        if (mVirtualAp < 0) break;
-
-        nextTID = AIMoveHelper::GetNextTID(mGc, map, nextTID, targetTileId);
-
-        if (tids.back() != nextTID) {
-            tids.push_back(nextTID); //중복되지 않았다면 넣어준다.
+        if (mVirtualAp <= 0) break; //가상 ap가 0이하면 반복문을 탈출한다.
+        
+        nextTID = AIMoveHelper::GetNextTID(mGc, map, currentTID, targetTileId); //이전 tid값을 계승하여 다음 tid값을 계산한다.
+        
+        if (tids.empty()) {
+            //컨테이너가 비었을 경우 정상 작동한다.
+            tids.push_back(nextTID); 
             SDL_Log("--> Next TID pushed: %d", nextTID);
+            mVirtualAp -= mvh::GetMoveCost(currentTID, nextTID, apPerTile, map);
+            currentTID = nextTID; //동작 완료후 tid를 계승
         }
-        else {
+
+        else if (tids.back() != nextTID) {
+            //컨테이너의 back이 중복되지 않은 tid일 경우 정상 작동한다.
+            tids.push_back(nextTID); 
+            SDL_Log("--> Next TID pushed: %d", nextTID);
+            mVirtualAp -= mvh::GetMoveCost(currentTID, nextTID, apPerTile, map);
+            currentTID = nextTID; //동작 완료후 tid를 계승
+        }
+        else if (tids.back() == nextTID) {
+            //중복되었을 경우 tid 컨테이너에 푸시하지 않고 탈출한다.
             SDL_Log("--> TID duplicate, not pushing");
+            break;
         }
     }
 
     map->mMapTiles[nextTID]->mIsReserved = true; //최신 목적지 타일 예약
-    npc->mReservedTid = nextTID;
+    npc->mReservedTid = nextTID; //npc의 예약 타일 아이디 캐싱
     SDL_Log("[INFO] Navigate skill queue: tile reserved, tile id: %d", nextTID);
 
     //스킬 큐에 푸시하는 단계
@@ -257,7 +271,7 @@ void AI::Transition(GameContext* gctx, Npc* npc)
     }
 }
 
-void AI::TakeTurn(GameContext* gctx, Npc* npc)
+void AI:: TakeTurn(GameContext* gctx, Npc* npc)
 {
     SDL_Log("ai taketurn");
 
@@ -282,6 +296,7 @@ void AI::UpdateSkillQueue(GameContext* gctx, Npc* npc)
 json AIHelper::GetAIData(GameContext *gctx, Entity *ent)
 {
     json& entdata = gctx->mObjm->mJsm->mEntDb["items"][ent->mCode];
+    //종족 필드의 문자열 데이터를 기반으로 ai를 결정한다.
     std::string kin = entdata["kin"].get<std::string>();
 
     json& aidata = gctx->mObjm->mEntm->mAim->mAIDb["items"][kin];
@@ -311,19 +326,22 @@ AIManager::AIManager()
 int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, int actorTID, int targetTID)
 {
     Vector2 vec = GetVectorFromTID(map, actorTID, targetTID);
-    SDL_Log("[INFO] Get final melee TID: vector2: %d, %d", vec.x, vec.y);
-    SDL_Log("--> Actor tile ID: %d", actorTID);
+    Log::LogInfo("Get final melee TID: vector2: " + std::to_string(vec.x) + ", " + std::to_string(vec.y), System::sLogOptionAIOn);
+    Log::LogVerbose("Actor tile ID: " + std::to_string(actorTID), System::sLogOptionAIOn);
 
     int dirChecksum {0}; //체크섬용 방향 배열
     Direction dir = Math().GetDirection8(vec.x, vec.y); //초기 방향을 구한다.
     Direction8 dir8 = Direction8(dir); //초기 방향 객체를 생성한다.
+
+    //경로 우회시 어떤 방향으로 차순위 경로를 탐색할지
+    bool isCW = Random::BDistribution(0.5);
 
     //체크섬을 기반으로 이동 가능 방향을 하나씩 소거한다.
     while (dirChecksum < 8) {
         
         //이미 근접해 있다면 굳이 연산하지 않는다.
         if (vec.x <= 1 && vec.y <= 1 && vec.x >= -1 && vec.y >= -1) {
-            SDL_Log("--> Target already adjacent");
+            Log::LogVerbose("Target already adjacent", System::sLogOptionAIOn);
             return actorTID;
         }
     
@@ -331,25 +349,32 @@ int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, int actorTID, int targ
 
         //현재 방향을 기준으로 타일을 구하고 이동 가능 여부를 확인
         int nextTID = MapHelper::GetAdjacentTID(map, dir8.mDir, actorTID);
-    
+
         if (map->mMapTiles[nextTID]->IsPassable()) {
             //이동 가능할 경우
-            SDL_Log("--> Passable");
+            Log::LogVerbose("Passable", System::sLogOptionAIOn);
             return nextTID;
         }
         else {
-            SDL_Log("--> Not Passable");
-            SDL_Log("--> Current direction: %d", (int) dir8.mDir);
+            //이동이 불가할 경우
+            Log::LogVerbose("Not passable", System::sLogOptionAIOn);
+            Log::LogVerbose("Current direction" + std::to_string((int) dir8.mDir), System::sLogOptionAIOn);
             dirChecksum += 1;
-            //DEBUGGIN 지금은 시계방향으로만 경로를 우회한다.
-            //TODO: 랜덤으로 시계 혹은 반시계로 탐색하도록 수정한다.
-            dir8.GoCW();
-            SDL_Log("--> Direction set to clockwise, direction: %d", (int) dir8.mDir);            
+
+            if (isCW) {
+                dir8.GoCW();
+                Log::LogVerbose("Direction set to clockwise, direction: " + std::to_string((int) dir8.mDir), System::sLogOptionAIOn);
+            }
+            else {
+                dir8.GoCCW();
+                Log::LogVerbose("Direction set to counter clockwise, direction: " + std::to_string((int) dir8.mDir), System::sLogOptionAIOn);
+            } 
+
         } 
     }
 
     //반복문을 다 돌았을 경우 이동할 수 없었다는 뜻이므로 액터가 서있는 타일 아이디를 반환한다.
-    SDL_Log("--> No passable tile nearby");
+    Log::LogVerbose("No passable tile nearby", System::sLogOptionAIOn);
     return actorTID;
 }
 
