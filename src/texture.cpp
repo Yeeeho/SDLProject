@@ -1,5 +1,7 @@
+
 #include "pch.h"
 
+#include "system/game_json.h"
 #include "texture.h"
 #include "system/system.h"
 
@@ -171,4 +173,27 @@ bool Texture::isLoaded()
     return mTexture != nullptr;
 }
 
+SpriteSheetManager::SpriteSheetManager()
+{
+    LoadSs();
+}
 
+void SpriteSheetManager::LoadSs()
+{
+    //먼저 리스트에서 로딩해야 할 스프라이트 시트/메타데이터를 읽어온다.
+    JsonHelper::LoadJsonFile(mSsLoadList, "images/effect/ss_list.json");
+
+    //리스트를 기반으로 스프라이트를 로드한다.
+    for (json ss : mSsLoadList["items"]["hit_ss"]) {
+        std::string ssname = ss.get<std::string>(); 
+
+        Texture* sstex = new Texture("images/effect/hit/" + ssname + ".png");
+        mSsContainer.insert({ssname, sstex});
+        
+        json ssmap;
+        JsonHelper::LoadJsonFile(ssmap, "images/effect/hit/" + ssname + ".json");
+        mSsMapContainer.insert({ssname, ssmap});
+    } 
+
+
+}

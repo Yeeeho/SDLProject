@@ -1,5 +1,6 @@
 #pragma once
 
+#include <json.hpp>
 #include <string>
 #include <vector>
 #include <SDL3/SDL.h>
@@ -45,4 +46,17 @@ class Texture {
     int mWidth;
     int mHeight;
     private:
+};
+
+class SpriteSheetManager {
+    public:
+    using json = nlohmann::json;
+
+    SpriteSheetManager();
+    void LoadSs();
+
+    json mSsLoadList; //로딩할 스프라이트 시트의 리스트
+
+    std::map<std::string, Texture*> mSsContainer;
+    std::map<std::string, json> mSsMapContainer;
 };
