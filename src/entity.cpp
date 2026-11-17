@@ -3,8 +3,9 @@
 #include "math.h"
 #include "render.h"
 #include "system/system.h"
-#include "game_context.h"
 #include "system/game_json.h"
+#include "system/game_random.h"
+#include "game_context.h"
 #include "game_object.h"
 #include "ui.h"
 #include "event_context.h"
@@ -700,6 +701,31 @@ Entity::Entity(std::string name, int id)
     mId = id;
 
     mTexture = new Texture();
+}
+
+Skill *Entity::GetRandomSkill(GameContext* gctx, std::string type)
+{
+    namespace skh = SkillHelper;
+
+    std::vector<Skill*> targetSkills;
+
+    for (Skill* skill : mSkills) {
+        std::string stype = skh::GetSkillType(gctx, skill->mCode);
+        if (stype == type) {
+            targetSkills.push_back(skill);
+        }
+    }
+
+    //임시 버퍼에 아무것도 없다면 반환한다.
+    if (targetSkills.empty()) {
+        SDL_Log("Get random skill: uh no skill with curresponding skill type boi");
+        return new Skill("error", "error");
+    }
+
+    Random rnd;
+    int randIdx = rnd.IDistribution(0, (int) targetSkills.size() - 1);
+
+    return targetSkills[randIdx];
 }
 
 //부하 생성자

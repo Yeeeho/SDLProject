@@ -23,6 +23,7 @@ struct SkillContext {
     SkillContext(Skill*, std::vector<Item*>& targetItems, std::vector<Entity*>& targetEnts, std::vector<int>& tileIds);
     SkillContext(Skill*, const std::vector<int>& tileIds, Map* map);
     SkillContext(Skill*, Entity* actor, const std::vector<int>& tileIds, Map* map);
+    SkillContext(Skill*, Entity* actor, Entity* target, Map* map);
 
     bool Activate(GameContext* gctx);
 
@@ -38,6 +39,7 @@ namespace SkillAction {
     
     //하나씩 이동시키는 함수
     bool MoveOneTile(GameContext* gctx, Entity* actor, Skill* skill, int adjacentTid, int apPerTile, Map* map);
+    bool AffectTarget(GameContext* gctx, Skill* skill, Entity* actor, std::vector<Entity*> targets, Map* map);
 };
 
 class SkillManager {
@@ -79,6 +81,7 @@ class SkillManager {
 
 namespace SkillHelper {
     json GetSkillData(const json& skillDb, std::string code); //스킬 데이터 자체 반환
+    json GetSkillData(GameContext* gctx, std::string code); //암묵적으로 Gamecontext의 skill database를 사용함
 
     std::string GetSkillType(GameContext* gctx, std::string code); //스킬 타입
     std::string GetSkillName(json skillData, Skill* skill); //스킬 이름

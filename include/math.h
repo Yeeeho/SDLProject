@@ -30,5 +30,7 @@ class Math {
     public:
     bool IsPointInSquare(float pointX, float pointY, float mX, float mY, float mW, float mH);
     Direction GetDirection8(int vectorX, int vectorY);
+
+    Vector2 GetVector(Vector2 v1, Vector2 v2); //v2 - v1
 };
 

@@ -308,7 +308,7 @@ std::set<int> MapHelper::GetNearestTileIds(int centerTid, Map* map, unsigned int
     int level = static_cast<int> (levelParam);
 
     if (level == 0) {
-        SDL_Log("[WARNING] get neareast tile ids: level cannot be 0!");
+        SDL_Log("[ERROR] get neareast tile ids: level cannot be 0!");
         return res;
     }
 

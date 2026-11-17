@@ -3,6 +3,7 @@
 #include <vector>
 
 struct GameContext;
+class Skill;
 class AIState; class AIManager;
 class CombatState; class IdleState; class FleeState;
 class Entity; class Npc;
@@ -43,6 +44,7 @@ class AIState {
     virtual void UpdateSkillQueue(Npc* npc);
 
     void NavigateQueue(Npc* npc, Map* map, int tileId);
+    void AttackQueue(Npc* actor, Skill* skill, Entity* target, Map* map);
 
     GameContext* mGc {nullptr};
     int mPrevTileId {-1};

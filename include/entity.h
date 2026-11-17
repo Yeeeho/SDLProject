@@ -186,6 +186,8 @@ class Entity {
     Entity() = default;
     Entity(std::string name, int id);
 
+    Skill* GetRandomSkill(GameContext* gctx, std::string type); //특정 타입의 스킬 중 하나를 임의로 골라 반환하는 함수
+
     //식별 정보
     std::string mName {""}; //이름
     std::string mCode {""}; //데이터베이스 식별용 문자열

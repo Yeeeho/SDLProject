@@ -131,6 +131,15 @@ void TurnManager::UpdateTurn()
 
 
     //일단 턴 시작하자마자 업데이트를 돌린다.
+    //pc턴 업데이트
+    for (Entity* p : mCurrentMap->mPawns) {
+        Pawn* pawn = (Pawn*) p;
+        //나중에 로직이 늘어나면 래핑이 필요할수도 있겠는걸
+        ch.RegenEntity(pawn, *mGc);
+    }
+
+
+    //npc턴 업데이트
     for (Entity* ent : mCurrentMap->mNpcs) {
         Npc* npc = (Npc*) ent;
         ch.RegenEntity(ent, *mGc);

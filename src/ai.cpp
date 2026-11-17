@@ -112,6 +112,41 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     SDL_Log("--> navigate queued");
 }
 
+void AIState::AttackQueue(Npc *actor, Skill* skill, Entity *target, Map *map)
+{
+    Math mth;
+    namespace mh = MapHelper;
+    namespace mvh = MoveHelper;
+    namespace skh = SkillHelper;
+    
+    json skd = skh::GetSkillData(mGc, skill->mCode);
+
+    //최소사거리 로직이 있을 경우 좀더 복잡해질 수 있을것이다.
+    int range = skh::GetSkillRange(skd, skill);
+    
+    //
+    Point p1 = mh::GetPosPoint(actor->mTileId, map);
+    Point p2 = mh::GetPosPoint(target->mTileId, map);
+    
+    int xdiff = p2.mX - p1.mX;
+    int ydiff = p2.mY - p1.mY;
+    Direction8 dir8 = mth.GetDirection8(xdiff, ydiff); //혹시 모르니 방향을 구해놓는다. 사격각 구현을 위해서..
+
+    std::vector<int> TIDs = mh::GetTilesIdBetween(map, actor->mTileId, target->mTileId);
+    int diamoves = mvh::GetDiagonalMoves(TIDs, map);
+    int smoves = (int) TIDs.size() - diamoves - 1;
+    int targetDis = diamoves * 1.5 + smoves;
+
+    if (targetDis > range) {
+        //타겟과의 거리가 스킬 범위보다 먼 경우 실패한다. 스킬 사용에.
+        return;
+    }
+    else {
+        //유효 스킬 범위 내에 타겟이 있는 경우
+        SkillContext* skctx = new SkillContext(skill, actor, target, map);
+    }
+}
+
 IdleState::IdleState(GameContext *gc)
 {
     mGc = gc;
@@ -211,12 +246,15 @@ void CombatState::UpdateSkillQueue(Npc* npc)
 
     Map* map = mGc->mMapm->mCurrentMap;
     if (map->mPawns.empty()) return;
+    //TODO: 표적을 나름대로 찾아서 공격하게 만들자.
     Entity* p = map->mPawns[0];
     
     npc->ClearSkCtxQueue();
 
     //현재는 근접전만을 상정해서 스킬 큐를 업데이트 한다.
+    //TODO: 싱글 타겟 스킬만 랜덤으로 골라서 공격하게 해놓았다.
     NavigateQueue(npc, map, p->mTileId);
+    AttackQueue(npc, npc->GetRandomSkill(mGc, "single_target"), p, map);
 }
 
 FleeState::FleeState(GameContext *gc)
