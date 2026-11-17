@@ -122,7 +122,7 @@ void AIState::AttackQueue(Npc *actor, Skill* skill, Entity *target, Map *map)
     json skd = skh::GetSkillData(mGc, skill->mCode);
 
     //최소사거리 로직이 있을 경우 좀더 복잡해질 수 있을것이다.
-    int range = skh::GetSkillRange(skd, skill);
+    float range = skh::GetSkillRange(skd, skill);
     
     //
     Point p1 = mh::GetPosPoint(actor->mTileId, map);
@@ -135,15 +135,19 @@ void AIState::AttackQueue(Npc *actor, Skill* skill, Entity *target, Map *map)
     std::vector<int> TIDs = mh::GetTilesIdBetween(map, actor->mTileId, target->mTileId);
     int diamoves = mvh::GetDiagonalMoves(TIDs, map);
     int smoves = (int) TIDs.size() - diamoves - 1;
-    int targetDis = diamoves * 1.5 + smoves;
+    float targetDis = diamoves * 1.5 + smoves;
 
     if (targetDis > range) {
         //타겟과의 거리가 스킬 범위보다 먼 경우 실패한다. 스킬 사용에.
+        // Log::LogVerbose("targetdis:" + std::to_string(targetDis), System::sLogOptionAIOn);
+        // Log::LogVerbose("range:" + std::to_string(range), System::sLogOptionAIOn);
         return;
     }
     else {
         //유효 스킬 범위 내에 타겟이 있는 경우
         SkillContext* skctx = new SkillContext(skill, actor, target, map);
+        actor->mSkillCtxQueue.push(skctx);
+        Log::LogVerbose("affect skill queued", System::sLogOptionAIOn);
     }
 }
 
@@ -251,7 +255,7 @@ void CombatState::UpdateSkillQueue(Npc* npc)
     
     npc->ClearSkCtxQueue();
 
-    //현재는 근접전만을 상정해서 스킬 큐를 업데이트 한다.
+    //TODO: 현재는 근접전만을 상정해서 스킬 큐를 업데이트 한다.
     //TODO: 싱글 타겟 스킬만 랜덤으로 골라서 공격하게 해놓았다.
     NavigateQueue(npc, map, p->mTileId);
     AttackQueue(npc, npc->GetRandomSkill(mGc, "single_target"), p, map);

@@ -89,7 +89,7 @@ namespace SkillHelper {
 
     int GetSkillTargetNum(json skillData, Skill* skill); //멀티타겟의 경우는 아직 안만듬
 
-    int GetSkillRange(json skillData, Skill* skill); //스킬 범위
+    float GetSkillRange(json skillData, Skill* skill); //스킬 범위
     int GetSkillDamage(json skillData, Skill* skill, Entity* ent); //스킬 데미지
     //스킬 코스트
     int GetHpUse(json skillData, Skill* skill, Entity* ent);

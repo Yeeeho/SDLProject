@@ -175,6 +175,8 @@ bool SkillContext::Activate(GameContext *gctx)
     };
     if (stype == "single_target") {
         SkillAction::AffectTarget(gctx, mSkill, mActor, mTargetEnts, mMap);
+
+        return false; //어째서인지 거짓일때 루프를 끊게 만들어놨구만
     }
 
     return true;
@@ -271,12 +273,12 @@ void SkillManager::ActivateSkill()
 }
 
 //나중에 스킬 객체에 있는 추가 보정치도 포함할 수 있다.
-int SkillHelper::GetSkillRange(json skillData, Skill *skill)
+float SkillHelper::GetSkillRange(json skillData, Skill *skill)
 {
     if (!skillData.contains("range")) {
-        return 0;
+        return 0.f;
     }
-    int range = skillData["range"].get<int>();
+    float range = skillData["range"].get<float>();
     return range;
 }
 json SkillHelper::GetSkillData(const json &skillDb, std::string code)
@@ -508,15 +510,15 @@ bool SkillAction::AffectTarget(GameContext *gctx, Skill *skill, Entity *actor, s
 
     //액터의 스태미너와 ap가 충분한지 확인한다.
     if (hpUse > actor->mCurHp) {
-        log->AddMessage("HP가 부족합니다!", System::kY);
+        if (actor->mIsPawn) log->AddMessage("HP가 부족합니다!", System::kY);
         return false;            
     }
     if (spUse > actor->mCurSp) {
-        log->AddMessage("SP가 부족합니다!", System::kY);
+        if (actor->mIsPawn) log->AddMessage("SP가 부족합니다!", System::kY);
         return false;            
     }
     if (apUse > actor->mCurAp) {
-        log->AddMessage("AP가 부족합니다!", System::kY);
+        if (actor->mIsPawn) log->AddMessage("AP가 부족합니다!", System::kY);
         return false;
     }
 

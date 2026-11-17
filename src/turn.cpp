@@ -166,8 +166,14 @@ void TurnManager::UpdateTurn()
         } 
         else {
             //모두가 턴을 잡음
+            SDL_Log("turn manager: everybody took their turn boi");
             mPawnIdx = 0;
             mNpcIdx = 0;
+
+            if (mCurrentMap->mPawns.empty()) {
+                //아군이 맵에 없는 경우 반복문을 탈출한다.
+                break;
+            }
         }
     }
 }
