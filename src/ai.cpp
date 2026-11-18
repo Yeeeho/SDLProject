@@ -32,7 +32,7 @@ void AIState::UpdateSkillQueue(Npc* npc)
 {
 }
 
-void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
+void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId, float offsetDis)
 {
     using namespace std;
     namespace mh = MapHelper;
@@ -67,7 +67,7 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     int nextTID = npc->mTileId; //초기 값
 
     while (true) {        
-        nextTID = AIMoveHelper::GetNextTID(mGc, map, currentTID, targetTileId); //이전 tid값을 계승하여 다음 tid값을 계산한다.
+        nextTID = AIMoveHelper::GetNextTID(mGc, map, currentTID, targetTileId, offsetDis); //이전 tid값을 계승하여 다음 tid값을 계산한다.
         
         if (tids.empty()) {
             //컨테이너가 비었을 경우 정상 작동한다.
@@ -112,7 +112,7 @@ void AIState::NavigateQueue(Npc *npc, Map* map, int targetTileId)
     SDL_Log("--> navigate queued");
 }
 
-void AIState::AttackQueue(Npc *actor, Skill* skill, Entity *target, Map *map)
+bool AIState::AffectTargetQueue(Npc *actor, Skill* skill, Entity *target, Map *map)
 {
     Math mth;
     namespace mh = MapHelper;
@@ -120,35 +120,32 @@ void AIState::AttackQueue(Npc *actor, Skill* skill, Entity *target, Map *map)
     namespace skh = SkillHelper;
     
     json skd = skh::GetSkillData(mGc, skill->mCode);
+    bool isValid = ApplySkillCost(skill, actor);
+    if (!isValid) return false;
 
-    //최소사거리 로직이 있을 경우 좀더 복잡해질 수 있을것이다.
-    float range = skh::GetSkillRange(skd, skill);
-    
-    //
-    Point p1 = mh::GetPosPoint(actor->mTileId, map);
-    Point p2 = mh::GetPosPoint(target->mTileId, map);
-    
-    int xdiff = p2.mX - p1.mX;
-    int ydiff = p2.mY - p1.mY;
-    Direction8 dir8 = mth.GetDirection8(xdiff, ydiff); //혹시 모르니 방향을 구해놓는다. 사격각 구현을 위해서..
+    SkillContext* skctx = new SkillContext(skill, actor, target, map);
+    actor->mSkillCtxQueue.push(skctx);
+    Log::LogVerbose("attack skill queued", System::sLogOptionAIOn);
 
-    std::vector<int> TIDs = mh::GetTilesIdBetween(map, actor->mTileId, target->mTileId);
-    int diamoves = mvh::GetDiagonalMoves(TIDs, map);
-    int smoves = (int) TIDs.size() - diamoves - 1;
-    float targetDis = diamoves * 1.5 + smoves;
+    return true;
+}
 
-    if (targetDis > range) {
-        //타겟과의 거리가 스킬 범위보다 먼 경우 실패한다. 스킬 사용에.
-        // Log::LogVerbose("targetdis:" + std::to_string(targetDis), System::sLogOptionAIOn);
-        // Log::LogVerbose("range:" + std::to_string(range), System::sLogOptionAIOn);
-        return;
+bool AIState::ApplySkillCost(Skill *skill, Entity* ent)
+{
+    namespace skh = SkillHelper;
+    json skd = skh::GetSkillData(mGc, skill->mCode);
+
+    int apuse = skh::GetApUse(skd, skill, ent);
+    int spuse = skh::GetSpUse(skd, skill, ent);
+    int hpuse = skh::GetHpUse(skd, skill, ent);
+
+    if (mVirtualAp >= apuse && mVirtualHp >= hpuse && mVirtualSp >= spuse) {
+        mVirtualAp -= apuse;
+        mVirtualSp -= spuse;
+        mVirtualHp -= hpuse;
+        return true;
     }
-    else {
-        //유효 스킬 범위 내에 타겟이 있는 경우
-        SkillContext* skctx = new SkillContext(skill, actor, target, map);
-        actor->mSkillCtxQueue.push(skctx);
-        Log::LogVerbose("affect skill queued", System::sLogOptionAIOn);
-    }
+    else return false; //자원 소모시 음수가 된다면 거짓을 반환해준다.
 }
 
 IdleState::IdleState(GameContext *gc)
@@ -257,8 +254,30 @@ void CombatState::UpdateSkillQueue(Npc* npc)
 
     //TODO: 현재는 근접전만을 상정해서 스킬 큐를 업데이트 한다.
     //TODO: 싱글 타겟 스킬만 랜덤으로 골라서 공격하게 해놓았다.
-    NavigateQueue(npc, map, p->mTileId);
-    AttackQueue(npc, npc->GetRandomSkill(mGc, "single_target"), p, map);
+
+    MeleeQueue(map, npc, p);
+}
+
+void CombatState::MeleeQueue(Map *map, Npc *actor, Entity *target)
+{
+    namespace skh = SkillHelper;
+
+    Skill* skill = actor->GetRandomSkill(mGc, "single_target");
+    json skd = skh::GetSkillData(mGc, skill->mCode);
+    float skrange = skh::GetSkillRange(skd, skill);
+
+    NavigateQueue(actor, map, target->mTileId, skrange);
+
+    //예약된 타일과 타겟 타일 사이의 거리를 구해 실제로 스킬을 쓸수 있는지를 확인한다.
+    float curDis = MapHelper::GetDistanceBetween(map, actor->mReservedTid, target->mTileId);
+
+    if (curDis > skrange) return; //실제 거리가 사정거리보다 크면 반환한다.
+
+    //여력이 된다면 계속 공격한다.
+    bool keepDoing {true}; 
+    while(keepDoing) {
+        keepDoing = AffectTargetQueue(actor, skill, target, map);
+    }
 }
 
 FleeState::FleeState(GameContext *gc)
@@ -340,7 +359,10 @@ void AI::UpdateSkillQueue(GameContext* gctx, Npc* npc)
 {
     Transition(gctx, npc);
 
-    mCurrentState->mVirtualAp = npc->mCurAp;
+    mCurrentState->mVirtualHp = npc->mCurHp; //계산을 위해 별도로 캐싱해준다.
+    mCurrentState->mVirtualSp = npc->mCurSp; 
+    mCurrentState->mVirtualAp = npc->mCurAp; 
+
     mCurrentState->UpdateSkillQueue(npc);
 }
 
@@ -374,8 +396,13 @@ AIManager::AIManager()
     JsonHelper::LoadJsonFile(mAIDb, "data/ai/ai.json");
 }
 
-int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, int actorTID, int targetTID)
+int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, int actorTID, int targetTID, float offsetDis)
 {
+    //offsetDis = 얼마나 떨어져 있어도 ok인지를 정함.
+    if (offsetDis < 1.5f) {
+        SDL_Log("[WARN] Get net TID: offsetDis less than 1.5, not intended for current version");
+    }
+
     Vector2 vec = GetVectorFromTID(map, actorTID, targetTID);
     Log::LogInfo("Get final melee TID: vector2: " + std::to_string(vec.x) + ", " + std::to_string(vec.y), System::sLogOptionAIOn);
     Log::LogVerbose("Actor tile ID: " + std::to_string(actorTID), System::sLogOptionAIOn);
@@ -387,11 +414,14 @@ int AIMoveHelper::GetNextTID(GameContext *gctx, Map *map, int actorTID, int targ
     //경로 우회시 어떤 방향으로 차순위 경로를 탐색할지
     bool isCW = Random::BDistribution(0.5);
 
+    //타겟과의 거리를 계산한다.
+    float curDis = MapHelper::GetDistanceBetween(map, actorTID, targetTID);
+
     //체크섬을 기반으로 이동 가능 방향을 하나씩 소거한다.
     while (dirChecksum < 8) {
         
         //이미 근접해 있다면 굳이 연산하지 않는다.
-        if (vec.x <= 1 && vec.y <= 1 && vec.x >= -1 && vec.y >= -1) {
+        if (curDis <= offsetDis) {
             Log::LogVerbose("Target already adjacent", System::sLogOptionAIOn);
             return actorTID;
         }

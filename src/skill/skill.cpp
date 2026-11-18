@@ -151,7 +151,7 @@ SkillContext::SkillContext(Skill *skill, Entity *actor, Entity *target, Map *map
 bool SkillContext::Activate(GameContext *gctx)
 {
     using namespace std;
-    
+
     json sd = SkillHelper::GetSkillData(gctx->mSkm->mSkillDb, mSkill->mCode);
     
     string stype = sd["type"].get<string>();
@@ -172,10 +172,10 @@ bool SkillContext::Activate(GameContext *gctx)
         //타겟 tid가 한개 이상일 경우
         SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[0], apPerTile, mMap);
         mTargetTIds.erase(mTargetTIds.begin());
-    };
+    }
+
     if (stype == "single_target") {
         SkillAction::AffectTarget(gctx, mSkill, mActor, mTargetEnts, mMap);
-
         return false; //어째서인지 거짓일때 루프를 끊게 만들어놨구만
     }
 
@@ -499,14 +499,15 @@ bool SkillAction::AffectTarget(GameContext *gctx, Skill *skill, Entity *actor, s
 {
     namespace skh = SkillHelper;
     namespace eh = EntityHelper;
+    namespace mh = MapHelper;
+
     json skd = skh::GetSkillData(gctx, skill->mCode);
-
-    LogUI* log = gctx->mUim->mLogUI;
-
     //hp, ap, sp 소모 체크, 먼저 스킬 데이터에서 소모량 정보를 가져온다.
     int hpUse = SkillHelper::GetHpUse(skd, skill, actor);
     int spUse = SkillHelper::GetSpUse(skd, skill, actor);
     int apUse = SkillHelper::GetApUse(skd, skill, actor);
+    
+    LogUI* log = gctx->mUim->mLogUI;
 
     //액터의 스태미너와 ap가 충분한지 확인한다.
     if (hpUse > actor->mCurHp) {
@@ -531,7 +532,7 @@ bool SkillAction::AffectTarget(GameContext *gctx, Skill *skill, Entity *actor, s
     actor->mCurAp -= apUse;
     gctx->mUim->mBCUI->UpdateUI(actor);
 
-    //스킬의 데미지를 구해서 타겟의 체력을 깎는다.
+    //스킬을 엔티티별로 적용한다.
     CombatHelper ch;
     int skDmg = SkillHelper::GetSkillDamage(skd, skill, actor);
     for (Entity* ent : targets) {

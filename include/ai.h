@@ -43,13 +43,17 @@ class AIState {
     virtual void Exit();
     virtual void UpdateSkillQueue(Npc* npc);
 
-    void NavigateQueue(Npc* npc, Map* map, int tileId);
-    void AttackQueue(Npc* actor, Skill* skill, Entity* target, Map* map);
+    void NavigateQueue(Npc* npc, Map* map, int tileId, float offsetDis);
+    bool AffectTargetQueue(Npc* actor, Skill* skill, Entity* target, Map* map);
 
     GameContext* mGc {nullptr};
     int mPrevTileId {-1};
 
+    bool ApplySkillCost(Skill* skill, Entity* ent);
+
     int mVirtualAp {0};
+    int mVirtualSp {0};
+    int mVirtualHp {0};
 };
 
 class CombatState : public AIState {
@@ -59,6 +63,8 @@ class CombatState : public AIState {
     void Destroy() override;
 
     void UpdateSkillQueue(Npc* npc) override;
+
+    void MeleeQueue(Map* map, Npc* actor, Entity* target); //특정 범위까지 근접 후 공격하는 행동 패턴
 };
 
 class IdleState : public AIState {
@@ -93,7 +99,7 @@ namespace AIHelper {
 
 namespace AIMoveHelper {
 
-    int GetNextTID(GameContext* gctx, Map* map, int actorTID, int targetTID);
+    int GetNextTID(GameContext* gctx, Map* map, int actorTID, int targetTID, float offsetDis = 1.5);
 
     Vector2 GetVectorFromTID(Map* map, int actorTID, int targetTID);
 };

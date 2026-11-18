@@ -416,6 +416,17 @@ Point MapHelper::GetPosPoint(int tileId, Grid *grid)
     return p;
 }
 
+float MapHelper::GetDistanceBetween(Map *map, int TID1, int TID2)
+{
+    std::vector<int> TIDs = GetTilesIdBetween(map, TID1, TID2);
+    int diamoves = MoveHelper::GetDiagonalMoves(TIDs, map);
+
+    int smoves = (int) TIDs.size() - diamoves - 1;
+    float targetDis = diamoves * 1.5 + smoves;
+
+    return targetDis;
+}
+
 //예외 상황시 -1을 반환함.
 int MapHelper::GetAdjacentTID(Map *map, Direction dir, int initTID)
 {
