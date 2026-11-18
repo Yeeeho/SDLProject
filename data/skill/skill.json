@@ -51,6 +51,7 @@
 
         "bite" : {
             "name" : "물기",
+            "ss_name" : "bite_ss",
             "type" : "single_target",
             "target" : "single",
             "range" : 1.5,

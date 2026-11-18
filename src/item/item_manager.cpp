@@ -264,7 +264,6 @@ void ItemManager::RenderStoredTex()
     SDL_RenderTexture(System::sRenderer, mTempTex, nullptr, &fr);
 }
 
-//TODO: 맵상에 있는 오브젝트들은 맵이 렌더링 책임을 지도록 바꾸는게 좋을거같다.
 void ItemManager::RenderItems()
 {
     ItemHelper ih;

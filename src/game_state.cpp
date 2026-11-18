@@ -202,6 +202,8 @@ void SubMapState::Update(GameContext& gc)
     gc.mObjm->UpdateObjects();
 
     gc.mUim->UpdateGridToolTip(gc.mUim->mToolTipGrid);
+
+    //WIP애니메이션 업데이트
 }
 
 void SubMapState::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
