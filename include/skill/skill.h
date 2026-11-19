@@ -96,6 +96,8 @@ namespace SkillHelper {
     int GetSpUse(json skillData, Skill* skill, Entity* ent);
     int GetApUse(json skillData, Skill* skill, Entity* ent);
 
+    std::string GetSkillHitSpriteSheetName(json skilldata, Skill* skill);
+
     //특정 타입의 스킬을 반환해주는 메서드
     Skill* GetMovementSkill(Entity* ent); //이동형 스킬이 있다면 스킬을 반환하고, 없다면 널포인터를 반환함.
 };

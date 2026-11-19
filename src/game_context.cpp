@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "texture.h"
+#include "animation.h"
 #include "render.h"
 #include "game_context.h"
 #include "game_state.h"
@@ -15,6 +16,7 @@
 GameContext::GameContext()
 {
     mSpsm = new SpriteSheetManager();
+    mAnim = new AnimationManager(mSpsm);
     mRenderM = new RenderManager();
     mScm = new ScenarioManager();
     mTurnm = new TurnManager(this);

@@ -197,3 +197,29 @@ void SpriteSheetManager::LoadSs()
 
 
 }
+
+void SpriteSheetManager::RenderSprite(std::string name, float x, float y, float w, float h)
+{
+    Texture* ss = mSsContainer[name];
+    json ssMap = mSsMapContainer[name];
+
+    json sprites = ssMap["sprites"];
+    for (json sp : sprites) {
+        SDL_FRect fr = {sp["x"].get<float>(), sp["y"].get<float>(),
+            sp["width"].get<float>(), sp["height"].get<float>() 
+        };
+        ss->Render(x, y, &fr, (float) w, (float) h);
+        SDL_Log("renderrrrrr");
+    }
+}
+
+Texture *SpriteSheetManager::GetSpriteSheet(std::string name)
+{
+    return mSsContainer[name];
+}
+
+json SpriteSheetManager::GetSpriteMap(std::string name)
+{
+    return mSsMapContainer[name];
+}
+

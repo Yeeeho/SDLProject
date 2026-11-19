@@ -15,6 +15,7 @@
 #include "entity.h"
 #include "ai.h"
 #include "skill/skill.h"
+#include "animation.h"
 
 Skill::Skill(std::string code, std::string name)
 {
@@ -449,6 +450,14 @@ int SkillHelper::GetApUse(json skillData, Skill *skill, Entity *ent)
     return apUse;
 }
 
+std::string SkillHelper::GetSkillHitSpriteSheetName(json skilldata, Skill *skill)
+{
+    if (skilldata.contains("hit_ss_name")) {
+        return skilldata["hit_ss_name"].get<std::string>();
+    }
+    else return "ErrorHitSpriteSheet";
+}
+
 Skill *SkillHelper::GetMovementSkill(Entity *ent)
 {
     //TODO: 이동 스킬이 2개 이상이라면 마지막 거만 반환하는 문제가 있습니다.
@@ -502,13 +511,14 @@ bool SkillAction::AffectTarget(GameContext *gctx, Skill *skill, Entity *actor, s
     namespace mh = MapHelper;
 
     json skd = skh::GetSkillData(gctx, skill->mCode);
+    
     //hp, ap, sp 소모 체크, 먼저 스킬 데이터에서 소모량 정보를 가져온다.
     int hpUse = SkillHelper::GetHpUse(skd, skill, actor);
     int spUse = SkillHelper::GetSpUse(skd, skill, actor);
     int apUse = SkillHelper::GetApUse(skd, skill, actor);
     
     LogUI* log = gctx->mUim->mLogUI;
-
+    
     //액터의 스태미너와 ap가 충분한지 확인한다.
     if (hpUse > actor->mCurHp) {
         if (actor->mIsPawn) log->AddMessage("HP가 부족합니다!", System::kY);
@@ -522,7 +532,7 @@ bool SkillAction::AffectTarget(GameContext *gctx, Skill *skill, Entity *actor, s
         if (actor->mIsPawn) log->AddMessage("AP가 부족합니다!", System::kY);
         return false;
     }
-
+    
     std::string message = actor->mName + "이(가) " + skill->mName + "을(를) 사용합니다!";
     log->AddMessage(message, eh::GetDemeanorColor(actor));
 
@@ -531,12 +541,18 @@ bool SkillAction::AffectTarget(GameContext *gctx, Skill *skill, Entity *actor, s
     actor->mCurSp -= spUse;
     actor->mCurAp -= apUse;
     gctx->mUim->mBCUI->UpdateUI(actor);
+    
+    std::string hitSsName = skh::GetSkillHitSpriteSheetName(skd, skill);
 
     //스킬을 엔티티별로 적용한다.
     CombatHelper ch;
     int skDmg = SkillHelper::GetSkillDamage(skd, skill, actor);
     for (Entity* ent : targets) {
         ch.TakeDamage(ent, *gctx, skDmg);
+        //TODO:엔티티 스프라이트가 2x2가 되면 좆버그 날거임
+        int tl = map->mTileLen;
+        SDL_FRect entFRect = {(float) ent->mMapX * tl ,(float) ent->mMapY * tl,(float) tl,(float) tl};
+        gctx->mAnim->QueueAnimCtx(new AnimationContext(hitSsName, entFRect, 1000));
         if (ent->mId == actor->mId && ent->mIsPawn == actor->mIsPawn) {
             gctx->mUim->mBCUI->UpdateUI(ent);
         }

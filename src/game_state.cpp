@@ -16,9 +16,9 @@
 #include "item/item_manager.h"
 #include "city.h"
 #include "render.h"
-#include "square.h"
 #include "ui.h"
 #include "text.h"
+#include "animation.h"
 
 GameStateManager::GameStateManager()
 {
@@ -203,7 +203,7 @@ void SubMapState::Update(GameContext& gc)
 
     gc.mUim->UpdateGridToolTip(gc.mUim->mToolTipGrid);
 
-    //WIP애니메이션 업데이트
+    gc.mAnim->UpdateAnimCtx();
 }
 
 void SubMapState::HandleEvent(SDL_Event &e, GameContext& gc, float mouseX, float mouseY)
@@ -243,6 +243,9 @@ void SubMapState::Render(GameContext& gc)
 
     gc.mUim->mDialogueUI->RenderOnUpdate();
     if (!gc.mUim->mDialogueUI->mIsRender) gc.mUim->mTurnOverBtn->Render();
+
+    //애니메이션 렌더링
+    gc.mAnim->RenderSprite();
 
     SDL_RenderPresent(System::sRenderer);
 }

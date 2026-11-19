@@ -59,4 +59,10 @@ class SpriteSheetManager {
 
     std::map<std::string, Texture*> mSsContainer;
     std::map<std::string, json> mSsMapContainer;
+
+    void RenderSprite(std::string name, float x, float y, float w, float h);
+    Texture* GetSpriteSheet(std::string name);
+    json GetSpriteMap(std::string name);
+
+    Texture* GetSprite(std::string name, int idx);
 };
