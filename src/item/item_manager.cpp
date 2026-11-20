@@ -310,7 +310,7 @@ void ItemManager::RenderItem(Item* item, float x, float y, float w, float h)
             SDL_FRect fr = {sp["x"].get<float>(), sp["y"].get<float>(),
                 sp["width"].get<float>(), sp["height"].get<float>() 
             };
-            ss->Render(x, y, &fr, (float) w, (float) h);
+            ss->Render(x, y, &fr, w, h);
         }
     }
 }

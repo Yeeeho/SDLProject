@@ -202,7 +202,7 @@ class Entity {
     //맵 관련 
     bool mIsOnMap {false}; //맵에 있나?
     int mTileId {-1}; //지금 서있는 타일 id
-    int mMapX {-1}; //좌표
+    int mMapX {-1}; //실제 좌표
     int mMapY {-1};
     int mXspeed {0};
     int mYspeed {0};

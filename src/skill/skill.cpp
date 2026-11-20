@@ -73,6 +73,8 @@ void Skill::Activate(SkillManager* skm)
 
     //공격 스킬일 경우
     else if (skillType == "single_target") {
+        // SkillContext* skctx = new SkillContext(this, actor, targets, map);
+        // gc->mObjm->mSkCtxUpdateQueue.push(skctx);
 
         //hp, ap, sp 소모 체크, 먼저 스킬 데이터에서 소모량 정보를 가져온다.
         int hpUse = SkillHelper::GetHpUse(skillData, this, actor);
@@ -138,6 +140,14 @@ SkillContext::SkillContext(Skill* skill, Entity *actor, const std::vector<int> &
     mSkill = skill;
     mActor = actor;
     mTargetTIds = tileIds;
+    mMap = map;
+}
+
+SkillContext::SkillContext(Skill *skill, Entity *actor, std::vector<Entity*>& targets, Map *map)
+{
+    mSkill = skill;
+    mActor = actor;
+    mTargetEnts = targets;
     mMap = map;
 }
 
@@ -550,9 +560,14 @@ bool SkillAction::AffectTarget(GameContext *gctx, Skill *skill, Entity *actor, s
     for (Entity* ent : targets) {
         ch.TakeDamage(ent, *gctx, skDmg);
         //TODO:엔티티 스프라이트가 2x2가 되면 좆버그 날거임
+        //애니메이션 컨텍스트를 애니메이션 매니저에 로드함.
         int tl = map->mTileLen;
-        SDL_FRect entFRect = {(float) ent->mMapX * tl ,(float) ent->mMapY * tl,(float) tl,(float) tl};
-        gctx->mAnim->QueueAnimCtx(new AnimationContext(hitSsName, entFRect, 1000));
+        SDL_FRect entFRect = {
+            (float) ent->mMapX, (float) ent->mMapY,
+            (float) tl,(float) tl
+        };
+
+        gctx->mAnim->QueueAnimCtx(new AnimationContext(gctx->mSpsm, hitSsName, entFRect, System::sAnimationInterval));
         if (ent->mId == actor->mId && ent->mIsPawn == actor->mIsPawn) {
             gctx->mUim->mBCUI->UpdateUI(ent);
         }

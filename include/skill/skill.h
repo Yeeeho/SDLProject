@@ -23,6 +23,7 @@ struct SkillContext {
     SkillContext(Skill*, std::vector<Item*>& targetItems, std::vector<Entity*>& targetEnts, std::vector<int>& tileIds);
     SkillContext(Skill*, const std::vector<int>& tileIds, Map* map);
     SkillContext(Skill*, Entity* actor, const std::vector<int>& tileIds, Map* map);
+    SkillContext(Skill*, Entity* actor, std::vector<Entity*>& targets, Map* map);
     SkillContext(Skill*, Entity* actor, Entity* target, Map* map);
 
     bool Activate(GameContext* gctx);

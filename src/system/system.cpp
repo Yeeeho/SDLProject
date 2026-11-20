@@ -106,6 +106,20 @@ bool System::LoadConfig()
     return success;
 }
 
+bool System::LoadGameConfig()
+{
+    bool success = true;
+
+    json gameCfg;
+    success = JsonHelper::LoadJsonFile(gameCfg, "data/config/gameconfig.json");
+
+    json setting = gameCfg["items"];
+
+    sAnimationInterval = JsonHelper::GetInt(setting, "animation_interval");
+
+    return success;
+}
+
 bool System::LoadData(ObjectManager& objm)
 {
     bool success = true;

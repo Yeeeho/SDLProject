@@ -245,7 +245,7 @@ void SubMapState::Render(GameContext& gc)
     if (!gc.mUim->mDialogueUI->mIsRender) gc.mUim->mTurnOverBtn->Render();
 
     //애니메이션 렌더링
-    gc.mAnim->RenderSprite();
+    gc.mAnim->RenderAnimation(gc.mMapm->mSubMap->mCam->mSight);
 
     SDL_RenderPresent(System::sRenderer);
 }

@@ -28,6 +28,7 @@
 
         "punch" : {
             "name" : "주먹질",
+            "hit_ss_name" : "blunt_ss",
             "type" : "single_target",
             "img_path" : "images/icons/skill/fist.png",
             "target" : "single",

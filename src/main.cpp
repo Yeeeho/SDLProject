@@ -31,6 +31,7 @@ int main() {
 
     //로딩
     sys.LoadConfig();
+    sys.LoadGameConfig();
     sys.LoadData(*gc.mObjm); //json 데이터베이스 로드
     sys.LoadObjects(gc); //게임에서 사용할 객체 로드
     sys.LoadUIs(*gc.mUim, *gc.mObjm); //ui객체 로드
