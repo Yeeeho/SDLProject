@@ -15,6 +15,7 @@
 #include "entity.h"
 #include "ai.h"
 #include "skill/skill.h"
+#include "animation.h"
 
 Skill::Skill(std::string code, std::string name)
 {
@@ -71,7 +72,9 @@ void Skill::Activate(SkillManager* skm)
     }
 
     //공격 스킬일 경우
-    else if (skillType == "attack") {
+    else if (skillType == "single_target") {
+        // SkillContext* skctx = new SkillContext(this, actor, targets, map);
+        // gc->mObjm->mSkCtxUpdateQueue.push(skctx);
 
         //hp, ap, sp 소모 체크, 먼저 스킬 데이터에서 소모량 정보를 가져온다.
         int hpUse = SkillHelper::GetHpUse(skillData, this, actor);
@@ -140,10 +143,26 @@ SkillContext::SkillContext(Skill* skill, Entity *actor, const std::vector<int> &
     mMap = map;
 }
 
+SkillContext::SkillContext(Skill *skill, Entity *actor, std::vector<Entity*>& targets, Map *map)
+{
+    mSkill = skill;
+    mActor = actor;
+    mTargetEnts = targets;
+    mMap = map;
+}
+
+SkillContext::SkillContext(Skill *skill, Entity *actor, Entity *target, Map *map)
+{
+    mSkill = skill;
+    mActor = actor;
+    mTargetEnts.push_back(target);
+    mMap = map;
+}
+
 bool SkillContext::Activate(GameContext *gctx)
 {
     using namespace std;
-    
+
     json sd = SkillHelper::GetSkillData(gctx->mSkm->mSkillDb, mSkill->mCode);
     
     string stype = sd["type"].get<string>();
@@ -161,17 +180,15 @@ bool SkillContext::Activate(GameContext *gctx)
         //타겟 tid가 없을 경우
         if ((int) mTargetTIds.size() < 1) return false; //움직임을 멈춘다.
         
-        //타겟 tid가 한개일 경우
-        if ((int) mTargetTIds.size() == 1) {
-            SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[0], apPerTile, mMap);
-            mTargetTIds.erase(mTargetTIds.begin());        
-            return true;
-        }
-
-        //타겟 tid가 2개 이상일 경우
-        SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[1], apPerTile, mMap);
+        //타겟 tid가 한개 이상일 경우
+        SkillAction::MoveOneTile(gctx, mActor, mSkill, mTargetTIds[0], apPerTile, mMap);
         mTargetTIds.erase(mTargetTIds.begin());
-    };
+    }
+
+    if (stype == "single_target") {
+        SkillAction::AffectTarget(gctx, mSkill, mActor, mTargetEnts, mMap);
+        return false; //어째서인지 거짓일때 루프를 끊게 만들어놨구만
+    }
 
     return true;
 }
@@ -267,9 +284,12 @@ void SkillManager::ActivateSkill()
 }
 
 //나중에 스킬 객체에 있는 추가 보정치도 포함할 수 있다.
-int SkillHelper::GetSkillRange(json skillData, Skill *skill)
+float SkillHelper::GetSkillRange(json skillData, Skill *skill)
 {
-    int range = skillData["range"].get<int>();
+    if (!skillData.contains("range")) {
+        return 0.f;
+    }
+    float range = skillData["range"].get<float>();
     return range;
 }
 json SkillHelper::GetSkillData(const json &skillDb, std::string code)
@@ -277,6 +297,20 @@ json SkillHelper::GetSkillData(const json &skillDb, std::string code)
     json ret;
     if (skillDb["items"].contains(code)) {
         ret = skillDb["items"][code];
+    }
+    else {
+        SDL_Log("getskilldata: cannot find code in skill db!");
+    }
+    return ret;
+}
+
+json SkillHelper::GetSkillData(GameContext* gctx, std::string code)
+{
+    json sdb = gctx->mSkm->mSkillDb;
+
+    json ret;
+    if (sdb["items"].contains(code)) {
+        ret = sdb["items"][code];
     }
     else {
         SDL_Log("getskilldata: cannot find code in skill db!");
@@ -426,8 +460,17 @@ int SkillHelper::GetApUse(json skillData, Skill *skill, Entity *ent)
     return apUse;
 }
 
+std::string SkillHelper::GetSkillHitSpriteSheetName(json skilldata, Skill *skill)
+{
+    if (skilldata.contains("hit_ss_name")) {
+        return skilldata["hit_ss_name"].get<std::string>();
+    }
+    else return "ErrorHitSpriteSheet";
+}
+
 Skill *SkillHelper::GetMovementSkill(Entity *ent)
 {
+    //TODO: 이동 스킬이 2개 이상이라면 마지막 거만 반환하는 문제가 있습니다.
     Skill* ret = nullptr;
     for (Skill* skill : ent->mSkills) {
         if (skill->mCode == "move") {
@@ -460,11 +503,77 @@ bool SkillAction::MoveOneTile(GameContext *gctx, Entity *actor, Skill *skill, in
         actor->mCurAp -= apPerTile;
     }
 
+    SDL_Log("Current ap: %d", actor->mCurAp);
+
     MoveManager mvm = MoveManager(gctx->mUim, gctx->mObjm);
-    mvm.MoveEntityTo(map, actor, actor->mTileId, adjacentTid);
+    mvm.MoveEntityTo(map, actor, actor->mTileId, adjacentTid); //실제 이동
 
     gctx->mUim->mBCUI->UpdateUI(actor);
     
     success = true;
     return success;
+}
+
+bool SkillAction::AffectTarget(GameContext *gctx, Skill *skill, Entity *actor, std::vector<Entity *> targets, Map *map)
+{
+    namespace skh = SkillHelper;
+    namespace eh = EntityHelper;
+    namespace mh = MapHelper;
+
+    json skd = skh::GetSkillData(gctx, skill->mCode);
+    
+    //hp, ap, sp 소모 체크, 먼저 스킬 데이터에서 소모량 정보를 가져온다.
+    int hpUse = SkillHelper::GetHpUse(skd, skill, actor);
+    int spUse = SkillHelper::GetSpUse(skd, skill, actor);
+    int apUse = SkillHelper::GetApUse(skd, skill, actor);
+    
+    LogUI* log = gctx->mUim->mLogUI;
+    
+    //액터의 스태미너와 ap가 충분한지 확인한다.
+    if (hpUse > actor->mCurHp) {
+        if (actor->mIsPawn) log->AddMessage("HP가 부족합니다!", System::kY);
+        return false;            
+    }
+    if (spUse > actor->mCurSp) {
+        if (actor->mIsPawn) log->AddMessage("SP가 부족합니다!", System::kY);
+        return false;            
+    }
+    if (apUse > actor->mCurAp) {
+        if (actor->mIsPawn) log->AddMessage("AP가 부족합니다!", System::kY);
+        return false;
+    }
+    
+    std::string message = actor->mName + "이(가) " + skill->mName + "을(를) 사용합니다!";
+    log->AddMessage(message, eh::GetDemeanorColor(actor));
+
+    //액터의 스탯에서 소모량만큼 깐다.
+    actor->mCurHp -= hpUse;
+    actor->mCurSp -= spUse;
+    actor->mCurAp -= apUse;
+    gctx->mUim->mBCUI->UpdateUI(actor);
+    
+    std::string hitSsName = skh::GetSkillHitSpriteSheetName(skd, skill);
+
+    //스킬을 엔티티별로 적용한다.
+    CombatHelper ch;
+    int skDmg = SkillHelper::GetSkillDamage(skd, skill, actor);
+    for (Entity* ent : targets) {
+        ch.TakeDamage(ent, *gctx, skDmg);
+        //TODO:엔티티 스프라이트가 2x2가 되면 좆버그 날거임
+        //애니메이션 컨텍스트를 애니메이션 매니저에 로드함.
+        int tl = map->mTileLen;
+        SDL_FRect entFRect = {
+            (float) ent->mMapX, (float) ent->mMapY,
+            (float) tl,(float) tl
+        };
+
+        gctx->mAnim->QueueAnimCtx(new AnimationContext(gctx->mSpsm, hitSsName, entFRect, System::sAnimationInterval));
+        if (ent->mId == actor->mId && ent->mIsPawn == actor->mIsPawn) {
+            gctx->mUim->mBCUI->UpdateUI(ent);
+        }
+    }
+    gctx->mUim->mToolTip->mIsRenderUpdate = true;
+    gctx->mSkm->mTargets.clear();
+
+    return true;
 }

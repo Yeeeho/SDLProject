@@ -1,5 +1,6 @@
 #pragma once
 
+class SpriteSheetManager; class AnimationManager;
 class MapManager;
 class GameStateManager;
 class ScenarioManager;
@@ -12,7 +13,11 @@ struct EventContext;
 
 struct GameContext {
     GameContext();
+    
     RenderManager* mRenderM {nullptr};
+    AnimationManager* mAnim {nullptr};
+    SpriteSheetManager* mSpsm {nullptr};
+
     GameStateManager* mGsm {nullptr};
     ScenarioManager* mScm {nullptr};
     TurnManager* mTurnm {nullptr};

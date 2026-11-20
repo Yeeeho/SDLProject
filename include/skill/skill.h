@@ -23,6 +23,8 @@ struct SkillContext {
     SkillContext(Skill*, std::vector<Item*>& targetItems, std::vector<Entity*>& targetEnts, std::vector<int>& tileIds);
     SkillContext(Skill*, const std::vector<int>& tileIds, Map* map);
     SkillContext(Skill*, Entity* actor, const std::vector<int>& tileIds, Map* map);
+    SkillContext(Skill*, Entity* actor, std::vector<Entity*>& targets, Map* map);
+    SkillContext(Skill*, Entity* actor, Entity* target, Map* map);
 
     bool Activate(GameContext* gctx);
 
@@ -38,6 +40,7 @@ namespace SkillAction {
     
     //하나씩 이동시키는 함수
     bool MoveOneTile(GameContext* gctx, Entity* actor, Skill* skill, int adjacentTid, int apPerTile, Map* map);
+    bool AffectTarget(GameContext* gctx, Skill* skill, Entity* actor, std::vector<Entity*> targets, Map* map);
 };
 
 class SkillManager {
@@ -79,6 +82,7 @@ class SkillManager {
 
 namespace SkillHelper {
     json GetSkillData(const json& skillDb, std::string code); //스킬 데이터 자체 반환
+    json GetSkillData(GameContext* gctx, std::string code); //암묵적으로 Gamecontext의 skill database를 사용함
 
     std::string GetSkillType(GameContext* gctx, std::string code); //스킬 타입
     std::string GetSkillName(json skillData, Skill* skill); //스킬 이름
@@ -86,12 +90,14 @@ namespace SkillHelper {
 
     int GetSkillTargetNum(json skillData, Skill* skill); //멀티타겟의 경우는 아직 안만듬
 
-    int GetSkillRange(json skillData, Skill* skill); //스킬 범위
+    float GetSkillRange(json skillData, Skill* skill); //스킬 범위
     int GetSkillDamage(json skillData, Skill* skill, Entity* ent); //스킬 데미지
     //스킬 코스트
     int GetHpUse(json skillData, Skill* skill, Entity* ent);
     int GetSpUse(json skillData, Skill* skill, Entity* ent);
     int GetApUse(json skillData, Skill* skill, Entity* ent);
+
+    std::string GetSkillHitSpriteSheetName(json skilldata, Skill* skill);
 
     //특정 타입의 스킬을 반환해주는 메서드
     Skill* GetMovementSkill(Entity* ent); //이동형 스킬이 있다면 스킬을 반환하고, 없다면 널포인터를 반환함.

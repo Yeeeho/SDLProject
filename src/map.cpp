@@ -308,7 +308,7 @@ std::set<int> MapHelper::GetNearestTileIds(int centerTid, Map* map, unsigned int
     int level = static_cast<int> (levelParam);
 
     if (level == 0) {
-        SDL_Log("[WARNING] get neareast tile ids: level cannot be 0!");
+        SDL_Log("[ERROR] get neareast tile ids: level cannot be 0!");
         return res;
     }
 
@@ -414,6 +414,17 @@ Point MapHelper::GetPosPoint(int tileId, Grid *grid)
 
     Point p = {posX, posY};
     return p;
+}
+
+float MapHelper::GetDistanceBetween(Map *map, int TID1, int TID2)
+{
+    std::vector<int> TIDs = GetTilesIdBetween(map, TID1, TID2);
+    int diamoves = MoveHelper::GetDiagonalMoves(TIDs, map);
+
+    int smoves = (int) TIDs.size() - diamoves - 1;
+    float targetDis = diamoves * 1.5 + smoves;
+
+    return targetDis;
 }
 
 //예외 상황시 -1을 반환함.

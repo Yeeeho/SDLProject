@@ -86,11 +86,6 @@ void TurnManager::TakeTurn(Entity *ent)
     std::string message = ent->mName + "의 차례입니다!";
     mGc->mUim->mLogUI->AddMessage(message, tc);
 
-    //턴당 회복
-    CombatHelper ch;
-    ch.RegenEntity(ent, *mGc);
-
-
     //초기화
     entm->mFocusedEnt = nullptr;
     entm->mPrevFocusedEnt = nullptr;
@@ -131,9 +126,23 @@ void TurnManager::UpdateTurn()
     //pc가 턴을 모두 잡은 뒤에야 적이 턴을 잡는다.
     //TODO: 플레이어가 임의로 큐를 설정할 수 있게 만들어야함
     
+    //턴당 회복
+    CombatHelper ch;
+
+
     //일단 턴 시작하자마자 업데이트를 돌린다.
+    //pc턴 업데이트
+    for (Entity* p : mCurrentMap->mPawns) {
+        Pawn* pawn = (Pawn*) p;
+        //나중에 로직이 늘어나면 래핑이 필요할수도 있겠는걸
+        ch.RegenEntity(pawn, *mGc);
+    }
+
+
+    //npc턴 업데이트
     for (Entity* ent : mCurrentMap->mNpcs) {
         Npc* npc = (Npc*) ent;
+        ch.RegenEntity(ent, *mGc);
         mGc->mObjm->mEntm->mEntAI->UpdateSkillQueue(mGc, npc);
     }
 
@@ -157,8 +166,14 @@ void TurnManager::UpdateTurn()
         } 
         else {
             //모두가 턴을 잡음
+            SDL_Log("turn manager: everybody took their turn boi");
             mPawnIdx = 0;
             mNpcIdx = 0;
+
+            if (mCurrentMap->mPawns.empty()) {
+                //아군이 맵에 없는 경우 반복문을 탈출한다.
+                break;
+            }
         }
     }
 }

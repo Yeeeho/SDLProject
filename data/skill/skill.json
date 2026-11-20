@@ -1,6 +1,7 @@
 {
     "type" : "skill_db",
     "desc" : "스킬들의 정보를 기재해놓았다.",
+    "//" : "참고. 근접공격 스킬들 range가 1.5인 이유는 편의상 대각선상의 엔티티까지 공격하게 만들기 위함임.",
     "items" : {
 
         "move" : {
@@ -27,10 +28,11 @@
 
         "punch" : {
             "name" : "주먹질",
-            "type" : "attack",
+            "hit_ss_name" : "blunt_ss",
+            "type" : "single_target",
             "img_path" : "images/icons/skill/fist.png",
             "target" : "single",
-            "range" : 1,
+            "range" : 1.5,
 
             "dmg" : {
                 "mod" : {
@@ -50,9 +52,10 @@
 
         "bite" : {
             "name" : "물기",
-            "type" : "attack",
+            "hit_ss_name" : "bite_ss",
+            "type" : "single_target",
             "target" : "single",
-            "range" : 1,
+            "range" : 1.5,
             "dmg" : {
                 "mod" : {
                     "str_mod" : 0.3,
@@ -70,9 +73,9 @@
 
         "basic_attack" : {
             "name" : "기본 공격",
-            "type" : "attack",
+            "type" : "single_target",
             "target" : "single",
-            "range" : 1,
+            "range" : 1.5,
 
             "dmg" : {
                 "mod" : {

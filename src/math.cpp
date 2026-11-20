@@ -63,6 +63,11 @@ Direction Math::GetDirection8(int vectorX, int vectorY)
     return direction;
 }
 
+Vector2 Math::GetVector(Vector2 v1, Vector2 v2)
+{
+    return Vector2() = {(v2.x - v1.x), (v2.y - v1.y)};
+}
+
 Direction8::Direction8(Direction initDir)
 {
     mDir = initDir;

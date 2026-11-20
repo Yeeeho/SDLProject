@@ -1,0 +1,32 @@
+{
+    "spritesheet_width": 384,
+    "spritesheet_height": 96,
+    "cell_width": 96,
+    "cell_height": 96,
+    "sprites": [
+        {
+            "filename": "blunt1.png",
+            "order": 0,
+            "width": 96,
+            "height": 96,
+            "x": 0,
+            "y": 0
+        },
+        {
+            "filename": "blunt2.png",
+            "order": 1,
+            "width": 96,
+            "height": 96,
+            "x": 96,
+            "y": 0
+        },
+        {
+            "filename": "blunt3.png",
+            "order": 2,
+            "width": 96,
+            "height": 96,
+            "x": 192,
+            "y": 0
+        }
+    ]
+}

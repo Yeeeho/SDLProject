@@ -147,6 +147,8 @@ namespace MapHelper {
     std::unordered_map<std::string, int> PosXYByTileId(int id, Grid* grid);
     Point GetPosPoint(int tileId, Grid* grid);
 
+    float GetDistanceBetween(Map* map, int TID1, int TID2);
+
     //바로 근접한 특정 방향에 있는 타일 아이디를 구하는 녀석
     int GetAdjacentTID(Map* map, Direction dir, int initTID);
 };

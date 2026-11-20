@@ -52,12 +52,14 @@ class System {
     inline static bool sIsActionPerformed {false}; //이벤트를 루프당 한번 실행시키기 위한 플래그
     inline static bool sIsLeftMouseClicked {false};
 
-    /*함수 선언*/
+    inline static int sAnimationInterval {100};
 
+    /*함수 선언*/
     bool Init();
 
     //초기 설정 로드
     bool LoadConfig();
+    bool LoadGameConfig();
 
     //외부 데이터(json등) 로드
     bool LoadData(ObjectManager&);
@@ -85,8 +87,8 @@ class Timer {
     Uint64 mMs = 0;
 
     Uint64 StoreProgramTick();
-    Uint64 GetPreviousTick();
-
     Uint64 StoreProgramTickMs();
+
+    Uint64 GetPreviousTick();
 };
 

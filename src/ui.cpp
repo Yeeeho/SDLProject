@@ -1591,7 +1591,7 @@ void QuickSkillUI::HandleEvent(SDL_Event &e, GameContext& gc, Map* map, float mo
             json sd = skillTable[skillCode];
             std::string stype = sd["type"].get<std::string>();
             if (stype == "movement") gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight.png");
-            else if (stype == "attack") gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight_red.png");
+            else if (stype == "single_target") gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight_red.png");
             else gc.mUim->mTileHLUI->mHighlight->LoadFromFile("images/ui/highlight.png");
 
             mGc->mSkm->mIsSkillReady = true; //스킬 사용 준비 완료
